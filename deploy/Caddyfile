@@ -1,0 +1,33 @@
+{
+	skip_install_trust
+	auto_https disable_redirects
+}
+
+hubia.psxt.io {
+	tls internal
+
+	handle /health/edge {
+		respond "ok" 200
+	}
+
+	@portal path /conta/* /.well-known/agent-card.json /.well-known/oauth-authorization-server /.well-known/oauth-protected-resource /.well-known/oauth-protected-resource/conta/mcp /.well-known/oauth-protected-resource/conta/mcp/email /.well-known/oauth-authorization-server/conta/email
+	handle @portal {
+		reverse_proxy portal:8000 {
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	@icons path /hub-ia.png /hub-ia-64.png /apple-touch-icon.png /favicon.ico
+	header @icons Access-Control-Allow-Origin "*"
+
+	@site path / /hub-ia-64.png /hub-ia.png /apple-touch-icon.png /favicon.ico
+	handle @site {
+		root * /srv/hubia
+		header Cache-Control "no-cache"
+		file_server
+	}
+
+	handle {
+		respond 404
+	}
+}

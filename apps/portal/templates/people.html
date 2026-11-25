@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block title %}Usuários e auditoria{% endblock %}
+{% block body %}<nav><a href="{% url 'administration' %}">← Administração</a></nav><h1>Usuários</h1>
+{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
+<details {% if form.errors %}open{% endif %}><summary>Cadastrar usuário</summary><form method="post">{% csrf_token %}{{ form.as_p }}<button name="action" value="create">Cadastrar</button></form></details>
+<ul class="cards">{% for u in users %}<li><strong>{{ u.username }}</strong> · {% if u.is_active %}Ativo{% else %}Desativado{% endif %}
+{% if request.user.pk != u.id %}<form method="post">{% csrf_token %}<input type="hidden" name="account" value="{{ u.id }}">
+{% if u.is_active %}<button name="action" value="disable">Desativar usuário</button>{% else %}<button name="action" value="enable">Reativar usuário</button>{% endif %}</form>{% endif %}</li>{% endfor %}</ul>
+<h2>Atividade administrativa recente</h2>
+{% for date,org,actor,event in events %}<article><small>{{ date|date:"d/m/Y H:i" }} · {{ org }}</small><div>{{ actor }}</div><code>{{ event }}</code></article>{% empty %}<p>Nenhum evento registrado.</p>{% endfor %}
+{% endblock %}

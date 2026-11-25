@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block title %}{% if email_only %}Conectar meu e-mail{% else %}Conectar Gemini{% endif %}{% endblock %}{% block body %}
+<h1>{% if email_only %}Conectar meu e-mail à IA{% else %}Conectar Gemini ao HUB IA{% endif %}</h1>
+{% if groups %}
+<form method="get">
+{% for key,value in params %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+<label>{% if email_only %}Caixa institucional{% else %}Espaços que o Gemini poderá consultar{% endif %}<select name="hub_workspace" required>
+<option value="">Selecione uma opção</option>
+{% for org,options in groups %}<optgroup label="{{ org }}">
+{% for key,label in options %}<option value="{{ key }}">{{ label }}{% if not email_only %} · {{ org }}{% endif %}</option>{% endfor %}
+</optgroup>{% endfor %}
+</select></label><button>Continuar</button>
+</form>
+{% else %}<p>{% if email_only %}Vincule sua caixa em Meu e-mail na instituição para conectar este MCP.{% else %}Sua conta ainda não tem acesso a um espaço ativo.{% endif %}</p>{% endif %}
+{% endblock %}

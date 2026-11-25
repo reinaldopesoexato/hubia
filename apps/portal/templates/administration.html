@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Administração{% endblock %}
+{% block body %}
+<p><a href="/conta/">← Meus espaços</a></p><h1>Administração</h1><p><a href="{% url 'people' %}">Usuários e auditoria</a></p>
+<dl class="stats admin-metrics">
+{% include "metric.html" with label="Instituições" value=organizations|length symbol="org" tone="sky" %}
+{% include "metric.html" with label="Ativas" value=active_orgs symbol="shield" tone="mint" %}
+{% include "metric.html" with label="Espaços" value=space_count symbol="layers" tone="" %}
+</dl>
+{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
+<details><summary>Criar instituição</summary><form method="post">{% csrf_token %}
+<label>Nome da instituição<input name="name" maxlength="120" required></label>
+<label>Usuário responsável <small>(em branco para assumir)</small><input name="username" maxlength="150"></label>
+<button name="action" value="create_org">Criar instituição</button></form></details>
+<h2>Instituições</h2>
+{% for org in organizations %}
+<details><summary>{{ org.name }} · {% if org.status == "ACTIVE" %}Ativa{% else %}Suspensa{% endif %}</summary>
+{% if org.status == "ACTIVE" %}
+<h3>Conectores</h3><p><a href="{% url 'github_connector' org.id %}">GitHub</a> · <a href="{% url 'email_connector' org.id %}">E-mail institucional</a></p>
+<form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}">
+<label>Nome da instituição<input name="name" value="{{ org.name }}" maxlength="120" required></label>
+<button name="action" value="rename_org">Salvar nome</button></form>
+<h3>Espaços</h3>
+{% for space in org.spaces %}
+<details><summary>{{ space.name }}</summary>
+<p><a href="{% url 'manage_agents' org.id space.id %}">Gerenciar agentes e ver membros</a></p>
+<p><a href="{% url 'workspace_settings' org.id space.id %}">Alterar ou excluir espaço</a></p>
+<form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}"><input type="hidden" name="workspace" value="{{ space.id }}">
+<label>Usuário cadastrado<input name="username" maxlength="150" required></label>
+<button name="action" value="grant_space">Conceder acesso</button>
+<button name="action" value="revoke_space">Revogar acesso</button></form></details>
+{% endfor %}
+<form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}">
+<label>Novo espaço<input name="name" maxlength="120" required></label><button name="action" value="create_space">Criar espaço</button></form>
+{% if org.trash %}<h3>Lixeira de espaços</h3><ul>{% for space in org.trash %}<li>{{ space.name }} · excluído em {{ space.deleted_at|date:"d/m/Y" }} · <a href="{% url 'workspace_settings' org.id space.id %}">Ver e restaurar</a></li>{% endfor %}</ul>{% endif %}
+{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}">
+{% if org.status == "ACTIVE" %}<button name="action" value="suspend">Suspender instituição</button>
+{% else %}<button name="action" value="activate">Reativar instituição</button>{% endif %}</form></details>
+{% empty %}<p>Nenhuma instituição cadastrada.</p>{% endfor %}
+{% endblock %}

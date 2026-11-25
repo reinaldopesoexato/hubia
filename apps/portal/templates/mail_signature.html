@@ -1,0 +1,128 @@
+<section aria-labelledby="signature-title">
+  <h2 id="signature-title">Assinatura dos e-mails enviados por IA</h2>
+  <p>O HUB acrescenta esta assinatura somente aos e-mails que suas IAs enviam por <strong>{{ box.address }}</strong>. Seu webmail e seus aplicativos de e-mail continuam usando as próprias assinaturas.</p>
+  <p>Você pode editar aqui ou pedir a uma IA com permissão de envio. A alteração vale para todas as IAs que usam esta caixa. Para remover a assinatura, apague o conteúdo e salve.</p>
+  {{ box.signature_html|json_script:"stored-mail-signature" }}
+  <form id="mail-signature" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="signature">
+    <input type="hidden" name="mailbox" value="{{ box.pk }}">
+    <input type="hidden" name="revision" value="{{ signature_revision }}">
+    <div class="signature-modes" hidden role="group" aria-label="Modo de edição">
+      <button type="button" data-mode="visual">Editor visual</button>
+      <button type="button" data-mode="html">Código HTML</button>
+    </div>
+    <div id="signature-visual" hidden>
+      <div class="signature-format" role="group" aria-label="Formatação">
+        <button type="button" data-command="bold" aria-label="Negrito"><b>N</b></button>
+        <button type="button" data-command="italic" aria-label="Itálico"><i>I</i></button>
+        <button type="button" data-command="underline" aria-label="Sublinhado"><u>S</u></button>
+        <button type="button" data-command="insertUnorderedList">Lista</button>
+        <button type="button" data-command="createLink">Link</button>
+      </div>
+      <div id="signature-editor" contenteditable="true" role="textbox" aria-label="Editar assinatura formatada" aria-multiline="true"></div>
+    </div>
+    <div id="signature-source">
+      <label for="signature-html">Código HTML da assinatura</label>
+      <textarea id="signature-html" name="signature_html" rows="6" maxlength="6000" spellcheck="false">{{ signature_source }}</textarea>
+      <small>Até 6.000 caracteres. Use parágrafos, quebras de linha, negrito, itálico, sublinhado, listas e links HTTPS, de e-mail ou telefone.</small>
+    </div>
+    <button type="submit">Salvar assinatura</button>
+    <span role="status" aria-live="polite" id="signature-status">{% if signature_saved %}Assinatura salva.{% endif %}</span>
+  </form>
+</section>
+<style>
+#mail-signature .signature-modes,#mail-signature .signature-format{display:flex;flex-wrap:wrap;gap:.35rem;margin:.4rem 0}
+#mail-signature [hidden]{display:none!important}
+#mail-signature button[type=button]{background:white;color:var(--ink);border:1px solid var(--line);padding:.35rem .7rem;margin:0}
+#mail-signature button[aria-pressed=true]{color:var(--blue);border-color:var(--blue);background:#eeebfc}
+#signature-editor{min-height:8rem;border:1px solid var(--line);border-radius:8px;padding:.75rem;overflow-wrap:anywhere}
+#signature-editor p,#signature-editor ul{margin:.25rem 0}
+#signature-html{font-family:ui-monospace,monospace}
+</style>
+<script>
+(() => {
+  const form = document.querySelector('#mail-signature');
+  const editor = form.querySelector('#signature-editor');
+  const source = form.querySelector('#signature-html');
+  const status = form.querySelector('#signature-status');
+  const buttons = form.querySelectorAll('[data-mode]');
+  let visual = false;
+  function setMode(enabled) {
+    visual = enabled;
+    form.querySelector('#signature-source').hidden = enabled;
+    form.querySelector('#signature-visual').hidden = !enabled;
+    for (const button of buttons) {
+      button.setAttribute('aria-pressed', String((button.dataset.mode === 'visual') === enabled));
+    }
+  }
+  form.querySelector('.signature-modes').hidden = false;
+  // The text area may contain a rejected edit. Render only markup validated by the server.
+  async function activateVisual() {
+    const draft = source.value;
+    const data = new FormData(form);
+    data.set('action', 'preview_signature');
+    try {
+      const response = await fetch(form.action, {method: 'POST', body: data, mode: 'same-origin'});
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Reabra Meu e-mail para validar sua sessão.');
+      }
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Confira o código HTML.');
+      if (draft !== source.value) return;
+      editor.innerHTML = result.html;
+      setMode(true);
+    } catch (error) {
+      status.textContent = error.message || 'Não foi possível abrir o editor visual.';
+    }
+  }
+  for (const button of buttons) {
+    button.addEventListener('click', async () => {
+      if ((button.dataset.mode === 'visual') === visual) return;
+      status.textContent = '';
+      if (visual) {
+        source.value = editor.innerHTML;
+        setMode(false);
+        source.focus();
+      } else {
+        await activateVisual();
+        if (visual) editor.focus();
+      }
+    });
+  }
+  for (const button of form.querySelectorAll('[data-command]')) {
+    button.addEventListener('mousedown', event => event.preventDefault());
+    button.addEventListener('click', () => {
+      editor.focus();
+      const command = button.dataset.command;
+      let value = null;
+      if (command === 'createLink') {
+        if (!window.getSelection().toString()) {
+          status.textContent = 'Selecione o texto que deseja transformar em link.';
+          return;
+        }
+        value = window.prompt('Endereço do link (https://, mailto: ou tel:)');
+        if (!value) return;
+        if (!/^(https:\/\/|mailto:|tel:)/i.test(value)) {
+          status.textContent = 'Use um link HTTPS, de e-mail ou telefone.';
+          return;
+        }
+      }
+      document.execCommand('styleWithCSS', false, false);
+      document.execCommand(command, false, value);
+    });
+  }
+  editor.addEventListener('paste', event => {
+    event.preventDefault();
+    document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
+  });
+  editor.addEventListener('drop', event => event.preventDefault());
+  form.addEventListener('submit', () => { if (visual) source.value = editor.innerHTML; });
+  setMode(false);
+  const stored = JSON.parse(document.querySelector('#stored-mail-signature').textContent);
+  if (source.value === stored) {
+    editor.innerHTML = stored;
+    setMode(true);
+  }
+})();
+</script>

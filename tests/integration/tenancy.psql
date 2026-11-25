@@ -1,0 +1,140 @@
+\set ON_ERROR_STOP on
+
+CREATE FUNCTION pg_temp.assert_true(condition boolean, description text)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+    IF condition IS DISTINCT FROM true THEN
+        RAISE EXCEPTION 'Falhou: %', description;
+    END IF;
+END
+$$;
+
+BEGIN;
+SET LOCAL ROLE hub_operator;
+SELECT hub_admin.register_identity('https://oidc.example.test', 'alice', 'Alice', true) AS alice,
+       hub_admin.register_identity('https://oidc.example.test', 'bob', 'Bob') AS bob,
+       hub_admin.register_identity('https://oidc.example.test', 'carla', 'Carla') AS carla \gset
+
+SELECT pg_temp.assert_true(
+    hub_admin.register_identity('https://oidc.example.test', 'alice', 'Alice', true) = :'alice'::uuid,
+    'bootstrap idempotente'
+);
+
+SELECT hub_admin.provision_institution(:'alice', :'alice', 'peso-exato', 'Peso Exato') AS first \gset
+SELECT hub_admin.provision_institution(:'alice', :'bob', 'instituicao-teste', 'Instituição Teste') AS second \gset
+SELECT hub_admin.add_institution_member(:'bob', :'second', :'alice', 'viewer');
+SELECT hub_admin.add_institution_member(:'bob', :'second', :'alice', 'viewer');
+SELECT pg_temp.assert_true(
+    hub_admin.provision_institution(:'alice', :'alice', 'peso-exato', 'Peso Exato') = :'first'::uuid,
+    'provisionamento idempotente'
+);
+
+SELECT set_config('hub_test.alice', :'alice', true),
+       set_config('hub_test.bob', :'bob', true),
+       set_config('hub_test.first', :'first', true),
+       set_config('hub_test.second', :'second', true);
+DO $$
+BEGIN
+    PERFORM hub_admin.register_identity('https://oidc.example.test', 'carla', 'Carla', true);
+    RAISE EXCEPTION 'Identidade existente foi promovida a proprietária da plataforma';
+EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM <> 'A identidade existente não é a do proprietário da plataforma' THEN
+        RAISE;
+    END IF;
+END
+$$;
+DO $$
+BEGIN
+    PERFORM hub_admin.provision_institution(
+        current_setting('hub_test.bob')::uuid, current_setting('hub_test.bob')::uuid, 'outra', 'Outra'
+    );
+    RAISE EXCEPTION 'Usuário comum conseguiu criar uma instituição';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END
+$$;
+DO $$
+BEGIN
+    PERFORM hub_admin.add_institution_member(
+        current_setting('hub_test.alice')::uuid, current_setting('hub_test.second')::uuid,
+        current_setting('hub_test.bob')::uuid, 'viewer'
+    );
+    RAISE EXCEPTION 'Proprietário global conseguiu conceder vínculo sem papel institucional';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END
+$$;
+
+RESET ROLE;
+SELECT tenant_id AS bob_personal FROM hub_tenancy.personal_spaces WHERE owner_id = :'bob' \gset
+INSERT INTO hub_tenancy.workspaces (tenant_id, slug, name)
+VALUES (:'second', 'privado', 'Privado') RETURNING id AS private_workspace \gset
+SELECT set_config('hub_test.private_workspace', :'private_workspace', true);
+
+DO $$
+BEGIN
+    INSERT INTO hub_tenancy.workspace_members (tenant_id, workspace_id, user_id)
+    VALUES (current_setting('hub_test.first')::uuid, current_setting('hub_test.private_workspace')::uuid,
+            current_setting('hub_test.alice')::uuid);
+    RAISE EXCEPTION 'Workspace foi referenciado a partir de outro tenant';
+EXCEPTION WHEN foreign_key_violation THEN NULL;
+END
+$$;
+
+SET LOCAL ROLE hub_runtime;
+SELECT pg_temp.assert_true(NOT EXISTS (SELECT FROM hub_tenancy.tenants), 'sem contexto nega acesso');
+SELECT set_config('hub.principal_id', :'alice', true), set_config('hub.tenant_id', :'first', true);
+SELECT pg_temp.assert_true(
+    (SELECT id FROM hub_tenancy.tenants) = :'first'::uuid,
+    'somente o tenant selecionado fica visível'
+);
+SELECT pg_temp.assert_true(
+    (SELECT role FROM hub_tenancy.memberships WHERE tenant_id = :'first') = 'institution_owner'
+    AND (SELECT role FROM hub_tenancy.memberships WHERE tenant_id = :'second') = 'viewer',
+    'mesma identidade tem papéis distintos por instituição'
+);
+SELECT pg_temp.assert_true(
+    NOT EXISTS (SELECT FROM hub_tenancy.institutions WHERE tenant_id = :'second'),
+    'UUID válido de outro tenant fica oculto'
+);
+
+SELECT set_config('hub.tenant_id', :'second', true);
+SELECT pg_temp.assert_true(
+    (SELECT count(*) FROM hub_tenancy.workspaces) = 1
+    AND NOT EXISTS (SELECT FROM hub_tenancy.workspaces WHERE id = :'private_workspace'),
+    'ACL de workspace mantém recursos privados dentro da instituição'
+);
+SELECT set_config('hub.tenant_id', :'bob_personal', true);
+SELECT pg_temp.assert_true(
+    NOT EXISTS (SELECT FROM hub_tenancy.personal_spaces),
+    'proprietário global não lê o espaço pessoal de outro usuário'
+);
+SELECT set_config('hub.principal_id', :'carla', true), set_config('hub.tenant_id', :'first', true);
+SELECT pg_temp.assert_true(
+    NOT EXISTS (SELECT FROM hub_tenancy.institutions),
+    'trocar o tenant não concede vínculo'
+);
+
+RESET ROLE;
+UPDATE hub_tenancy.tenants SET status = 'SUSPENDED' WHERE id = :'first';
+UPDATE hub_identity.users SET active = false WHERE id = :'bob';
+
+SET LOCAL ROLE hub_runtime;
+SELECT set_config('hub.principal_id', :'alice', true);
+SELECT pg_temp.assert_true(
+    NOT EXISTS (SELECT FROM hub_tenancy.workspaces), 'tenant suspenso fica inacessível'
+);
+SELECT set_config('hub.principal_id', :'bob', true), set_config('hub.tenant_id', :'second', true);
+SELECT pg_temp.assert_true(
+    NOT EXISTS (SELECT FROM hub_tenancy.workspaces), 'identidade desativada perde acesso'
+);
+ROLLBACK;
+
+-- Reutiliza a mesma conexão depois de fechar a transação anterior.
+BEGIN;
+SET LOCAL ROLE hub_runtime;
+SELECT pg_temp.assert_true(
+    nullif(current_setting('hub.principal_id', true), '') IS NULL
+    AND nullif(current_setting('hub.tenant_id', true), '') IS NULL,
+    'contexto da transação anterior foi limpo'
+);
+ROLLBACK;
+\echo Testes de tenancy concluídos.

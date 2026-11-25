@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Agentes de {{ workspace }}{% endblock %}
+{% block body %}
+<nav><a href="/conta/">Meus espaços</a>{% if is_owner %} · <a href="{% url 'administration' %}">Administração</a>{% endif %}{% if can_open %} · <a href="{% url 'workspace' tenant space %}">Abrir espaço</a>{% endif %}</nav>
+<small>{{ organization }} · {{ workspace }}</small><h1>Gerenciar agentes</h1><p><a href="{% url 'configure_model' tenant space %}">Configurar modelo de IA</a></p>
+<ul class="cards">{% for a in agents %}<li>{% if a.kind == "library" %}<a href="{% url 'github_connector' tenant %}">{{ a.name }}</a> · Institucional{% else %}<a href="{% url 'edit_agent' tenant space a.id %}">{{ a.name }}</a>{% endif %}{% if a.kind == "notifications" %} · <a href="{% url 'notification_config' tenant space a.id %}">Configurar canais e destinos</a>{% endif %} · {% if a.active %}Ativo{% else %}Desativado{% endif %}</li>
+{% empty %}<li>Nenhum agente cadastrado.</li>{% endfor %}</ul>
+<h2>{% if edit %}Editar agente{% else %}Novo agente{% endif %}</h2>
+{% if warning %}<p class="error">{{ warning }}</p>{% endif %}
+{% if connectors %}<p>Conectores deste espaço: {{ connectors|join:", " }}</p>{% endif %}
+<form method="post">{% csrf_token %}{{ form.as_p }}<button>{% if edit %}Salvar alterações{% else %}Cadastrar agente{% endif %}</button>
+{% if edit %}<a href="{% url 'manage_agents' tenant space %}">Cancelar edição</a>{% endif %}</form>
+<h2>Avisos às integrações</h2>
+<form action="{% url 'manage_agents' tenant space %}" method="post">{% csrf_token %}
+<label><input type="checkbox" name="enabled" {% if catalog_alerts_enabled %}checked{% endif %}> Avisar as integrações deste espaço quando um agente ficar disponível</label>
+<p>O HUB publica um aviso por conexão. Clientes MCP com assinatura ativa recebem o evento de tarefa. Agentes A2A com destino configurado recebem uma mensagem.</p>
+<button name="action" value="catalog_alerts">Salvar avisos</button></form>
+<h2>Membros com acesso</h2><ul>{% for p in people %}<li>{{ p.name }} · {{ p.label }}</li>{% empty %}<li>Nenhum membro ativo.</li>{% endfor %}</ul>
+{% if institutional %}
+<form method="post" action="{% url 'manage_member' tenant space %}">{% csrf_token %}
+<label>Usuário cadastrado<input name="username" required maxlength="150"></label>
+<button name="action" value="grant">Conceder acesso</button> <button name="action" value="revoke">Revogar acesso</button></form>
+<details><summary>Alterar papel na instituição</summary><p>O papel se aplica a todos os espaços desta instituição aos quais o usuário tem acesso.</p>
+<form method="post" action="{% url 'manage_member' tenant space %}">{% csrf_token %}
+<label>Usuário deste espaço<input name="username" required maxlength="150"></label>
+<label>Papel institucional<select name="role"><option value="member">Membro</option><option value="viewer">Leitor</option><option value="institution_admin">Administrador institucional</option></select></label>
+<button name="action" value="role">Salvar papel</button></form></details>{% endif %}
+{% endblock %}

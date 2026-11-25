@@ -1,0 +1,50 @@
+\set ON_ERROR_STOP on
+BEGIN;
+SELECT pg_advisory_xact_lock(164201, 1);
+CREATE SCHEMA IF NOT EXISTS hub_migrations;
+REVOKE ALL ON SCHEMA hub_migrations FROM PUBLIC;
+CREATE TABLE IF NOT EXISTS hub_migrations.applied (
+    version integer PRIMARY KEY,
+    applied_at timestamptz NOT NULL DEFAULT now()
+);
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 1) AS apply_001 \gset
+\if :apply_001
+  \ir migrations/001-tenancy.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (1);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 2) AS apply_002 \gset
+\if :apply_002
+  \ir migrations/002-portal.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (2);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 3) AS apply_003 \gset
+\if :apply_003
+  \ir migrations/003-platform-admin.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (3);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 4) AS apply_004 \gset
+\if :apply_004
+  \ir migrations/004-workspace-agents.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (4);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 5) AS apply_005 \gset
+\if :apply_005
+  \ir migrations/005-workspace-model.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (5);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 6) AS apply_006 \gset
+\if :apply_006
+  \ir migrations/006-space-members.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (6);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 7) AS apply_007 \gset
+\if :apply_007
+  \ir migrations/007-notifications.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (7);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 8) AS apply_008 \gset
+\if :apply_008
+  \ir migrations/008-workspace-trash.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (8);
+\endif
+COMMIT;

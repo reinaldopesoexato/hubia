@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ workspace }}{% endblock %}
+{% block body %}
+<nav><a href="/conta/">← Meus espaços</a></nav>
+<small>{{ organization }}</small><h1>{{ workspace }}</h1>
+{% if manager %}<a href="{% url 'manage_agents' tenant space %}">Gerenciar agentes e ver membros</a>{% if institutional %} · <a href="{% url 'github_connector' tenant %}">GitHub</a> · <a href="{% url 'email_connector' tenant %}">E-mail institucional</a>{% endif %}{% endif %}
+{% if institutional %}<p><a href="{% url 'my_email' tenant %}">Meu e-mail</a></p>{% endif %}
+{% if is_owner and institutional %}<p><a href="{% url 'workspace_settings' tenant space %}">Alterar ou excluir espaço</a></p>{% endif %}
+<p><a href="{% url 'integrations' tenant space %}">Minhas integrações · Dot, MCP e A2A</a></p>
+<h2>Agentes</h2>
+<ul class="cards">{% for a in agents %}<li><a href="{% url 'use_agent' tenant space a.id %}">{{ a.name }}</a>{% if a.description %}<p>{{ a.description }}</p>{% endif %}</li>
+{% empty %}<li>Nenhum agente ativo neste espaço.</li>{% endfor %}</ul>
+{% endblock %}

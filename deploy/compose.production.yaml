@@ -1,0 +1,43 @@
+services:
+  postgres:
+    restart: unless-stopped
+    ports: !reset []
+
+  portal:
+    build: ./apps/portal
+    volumes:
+      - ${HUBIA_CONNECTORS_DIR:-./connectors}:/run/hubia:ro
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${PORTAL_DB_PASSWORD:?configure PORTAL_DB_PASSWORD}
+      PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:?configure PORTAL_SESSION_SECRET}
+    ports:
+      - "127.0.0.1:18873:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen(u.Request('http://127.0.0.1:8000/conta/entrar/', headers={'Host':'hubia.psxt.io'}),timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+
+  events:
+    image: hubia-prod-portal
+    restart: unless-stopped
+    command: ["python","-m","bridge.worker"]
+    environment:
+      PGPASSWORD: ${PORTAL_DB_PASSWORD:?configure PORTAL_DB_PASSWORD}
+      PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:?configure PORTAL_SESSION_SECRET}
+
+  caddy:
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    ports:
+      - "443:443"
+    volumes:
+      - ./apps/web/public:/srv/hubia:ro
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

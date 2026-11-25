@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Canais de notificação{% endblock %}{% block body %}
+<nav><a href="{% url 'manage_agents' tenant space %}">← Gerenciar agentes</a></nav>
+<small>{{ organization }} · {{ workspace }}</small><h1>{{ agent_name }}</h1>
+<h2>WhatsApp · Leadfinder</h2>
+<form method="post">{% csrf_token %}{{ settings.as_p }}<button name="action" value="settings">Salvar canal</button></form>
+{% if current %}<h2>Destinos salvos do WhatsApp</h2>
+<p>O destinatário pode ser informado no envio. Salve um destino para oferecer um atalho ou restringir seu uso a um setor.</p>
+{% for d in targets %}<form method="post">{% csrf_token %}
+<input type="hidden" name="destination" value="{{ d.pk }}"><strong>{{ d.name }}</strong> · {{ d.address }}
+{% for value,label in dest_form.fields.sector.choices %}{% if value == d.sector|stringformat:"s" or not value and not d.sector %} · {{ label }}{% endif %}{% endfor %}
+<button name="action" value="remove">Remover destino</button></form>{% endfor %}
+<form method="post">{% csrf_token %}{{ dest_form.as_p }}<button name="action" value="destination">Adicionar destino</button></form>
+{% endif %}{% endblock %}

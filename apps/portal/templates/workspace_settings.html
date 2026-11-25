@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Configurações de {{ workspace }}{% endblock %}
+{% block body %}
+<nav><a href="{% url 'administration' %}">← Administração</a></nav>
+<small>{{ organization }} · Configurações do espaço</small><h1>{{ workspace }}</h1>
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+{% if deleted_at %}
+<p>Na lixeira desde {{ deleted_at|date:"d/m/Y H:i" }}. A restauração reabre o espaço com os membros e as configurações salvas.</p>
+<form method="post">{% csrf_token %}<button name="action" value="restore_space">Restaurar espaço</button></form>
+{% else %}
+<form method="post">{% csrf_token %}
+<label>Nome do espaço<input name="name" value="{{ workspace }}" required maxlength="120"></label>
+<button name="action" value="rename_space">Salvar nome</button></form>
+<h2>Configuração atual</h2><ul>{% for label,count in impact %}<li>{{ label }} · {{ count }}</li>{% endfor %}
+<li>Avisos de catálogo · {% if catalog_alerts %}ativos{% else %}desativados{% endif %}</li>
+<li>Biblioteca · {% for folder in folders %}{% if folder == "/" %}Todas as pastas{% else %}{{ folder }}{% endif %}{% if not forloop.last %}, {% endif %}{% empty %}sem pastas liberadas{% endfor %}</li></ul>
+{% if principal_space %}<p>Este é o espaço principal usado para receber novos membros da instituição. Você pode alterar seu nome.</p>
+{% else %}
+<details><summary>Excluir espaço</summary>
+<p>Ao mover <strong>{{ workspace }}</strong> para a lixeira, o HUB bloqueará o acesso dos membros e das integrações. Membros, agentes, configurações e histórico ficarão guardados para restauração.</p>
+<form method="post">{% csrf_token %}<label>Digite o nome atual do espaço para confirmar<input name="name" required maxlength="120" autocomplete="off"></label>
+<button name="action" value="trash_space">Mover para a lixeira</button></form>
+</details>{% endif %}{% endif %}{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}Modelo de IA{% endblock %}
+{% block body %}<nav><a href="{% url 'manage_agents' tenant space %}">← Gerenciar agentes</a></nav>
+<small>{{ organization }} · {{ workspace }}</small><h1>Modelo de IA</h1>
+{% if configured %}<p>Configuração salva. Nos agentes do tipo <strong>Consulta a uma API conectada</strong>, use <strong>{{ reference }}</strong>. A disponibilidade é verificada durante a consulta.</p>{% endif %}
+<p>Os membros que usarem esse modelo consumirão a cota da conta OpenAI configurada neste espaço.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}{% if configured %}<small>Deixe a chave em branco para manter a atual.</small>{% endif %}
+<p><button>Salvar configuração</button></p></form>
+{% if configured %}<form method="post">{% csrf_token %}<button name="action" value="disconnect">Desconectar modelo deste espaço</button></form>{% endif %}
+{% endblock %}

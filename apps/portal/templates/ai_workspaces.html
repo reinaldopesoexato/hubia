@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Espaços das minhas IAs{% endblock %}
+{% block layout %}access-page{% endblock %}
+{% block head %}<style>
+.access-page{max-width:1050px;padding-bottom:16px}
+.access-page h1+p{margin:.6rem 0 1.8rem;color:var(--muted)}
+.access-group{margin:0 0 1.5rem}
+.access-group h2{margin:0 0 .7rem;font-size:1.15rem}
+.ai-row{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:1rem 1.25rem;margin-bottom:.6rem}
+.ai-row[data-dirty]{border-color:#8a78d1}
+.ai-row-head,.ai-save{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.ai-name{display:grid;gap:.25rem}
+.ai-row select{font:inherit;border:1px solid #bcc2cf;background:#fff;border-radius:7px;padding:.5rem;color:var(--ink);max-width:100%}
+.ai-row fieldset{border:0;border-top:1px solid var(--line);padding:.8rem 0 0;margin:.8rem 0 0;min-width:0}
+.ai-row legend{font-size:.84rem;color:var(--muted);padding:0 .5rem 0 0}
+.space-list{display:flex;gap:.45rem;flex-wrap:wrap}
+.space-list label{display:inline-flex;gap:.5rem;align-items:center;cursor:pointer;border:1px solid var(--line);border-radius:7px;padding:.45rem .75rem;overflow-wrap:anywhere;max-width:100%}
+.space-list label:has(:checked){background:#f1eefc;border-color:#bbafe7;color:#453490}
+.space-list input{margin:0;width:1rem;height:1rem;accent-color:var(--blue);flex:none}
+.ai-save{position:sticky;bottom:0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:.85rem 1.2rem;box-shadow:0 -3px 12px #23203a0b;z-index:1}
+.ai-save button{border:0;background:var(--blue);color:white;border-radius:8px;padding:.65rem 1rem;font-weight:650}
+.ai-save button:disabled{background:#e8e6ef;color:#656071;cursor:default}
+.ai-save [role=status]{color:var(--muted);font-size:.9rem}
+.access-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media(max-width:600px){.ai-row-head{align-items:stretch;flex-direction:column;gap:.6rem}.ai-row select{width:100%}.ai-save{gap:.5rem;padding:.7rem}.ai-save button{flex:none}}
+</style>{% endblock %}
+{% block body %}
+<h1>Espaços das minhas IAs</h1>
+<p>Escolha os espaços e as permissões de e-mail de cada IA. Salve todas as alterações de uma vez.</p>
+{% if entries %}
+<form method="post" id="access-form">{% csrf_token %}
+{% regroup entries by tenant as groups %}
+{% for group in groups %}<section class="access-group">
+<h2>{{ group.list.0.organization }}</h2>
+{% for item in group.list %}<div class="ai-row">
+<input type="hidden" name="link" value="{{ item.link.pk }}">
+<input type="hidden" name="initial-{{ item.link.pk }}" value="{{ item.initial }}">
+<div class="ai-row-head"><div class="ai-name"><h3>{{ item.link.name }}</h3>
+<small class="scope-summary">{% if item.mode == 'all' %}Inclui os espaços atuais e futuros{% elif item.count %}{{ item.count }} espaço{{ item.count|pluralize:"s" }} selecionado{{ item.count|pluralize:"s" }}{% else %}Acesso pausado{% endif %}</small></div>
+<label><span class="access-sr">Acesso de {{ item.link.name }}</span>
+<select name="mode-{{ item.link.pk }}">
+<option value="selected" {% if item.mode == 'selected' %}selected{% endif %}>Escolher espaços</option>
+<option value="all" {% if item.mode == 'all' %}selected{% endif %}>Todos, inclusive futuros</option>
+<option value="paused" {% if item.mode == 'paused' %}selected{% endif %}>Pausar acesso</option>
+</select></label></div>
+<fieldset><legend>Espaços disponíveis para {{ item.link.name }}</legend><div class="space-list">
+{% for id,name,checked in item.choices %}<label><input type="checkbox" name="spaces-{{ item.link.pk }}" value="{{ id }}" {% if checked %}checked{% endif %}>{{ name }}</label>{% endfor %}
+</div></fieldset>
+{% if item.box %}<fieldset><legend>Permissões MCP de e-mail · {{ item.box.address }}</legend>
+<input type="hidden" name="mailbox-{{ item.link.pk }}" value="{{ item.box.pk }}">
+<input type="hidden" name="initial-read-{{ item.link.pk }}" value="{{ item.read_mail|yesno:'1,0' }}">
+<input type="hidden" name="initial-send-{{ item.link.pk }}" value="{{ item.send_mail|yesno:'1,0' }}">
+<div class="space-list"><label><input type="checkbox" data-mail name="read-{{ item.link.pk }}" {% if item.read_mail %}checked{% endif %}>Ler minha caixa de entrada</label>
+<label><input type="checkbox" data-mail name="send-{{ item.link.pk }}" {% if not item.can_enable_send and not item.send_mail %}disabled{% endif %} {% if item.send_mail %}checked{% endif %}>Enviar e-mails em meu nome e editar a assinatura de IA</label></div>
+<small>{% if not item.can_enable_send %}Seu papel nesta instituição permite apenas leitura.{% else %}Para enviar, a IA precisa do escopo OAuth <code>hub.mail.send</code>. Se a conexão for anterior, autorize-a novamente com esse escopo.{% endif %}</small>
+</fieldset>{% endif %}
+<small>{% if item.observed %}Última consulta ao catálogo MCP em {{ item.observed.0|date:"d/m/Y H:i" }}.{% if item.send_mail and item.can_enable_send and not item.observed.1 %} O token usado nessa consulta precisa de nova autorização para enviar e-mails.{% endif %}{% else %}Aguardando a primeira consulta ao catálogo MCP.{% endif %}</small>
+</div>{% endfor %}
+</section>{% endfor %}
+<div class="ai-save"><span role="status" aria-live="polite" data-saved="{{ saved|yesno:'yes,no' }}">{% if saved %}Permissões salvas.{% endif %}</span><button type="submit">Salvar permissões</button></div>
+</form>
+<script>
+const accessForm = document.querySelector('#access-form');
+const accessStatus = accessForm.querySelector('[role=status]');
+function updatePermissions() {
+  let changes = 0;
+  for (const row of accessForm.querySelectorAll('.ai-row')) {
+    const mode = row.querySelector('select').value;
+    const ids = [...row.querySelectorAll('input[name^="spaces-"]:checked')].map(input => input.value).sort();
+    const value = mode === 'all' ? 'all' : mode === 'paused' ? '' : ids.join(',');
+    const mailChanged = [...row.querySelectorAll('[data-mail]')].some(input => input.checked !== input.defaultChecked);
+    const dirty = mailChanged || value !== row.querySelector('input[name^="initial-"]').value;
+    if (dirty) changes++;
+    row.toggleAttribute('data-dirty', dirty);
+    row.querySelector('fieldset').hidden = mode !== 'selected';
+    let summary = ids.length === 1 ? '1 espaço selecionado' : ids.length + ' espaços selecionados';
+    if (mode === 'all') summary = 'Inclui os espaços atuais e futuros';
+    else if (mode === 'paused' || !ids.length) summary = 'Acesso pausado';
+    row.querySelector('.scope-summary').textContent = dirty ? summary + ' · Alterado' : summary;
+  }
+  accessForm.querySelector('button[type=submit]').disabled = changes === 0;
+  accessStatus.textContent = changes ? (changes === 1 ? '1 conexão alterada' : changes + ' conexões alteradas') :
+    (accessStatus.dataset.saved === 'yes' ? 'Permissões salvas.' : 'Nenhuma alteração pendente.');
+}
+accessForm.addEventListener('change', updatePermissions);
+window.addEventListener('pageshow', updatePermissions);
+updatePermissions();
+</script>
+{% else %}<p>Abra <strong>Minhas integrações</strong> em um dos seus espaços para conectar sua primeira IA.</p>{% endif %}
+{% endblock %}
