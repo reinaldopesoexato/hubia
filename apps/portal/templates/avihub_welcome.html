@@ -1,24 +1,25 @@
-<details class="panel setup-card" {% if not setup_deferred %}open{% endif %}>
-  <summary>Configurar acesso ao Portal Peso Exato (AviHUB)</summary>
+{% load i18n %}<details class="panel setup-card" {% if not setup_deferred %}open{% endif %}>
+  <summary>{% translate "Configurar acesso ao Portal Peso Exato (AviHUB)" %}</summary>
   {% if avihub_setup.pending_url %}
-  <p>Seu vínculo aguarda o código de verificação do AviHUB. Abra a conta para concluir esta etapa.</p>
-  <a class="setup-primary" href="{{ avihub_setup.pending_url }}">Continuar verificação</a>
+  <p>{% translate "Seu vínculo aguarda o código de verificação do AviHUB. Abra a conta para concluir esta etapa." %}</p>
+  <a class="setup-primary" href="{{ avihub_setup.pending_url }}">{% translate "Continuar verificação" %}</a>
   {% else %}
   <ol>
-    <li>Informe o e-mail e a senha que você usa no Portal Peso Exato (AviHUB).</li>
-    <li>Selecione <strong>Vincular conta</strong>. Se o AviHUB solicitar um código, confirme-o na próxima tela.</li>
-    <li>Em <a href="#configured-ai">Minhas IAs configuradas</a>, conecte sua IA para consultar as operações da sua conta.</li>
+    <li>{% translate "Informe o e-mail e a senha que você usa no Portal Peso Exato (AviHUB)." %}</li>
+    <li>{% translate "Selecione" %} <strong>{% translate "Vincular conta" %}</strong>{% translate ". Se o AviHUB solicitar um código, confirme-o na próxima tela." %}</li>
+    <li>{% translate "Em" %} <a href="#configured-ai">{% translate "Minhas IAs configuradas" %}</a>{% translate ", conecte sua IA para consultar as operações da sua conta." %}</li>
   </ol>
   <form class="setup-login" method="post" action="{{ avihub_setup.url }}?origem=painel">
     {% csrf_token %}
-    <label>E-mail do AviHUB<input name="email" type="email" maxlength="254" required autocomplete="section-avihub username"></label>
-    <label>Senha do AviHUB<input name="password" type="password" required autocomplete="section-avihub current-password"></label>
-    <button class="setup-primary" name="action" value="login">Vincular conta</button>
+    <label>{% translate "E-mail do AviHUB" %}<input name="email" type="email" maxlength="254" required autocomplete="section-avihub username"></label>
+    <label>{% translate "Senha do AviHUB" %}<input name="password" type="password" required autocomplete="section-avihub current-password"></label>
+    <button class="setup-primary" name="action" value="login">{% translate "Vincular conta" %}</button>
   </form>
+  <p><a href="{{ avihub_setup.url }}?recuperar=1&amp;origem=painel">{% translate "Esqueci minha senha do AviHUB" %}</a></p>
   {% endif %}
   {% if not setup_deferred %}
   <form method="post" action="{% url 'dashboard' %}" class="setup-defer">{% csrf_token %}
-    <button name="action" value="defer_avihub">Configurar depois</button>
+    <button name="action" value="defer_avihub">{% translate "Configurar depois" %}</button>
   </form>
   {% endif %}
 </details>

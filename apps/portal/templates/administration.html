@@ -1,42 +1,42 @@
-{% extends "base.html" %}
-{% block title %}Administração{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Administração" %}{% endblock %}
 {% block body %}
-<p><a href="/conta/">← Meus espaços</a></p><h1>Administração</h1><p><a href="{% url 'people' %}">Usuários e auditoria</a> · <a href="{% url 'platform_email' %}">E-mail da plataforma</a></p>
+<p><a href="/conta/">{% translate "← Meus espaços" %}</a></p><h1>{% translate "Administração" %}</h1><p><a href="{% url 'people' %}">{% translate "Usuários e auditoria" %}</a> · <a href="{% url 'platform_email' %}">{% translate "E-mail da plataforma" %}</a></p>
 <dl class="stats admin-metrics">
 {% include "metric.html" with label="Instituições" value=organizations|length symbol="org" tone="sky" %}
 {% include "metric.html" with label="Ativas" value=active_orgs symbol="shield" tone="mint" %}
 {% include "metric.html" with label="Espaços" value=space_count symbol="layers" tone="" %}
 </dl>
-{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
-<details><summary>Criar instituição</summary><form method="post">{% csrf_token %}
-<label>Nome da instituição<input name="name" maxlength="120" required></label>
-<label>Usuário responsável <small>(em branco para assumir)</small><input name="username" maxlength="150"></label>
-<button name="action" value="create_org">Criar instituição</button></form></details>
-<h2>Instituições</h2>
+{% if error %}<p role="alert" class="error">{% translate error %}</p>{% endif %}
+<details><summary>{% translate "Criar instituição" %}</summary><form method="post">{% csrf_token %}
+<label>{% translate "Nome da instituição" %}<input name="name" maxlength="120" required></label>
+<label>{% translate "Usuário responsável" %} <small>{% translate "(em branco para assumir)" %}</small><input name="username" maxlength="150"></label>
+<button name="action" value="create_org">{% translate "Criar instituição" %}</button></form></details>
+<h2>{% translate "Instituições" %}</h2>
 {% for org in organizations %}
-<details><summary>{{ org.name }} · {% if org.status == "ACTIVE" %}Ativa{% else %}Suspensa{% endif %}</summary>
+<details><summary>{{ org.name }} · {% if org.status == "ACTIVE" %}{% translate "Ativa" %}{% else %}{% translate "Suspensa" %}{% endif %}</summary>
 {% if org.status == "ACTIVE" %}
-<p><a href="{% url 'institution_agents' org.id %}">Agentes da instituição</a></p>
-<h3>Conectores</h3><p><a href="{% url 'github_connector' org.id %}">GitHub</a>{% if org.mail_institution %} · <a href="{% url 'email_connector' org.id %}">E-mail institucional</a>{% endif %}</p>
+<p><a href="{% url 'institution_agents' org.id %}">{% translate "Agentes da instituição" %}</a></p>
+<h3>{% translate "Conectores" %}</h3><p><a href="{% url 'github_connector' org.id %}">GitHub</a>{% if org.mail_institution %} · <a href="{% url 'email_connector' org.id %}">{% translate "E-mail institucional" %}</a>{% endif %}</p>
 <form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}">
-<label>Nome da instituição<input name="name" value="{{ org.name }}" maxlength="120" required></label>
-<button name="action" value="rename_org">Salvar nome</button></form>
-<h3>Espaços</h3>
+<label>{% translate "Nome da instituição" %}<input name="name" value="{{ org.name }}" maxlength="120" required></label>
+<button name="action" value="rename_org">{% translate "Salvar nome" %}</button></form>
+<h3>{% translate "Espaços" %}</h3>
 {% for space in org.spaces %}
 <details><summary>{{ space.name }}</summary>
-<p><a href="{% url 'manage_agents' org.id space.id %}">Agentes do espaço e membros</a></p>
-<p><a href="{% url 'workspace_settings' org.id space.id %}">Alterar ou excluir espaço</a></p>
+<p><a href="{% url 'manage_agents' org.id space.id %}">{% translate "Agentes do espaço e membros" %}</a></p>
+<p><a href="{% url 'workspace_settings' org.id space.id %}">{% translate "Alterar ou excluir espaço" %}</a></p>
 <form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}"><input type="hidden" name="workspace" value="{{ space.id }}">
-<label>Usuário cadastrado<input name="username" maxlength="150" required></label>
-<button name="action" value="grant_space">Conceder acesso</button>
-<button name="action" value="revoke_space">Revogar acesso</button></form></details>
+<label>{% translate "Usuário cadastrado" %}<input name="username" maxlength="150" required></label>
+<button name="action" value="grant_space">{% translate "Conceder acesso" %}</button>
+<button name="action" value="revoke_space">{% translate "Revogar acesso" %}</button></form></details>
 {% endfor %}
 <form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}">
-<label>Novo espaço<input name="name" maxlength="120" required></label><button name="action" value="create_space">Criar espaço</button></form>
-{% if org.trash %}<h3>Lixeira de espaços</h3><ul>{% for space in org.trash %}<li>{{ space.name }} · excluído em {{ space.deleted_at|date:"d/m/Y" }} · <a href="{% url 'workspace_settings' org.id space.id %}">Ver e restaurar</a></li>{% endfor %}</ul>{% endif %}
+<label>{% translate "Novo espaço" %}<input name="name" maxlength="120" required></label><button name="action" value="create_space">{% translate "Criar espaço" %}</button></form>
+{% if org.trash %}<h3>{% translate "Lixeira de espaços" %}</h3><ul>{% for space in org.trash %}<li>{{ space.name }} {% translate "· excluído em" %} {{ space.deleted_at|date:"d/m/Y" }} · <a href="{% url 'workspace_settings' org.id space.id %}">{% translate "Ver e restaurar" %}</a></li>{% endfor %}</ul>{% endif %}
 {% endif %}
 <form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}">
-{% if org.status == "ACTIVE" %}<button name="action" value="suspend">Suspender instituição</button>
-{% else %}<button name="action" value="activate">Reativar instituição</button>{% endif %}</form></details>
-{% empty %}<p>Nenhuma instituição cadastrada.</p>{% endfor %}
+{% if org.status == "ACTIVE" %}<button name="action" value="suspend">{% translate "Suspender instituição" %}</button>
+{% else %}<button name="action" value="activate">{% translate "Reativar instituição" %}</button>{% endif %}</form></details>
+{% empty %}<p>{% translate "Nenhuma instituição cadastrada." %}</p>{% endfor %}
 {% endblock %}

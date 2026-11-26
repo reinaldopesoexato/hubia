@@ -4,6 +4,10 @@ import re
 from datetime import timedelta
 
 from cryptography.fernet import InvalidToken
+from django.utils.translation import gettext as translate_text
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from auth_limits import allow_auth_attempt
 from django.db import IntegrityError, transaction
 from django.urls import reverse
 from uuid import UUID
@@ -68,23 +72,23 @@ def account_id(ref):
     match = re.fullmatch(r"conta-([1-9][0-9]{0,18})", ref or "")
     if match and int(match[1]) <= 2**63 - 1:
         return int(match[1])
-    raise api.AccessDenied("Identificador de conta AviHUB inválido.")
+    raise api.AccessDenied(translate_text("Identificador de conta AviHUB inválido."))
 
 
 def locked_session(sessions, ref):
     session = sessions.select_related("agent").select_for_update(of=("self",)).filter(pk=account_id(ref)).first()
     if session:
         return session
-    raise api.AccessDenied("Esta sessão AviHUB está indisponível. Escolha uma conta vinculada.")
+    raise api.AccessDenied(translate_text("Esta sessão AviHUB está indisponível. Escolha uma conta vinculada."))
 
 
 def selected_accounts(sessions, refs):
     if not refs:
-        raise ValueError("Selecione pelo menos uma conta para excluir.")
+        raise ValueError(translate_text("Selecione pelo menos uma conta para excluir."))
     ids = {account_id(ref) for ref in refs}
     accounts = list(accounts_for(sessions.filter(pk__in=ids)).select_for_update())
     if len(accounts) != len(ids):
-        raise api.AccessDenied("A lista de contas mudou. Confira os vínculos e selecione novamente.")
+        raise api.AccessDenied(translate_text("A lista de contas mudou. Confira os vínculos e selecione novamente."))
     return accounts
 
 
@@ -136,10 +140,25 @@ def query(tenant, user, args, operation, *, link_url):
     return {**result, "conta": session.account_info()}
 
 
+def request_password_reset(agent, user, email):
+    email = email.strip()
+    try:
+        validate_email(email)
+        if len(email) > 254:
+            raise ValidationError("email")
+    except ValidationError:
+        raise ValueError("Informe um e-mail válido do AviHUB.") from None
+    if not allow_auth_attempt("avihub-reset-user", str(user.pk), 10):
+        raise ValueError("Aguarde alguns minutos antes de solicitar outro link.")
+    if allow_auth_attempt("avihub-reset-email", email.casefold(), 2):
+        Panel(agent.origin).request_password_reset(email)
+    return translate_text("Se o e-mail estiver cadastrado no AviHUB, você receberá um link para redefinir a senha.")
+
+
 def account_label(post):
     label = post.get("apelido", "").strip()
     if len(label) > 80 or (label and not label.isprintable()) or re.fullmatch(r"conta-[0-9]+", label, re.I):
-        raise ValueError("Escolha um apelido de até 80 caracteres diferente de um ID de conta.")
+        raise ValueError(translate_text("Escolha um apelido de até 80 caracteres diferente de um ID de conta."))
     return label
 
 
@@ -163,7 +182,7 @@ def start_session(agent, user, post):
         logger.error("Falha ao gravar vínculo AviHUB: SQLSTATE=%s coluna=%s restrição=%s",
                      getattr(diag, "sqlstate", None), getattr(diag, "column_name", None),
                      getattr(diag, "constraint_name", None))
-        raise ValueError("O HUB IA não conseguiu salvar o vínculo. Peça à administração para verificar o banco do HUB IA.") from None
+        raise ValueError(translate_text("O HUB IA não conseguiu salvar o vínculo. Peça à administração para verificar o banco do HUB IA.")) from None
 
 
 def page(request, ctx, agent):
@@ -179,13 +198,19 @@ def page(request, ctx, agent):
             if "conta" in request.GET:
                 session = accounts_for(sessions).filter(pk=account_id(request.GET["conta"])).first()
                 if not session:
-                    raise api.AccessDenied("Esta conta está indisponível.")
+                    raise api.AccessDenied(translate_text("Esta conta está indisponível."))
                 mode = "edit"
+            elif "recuperar" in request.GET:
+                mode = "reset"
             elif "nova" in request.GET:
                 mode = "add"
         else:
             post = request.POST
             action = post.get("action")
+            if action == "reset_password":
+                mode = "reset"
+                request.session[notice_key] = request_password_reset(agent, request.user, post.get("email", ""))
+                return redirect(f"{request.path}?recuperar=1{verification_suffix}")
             if action == "login":
                 mode = "add"
                 session = start_session(agent, request.user, post)
@@ -231,7 +256,7 @@ def page(request, ctx, agent):
                 request.session[notice_key] = "O AviHUB confirmou o envio do código."
                 return redirect(f"{request.path}?conta={session.account_ref}{verification_suffix}")
             else:
-                raise ValueError("Ação de conta indisponível.")
+                raise ValueError(translate_text("Ação de conta indisponível."))
     except SessionExpired as exc:
         mode = "list"
         session = None
@@ -240,5 +265,5 @@ def page(request, ctx, agent):
         ctx["error"] = str(exc)
     if mode == "list":
         ctx["accounts"] = accounts_for(sessions)
-    ctx.update(mode=mode, session=session)
+    ctx.update(mode=mode, session=session, from_dashboard=from_dashboard)
     return render(request, "avihub_agent.html", ctx)

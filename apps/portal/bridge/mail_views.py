@@ -1,6 +1,7 @@
 import hashlib
 import re
 
+from django.utils.translation import gettext as translate_text
 from django.contrib.auth.decorators import login_required
 from django.db import connection, transaction
 from django.http import Http404, HttpResponseBadRequest, JsonResponse
@@ -33,9 +34,9 @@ def connector(request, tenant):
         if request.method == "POST":
             domain = request.POST.get("domain", "").strip().lower()
             if not DOMAIN.fullmatch(domain):
-                return HttpResponseBadRequest("Informe um domínio corporativo válido.")
+                return HttpResponseBadRequest(translate_text("Informe um domínio corporativo válido."))
             if provider and provider.domain != domain and provider.mailbox_set.exists():
-                return HttpResponseBadRequest("Desconecte as caixas vinculadas antes de alterar o domínio.")
+                return HttpResponseBadRequest(translate_text("Desconecte as caixas vinculadas antes de alterar o domínio."))
             MailProvider.objects.update_or_create(tenant=tenant, defaults={
                 "domain":domain, "enabled":request.POST.get("enabled") == "on"})
             return redirect("email_connector", tenant)
@@ -72,11 +73,11 @@ def personal(request, tenant):
             if action == "disconnect" and box:
                 box.delete()
             elif not provider or not provider.enabled:
-                return HttpResponseBadRequest("O conector está desativado.")
+                return HttpResponseBadRequest(translate_text("O conector está desativado."))
             elif action in {"signature", "preview_signature"} and box:
                 source = request.POST.get("signature_html")
                 if source is None or request.POST.get("mailbox") != str(box.pk):
-                    return HttpResponseBadRequest("A caixa foi alterada. Reabra Meu e-mail.")
+                    return HttpResponseBadRequest(translate_text("A caixa foi alterada. Reabra Meu e-mail."))
                 try:
                     html, _ = signature_parts(source)
                 except ValueError as exc:
@@ -87,7 +88,7 @@ def personal(request, tenant):
                     if action == "preview_signature":
                         return JsonResponse({"html":html})
                     if request.POST.get("revision") != revision:
-                        return HttpResponseBadRequest("A assinatura mudou. Reabra Meu e-mail antes de editar novamente.")
+                        return HttpResponseBadRequest(translate_text("A assinatura mudou. Reabra Meu e-mail antes de editar novamente."))
                     box.signature_html = html
                     box.save(update_fields=["signature_html"])
                     request.session["saved_mail_signature"] = str(tenant)
@@ -98,7 +99,7 @@ def personal(request, tenant):
                 if (not sep or domain.lower()!=provider.domain or len(address)>254
                         or not re.fullmatch(r"[A-Za-z0-9_.+%-]{1,64}", localpart)
                         or not password or len(password)>1024 or "\0" in password or "\n" in password or "\r" in password):
-                    error = "Informe seu endereço corporativo completo e a senha da caixa."
+                    error = translate_text("Informe seu endereço corporativo completo e a senha da caixa.")
                 else:
                     address = localpart + "@" + provider.domain
                     try:
@@ -118,11 +119,11 @@ def personal(request, tenant):
                 links = list(Link.objects.filter(user=request.user, tenant=tenant, protocol="mcp"))
                 selected = set(request.POST.getlist("links"))
                 if selected - {str(link.pk) for link in links}:
-                    return HttpResponseBadRequest("Selecione apenas suas conexões desta instituição.")
+                    return HttpResponseBadRequest(translate_text("Selecione apenas suas conexões desta instituição."))
                 box.links.set([link for link in links if str(link.pk) in selected])
                 Link.objects.filter(pk__in=[link.pk for link in links], offer_mail_access=True).update(offer_mail_access=False)
             else:
-                return HttpResponseBadRequest("Ação indisponível.")
+                return HttpResponseBadRequest(translate_text("Ação indisponível."))
             if not error:
                 return redirect("my_email", tenant)
         return render(request, "my_email.html", {"tenant":tenant, "organization":org[0], "provider":provider,

@@ -2,6 +2,7 @@ from datetime import datetime, time, timedelta
 from heapq import nlargest
 
 from django.utils import timezone
+from django.utils.translation import gettext
 from django.db.models import Count, Q, Sum
 from bridge import mail_access
 from bridge.models import Link, OutboundEmail, Ticket
@@ -46,11 +47,11 @@ def space_guide(cursor, tenant, allowed_spaces=None):
     for space, workspace, organization, role, agent, name, kind, description in cursor.fetchall():
         if space not in groups:
             groups[space] = {"tenant":str(tenant), "space":str(space), "workspace":workspace,
-                             "organization":organization or "Espaço pessoal", "role":ROLE_NAMES.get(role,role),
+                             "organization":organization or gettext("Espaço pessoal"), "role":gettext(ROLE_NAMES.get(role,role)),
                              "agents":[]}
         if agent is not None:
             groups[space]["agents"].append({"id":str(agent), "name":name,
-                "purpose":description.strip() or DEFAULT_PURPOSE.get(kind, "Finalidade ainda não cadastrada.")})
+                "purpose":description.strip() or gettext(DEFAULT_PURPOSE.get(kind, "Finalidade ainda não cadastrada."))})
     return list(groups.values())
 
 
@@ -70,7 +71,7 @@ MAIL_STATES = {
 
 
 def connection_summary(account_id, spaces, start, end, internal_mail):
-    organizations = {space["tenant"]: space["org"] or "Espaço pessoal" for space in spaces}
+    organizations = {space["tenant"]: space["org"] or gettext("Espaço pessoal") for space in spaces}
     links = Link.objects.filter(user_id=account_id, tenant__in=organizations)
     links = mail_access.visible_links(links, internal_mail)
     usage_period = Q(daily_usage__day__gte=start.date(), daily_usage__day__lt=end.date())
@@ -84,9 +85,9 @@ def connection_summary(account_id, spaces, start, end, internal_mail):
     for row in rows:
         row["organization"] = organizations[row["tenant"]]
         if row["protocol"] == "peer":
-            row.update(protocol_label="A2A externo", queries=answered.get(row["id"], 0))
+            row.update(protocol_label=gettext("A2A externo"), queries=answered.get(row["id"], 0))
         else:
-            row["protocol_label"] = "MCP de e-mail" if row["email_only"] else row["protocol"].upper()
+            row["protocol_label"] = gettext("MCP de e-mail") if row["email_only"] else row["protocol"].upper()
     return sorted(rows, key=lambda row: (-row["queries"], row["name"].casefold(), row["organization"], row["id"]))
 
 

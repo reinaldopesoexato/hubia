@@ -1,16 +1,16 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load i18n %}
 {% block title %}{{ agent.name }}{% endblock %}
 {% block body %}
 <nav><a href="{% url 'workspace' tenant space %}">{{ workspace }}</a></nav>
 <small>{{ organization }} · {{ workspace }}</small><h1>{{ agent.name }}</h1>
 {% if enabled %}
-<form method="post">{% csrf_token %}<label>Buscar nas notas<input name="consulta" maxlength="200" required value="{{ request.POST.consulta }}"></label>
-<button name="action" value="buscar_notas">Buscar</button></form>
-{% else %}<p>Nenhuma pasta foi liberada para este espaço.</p>{% endif %}
-{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+<form method="post">{% csrf_token %}<label>{% translate "Buscar nas notas" %}<input name="consulta" maxlength="200" required value="{{ request.POST.consulta }}"></label>
+<button name="action" value="buscar_notas">{% translate "Buscar" %}</button></form>
+{% else %}<p>{% translate "Nenhuma pasta foi liberada para este espaço." %}</p>{% endif %}
+{% if error %}<p class="error" role="alert">{% translate error %}</p>{% endif %}
 {% if result %}
-{% if result.caminho %}<h2>{{ result.caminho }}</h2><a href="{{ result.fonte }}">Ver revisão no GitHub</a><pre class="output">{{ result.texto }}</pre>
-{% if result.proximo_inicio %}<form method="post">{% csrf_token %}<input type="hidden" name="caminho" value="{{ result.caminho }}"><input type="hidden" name="inicio" value="{{ result.proximo_inicio }}"><input type="hidden" name="revisao" value="{{ result.revisao }}"><button name="action" value="ler_nota">Continuar leitura</button></form>{% endif %}
-{% else %}<ul>{% for note in result.notas %}<li><form method="post">{% csrf_token %}<input type="hidden" name="caminho" value="{{ note.caminho }}"><input type="hidden" name="revisao" value="{{ result.revisao }}"><button name="action" value="ler_nota">{{ note.caminho }}</button></form></li>{% empty %}<li>Nenhuma nota encontrada nesta página.</li>{% endfor %}</ul>
-{% if result.proxima_pagina %}<form method="post">{% csrf_token %}<input type="hidden" name="consulta" value="{{ request.POST.consulta }}"><input type="hidden" name="revisao" value="{{ result.revisao }}"><input type="hidden" name="pagina" value="{{ result.proxima_pagina }}"><button name="action" value="buscar_notas">Pesquisar próxima página</button></form>{% endif %}
+{% if result.caminho %}<h2>{{ result.caminho }}</h2><a href="{{ result.fonte }}">{% translate "Ver revisão no GitHub" %}</a><pre class="output">{{ result.texto }}</pre>
+{% if result.proximo_inicio %}<form method="post">{% csrf_token %}<input type="hidden" name="caminho" value="{{ result.caminho }}"><input type="hidden" name="inicio" value="{{ result.proximo_inicio }}"><input type="hidden" name="revisao" value="{{ result.revisao }}"><button name="action" value="ler_nota">{% translate "Continuar leitura" %}</button></form>{% endif %}
+{% else %}<ul>{% for note in result.notas %}<li><form method="post">{% csrf_token %}<input type="hidden" name="caminho" value="{{ note.caminho }}"><input type="hidden" name="revisao" value="{{ result.revisao }}"><button name="action" value="ler_nota">{{ note.caminho }}</button></form></li>{% empty %}<li>{% translate "Nenhuma nota encontrada nesta página." %}</li>{% endfor %}</ul>
+{% if result.proxima_pagina %}<form method="post">{% csrf_token %}<input type="hidden" name="consulta" value="{{ request.POST.consulta }}"><input type="hidden" name="revisao" value="{{ result.revisao }}"><input type="hidden" name="pagina" value="{{ result.proxima_pagina }}"><button name="action" value="buscar_notas">{% translate "Pesquisar próxima página" %}</button></form>{% endif %}
 {% endif %}{% endif %}{% endblock %}

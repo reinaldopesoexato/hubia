@@ -1,38 +1,38 @@
-{% extends "base.html" %}
-{% block title %}{% if edit %}Editar {{ original.name }}{% else %}Novo agente{% endif %}{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if edit %}{% translate "Editar" %} {{ original.name }}{% else %}{% translate "Novo agente" %}{% endif %}{% endblock %}
 {% block body %}
-<nav><a href="{% if institution_editor %}{% url 'institution_agents' tenant %}{% else %}{% url 'manage_agents' tenant space %}{% endif %}">← Gerenciar agentes</a></nav>
+<nav><a href="{% if institution_editor %}{% url 'institution_agents' tenant %}{% else %}{% url 'manage_agents' tenant space %}{% endif %}">{% translate "← Gerenciar agentes" %}</a></nav>
 <header class="agent-heading"><div><small>{{ organization }}{% if workspace %} · {{ workspace }}{% endif %}</small>
-<h1>{% if edit %}Editar {{ original.name }}{% else %}Novo agente{% endif %}</h1></div></header>
-{% if warning %}<p class="error" role="alert">{{ warning }}</p>{% endif %}
-{% if form.errors %}<p class="error agent-feedback" role="alert">Revise os campos indicados para salvar o agente.</p>{% endif %}
+<h1>{% if edit %}{% translate "Editar" %} {{ original.name }}{% else %}{% translate "Novo agente" %}{% endif %}</h1></div></header>
+{% if warning %}<p class="error" role="alert">{% translate warning %}</p>{% endif %}
+{% if form.errors %}<p class="error agent-feedback" role="alert">{% translate "Revise os campos indicados para salvar o agente." %}</p>{% endif %}
 <form method="post" id="agent-editor">{% csrf_token %}
 {{ form.non_field_errors }}
-<div class="agent-fields"><div><label for="{{ form.name.id_for_label }}">Nome do agente</label>{{ form.name }}{{ form.name.errors }}</div>
-<div><label for="{{ form.kind.id_for_label }}">Funcionamento</label>{{ form.kind }}{{ form.kind.errors }}</div></div>
-<label for="{{ form.description.id_for_label }}">Descrição <small>(opcional)</small></label>{{ form.description }}{{ form.description.errors }}
-<noscript><p>Preencha a configuração correspondente ao funcionamento escolhido.</p></noscript>
+<div class="agent-fields"><div><label for="{{ form.name.id_for_label }}">{% translate "Nome do agente" %}</label>{{ form.name }}{{ form.name.errors }}</div>
+<div><label for="{{ form.kind.id_for_label }}">{% translate "Funcionamento" %}</label>{{ form.kind }}{{ form.kind.errors }}</div></div>
+<label for="{{ form.description.id_for_label }}">{% translate "Descrição" %} <small>{% translate "(opcional)" %}</small></label>{{ form.description }}{{ form.description.errors }}
+<noscript><p>{% translate "Preencha a configuração correspondente ao funcionamento escolhido." %}</p></noscript>
 <div data-config="knowledge">
-<label for="knowledge-text">Base de conhecimento</label>
+<label for="knowledge-text">{% translate "Base de conhecimento" %}</label>
 <textarea id="knowledge-text" name="knowledge_text"{% if form.configuration.errors and form.kind.value == "knowledge" %} aria-invalid="true"{% endif %} rows="8" maxlength="16000" aria-describedby="knowledge-help{% if form.configuration.errors %} config-errors{% endif %}">{{ knowledge_text }}</textarea>
-<small id="knowledge-help">Separe os trechos com uma linha em branco.</small></div>
+<small id="knowledge-help">{% translate "Separe os trechos com uma linha em branco." %}</small></div>
 <div data-config="external">
-<label for="external-url">Endereço do portal</label>
+<label for="external-url">{% translate "Endereço do portal" %}</label>
 <input id="external-url" name="external_url"{% if form.configuration.errors and form.kind.value == "external" %} aria-invalid="true"{% endif %} inputmode="url" placeholder="https://..." maxlength="16000" value="{{ external_url }}" aria-describedby="external-help{% if form.configuration.errors %} config-errors{% endif %}">
-<small id="external-help">Use uma URL HTTPS sem credenciais.</small></div>
+<small id="external-help">{% translate "Use uma URL HTTPS sem credenciais." %}</small></div>
 <div data-config="connector">
-<label for="connector-id">Conector do espaço</label>
+<label for="connector-id">{% translate "Conector do espaço" %}</label>
 <select id="connector-id" name="connector_id"{% if form.configuration.errors and form.kind.value == "connector" %} aria-invalid="true" aria-describedby="config-errors"{% endif %}>
-<option value="">Escolha um conector</option>
-{% if connector_id and connector_id not in connectors %}<option value="{{ connector_id }}" selected>{{ connector_id }} (indisponível)</option>{% endif %}
+<option value="">{% translate "Escolha um conector" %}</option>
+{% if connector_id and connector_id not in connectors %}<option value="{{ connector_id }}" selected>{{ connector_id }} {% translate "(indisponível)" %}</option>{% endif %}
 {% for connector in connectors %}<option value="{{ connector }}"{% if connector == connector_id %} selected{% endif %}>{{ connector }}</option>{% endfor %}</select>
-{% if institution_editor %}<small>A consulta usa o conector e as permissões do espaço em que o agente for aberto.</small>{% elif not connectors %}<small>Nenhum conector disponível neste espaço. <a href="{% url 'configure_model' tenant space %}">Configurar modelo de IA</a></small>
-{% elif model_ref in connectors %}<small><a href="{% url 'configure_model' tenant space %}">Editar modelo e instruções do espaço</a></small>{% endif %}</div>
+{% if institution_editor %}<small>{% translate "A consulta usa o conector e as permissões do espaço em que o agente for aberto." %}</small>{% elif not connectors %}<small>{% translate "Nenhum conector disponível neste espaço." %} <a href="{% url 'configure_model' tenant space %}">{% translate "Configurar modelo de IA" %}</a></small>
+{% elif model_ref in connectors %}<small><a href="{% url 'configure_model' tenant space %}">{% translate "Editar modelo e instruções do espaço" %}</a></small>{% endif %}</div>
 {% if form.configuration.errors %}<div id="config-errors">{{ form.configuration.errors }}</div>{% endif %}
-<p data-config="notifications">{% if institution_editor %}Os canais e destinos são configurados em cada espaço.{% elif edit and original.kind == "notifications" %}<a href="{% url 'notification_config' tenant space edit %}">Configurar canais e destinos</a>{% else %}<small>Salve o agente para configurar os canais e destinos.</small>{% endif %}</p>
-<div class="agent-availability"><label for="{{ form.active.id_for_label }}">{{ form.active }} {% if institution_editor %}Ativo nos espaços selecionados{% else %}Disponível aos membros do espaço{% endif %}</label>{{ form.active.errors }}</div>
-<footer class="agent-actions"><button type="submit">{% if edit %}Salvar alterações{% else %}Cadastrar agente{% endif %}</button>
-<a href="{% if institution_editor %}{% url 'institution_agents' tenant %}{% else %}{% url 'manage_agents' tenant space %}{% endif %}">Cancelar</a></footer>
+<p data-config="notifications">{% if institution_editor %}{% translate "Os canais e destinos são configurados em cada espaço." %}{% elif edit and original.kind == "notifications" %}<a href="{% url 'notification_config' tenant space edit %}">{% translate "Configurar canais e destinos" %}</a>{% else %}<small>{% translate "Salve o agente para configurar os canais e destinos." %}</small>{% endif %}</p>
+<div class="agent-availability"><label for="{{ form.active.id_for_label }}">{{ form.active }} {% if institution_editor %}{% translate "Ativo nos espaços selecionados" %}{% else %}{% translate "Disponível aos membros do espaço" %}{% endif %}</label>{{ form.active.errors }}</div>
+<footer class="agent-actions"><button type="submit">{% if edit %}{% translate "Salvar alterações" %}{% else %}{% translate "Cadastrar agente" %}{% endif %}</button>
+<a href="{% if institution_editor %}{% url 'institution_agents' tenant %}{% else %}{% url 'manage_agents' tenant space %}{% endif %}">{% translate "Cancelar" %}</a></footer>
 </form>
 <script>
 (() => {

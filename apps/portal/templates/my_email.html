@@ -1,23 +1,23 @@
-{% extends "base.html" %}
-{% block title %}Meu e-mail{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Meu e-mail" %}{% endblock %}
 {% block body %}
-<nav><a href="{% url 'dashboard' %}">Meus espaços</a></nav>
-<small>{{ organization }}</small><h1>Meu e-mail</h1>
-{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-{% if box %}<p>Caixa vinculada · <strong>{{ box.address }}</strong></p>{% endif %}
+<nav><a href="{% url 'dashboard' %}">{% translate "Meus espaços" %}</a></nav>
+<small>{{ organization }}</small><h1>{% translate "Meu e-mail" %}</h1>
+{% if error %}<p class="error" role="alert">{% translate error %}</p>{% endif %}
+{% if box %}<p>{% translate "Caixa vinculada ·" %} <strong>{{ box.address }}</strong></p>{% endif %}
 {% if provider.enabled %}
-<p>Ao ativar uma nova conexão de IA via MCP nesta instituição, a opção de leitura da sua caixa virá marcada. Você pode desmarcá-la ao autorizar a conexão.</p>
+<p>{% translate "Ao ativar uma nova conexão de IA via MCP nesta instituição, a opção de leitura da sua caixa virá marcada. Você pode desmarcá-la ao autorizar a conexão." %}</p>
 {% if box %}
-<h2>Permissões MCP</h2><p>Escolha quais IAs podem ler sua caixa e quais podem enviar mensagens em seu nome.</p>
-<p><a href="{% url 'ai_workspaces' %}">Gerenciar permissões das minhas IAs</a></p>
+<h2>{% translate "Permissões MCP" %}</h2><p>{% translate "Escolha quais IAs podem ler sua caixa e quais podem enviar mensagens em seu nome." %}</p>
+<p><a href="{% url 'ai_workspaces' %}">{% translate "Gerenciar permissões das minhas IAs" %}</a></p>
 {% include "mail_mcp_setup.html" %}
 {% include "mail_signature.html" %}
-<h2>Reconectar caixa</h2><p>Ao reconectar, você escolherá novamente as IAs autorizadas.</p>
+<h2>{% translate "Reconectar caixa" %}</h2><p>{% translate "Ao reconectar, você escolherá novamente as IAs autorizadas." %}</p>
 {% endif %}
 <form method="post">{% csrf_token %}
-<label>E-mail corporativo<input type="email" name="address" autocomplete="off" value="{{ box.address }}" placeholder="usuario@{{ provider.domain }}" required></label>
-<label>Senha da caixa de e-mail<input type="password" name="password" autocomplete="new-password" required></label>
-<button name="action" value="connect">Validar e conectar caixa</button></form>
-{% else %}<p>O conector de e-mail está desativado nesta instituição.</p>{% endif %}
-{% if box %}<form method="post">{% csrf_token %}<button name="action" value="disconnect">Desconectar caixa e revogar acessos</button></form>{% endif %}
+<label>{% translate "E-mail corporativo" %}<input type="email" name="address" autocomplete="off" value="{{ box.address }}" placeholder="usuario@{{ provider.domain }}" required></label>
+<label>{% translate "Senha da caixa de e-mail" %}<input type="password" name="password" autocomplete="new-password" required></label>
+<button name="action" value="connect">{% translate "Validar e conectar caixa" %}</button></form>
+{% else %}<p>{% translate "O conector de e-mail está desativado nesta instituição." %}</p>{% endif %}
+{% if box %}<form method="post">{% csrf_token %}<button name="action" value="disconnect">{% translate "Desconectar caixa e revogar acessos" %}</button></form>{% endif %}
 {% endblock %}

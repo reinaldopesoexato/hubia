@@ -1,13 +1,13 @@
-{% extends "base.html" %}
-{% block title %}E-mail institucional{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "E-mail institucional" %}{% endblock %}
 {% block body %}
-<nav><a href="{% url 'dashboard' %}">Visão geral</a>{% if is_owner %} · <a href="{% url 'administration' %}">Administração</a>{% endif %}</nav>
-<small>{{ organization }} · Conectores</small><h1>E-mail institucional</h1>
-<p>Skymail · {% if provider.enabled %}Habilitado{% else %}Desativado{% endif %}</p>
-<p>Leitura por IMAP em <code>{{ imap }}:993</code> com TLS. O perfil de envio do provedor é <code>{{ smtp }}:465</code> com TLS.</p>
+<nav><a href="{% url 'dashboard' %}">{% translate "Visão geral" %}</a>{% if is_owner %} · <a href="{% url 'administration' %}">{% translate "Administração" %}</a>{% endif %}</nav>
+<small>{{ organization }} {% translate "· Conectores" %}</small><h1>{% translate "E-mail institucional" %}</h1>
+<p>{% translate "Skymail ·" %} {% if provider.enabled %}{% translate "Habilitado" %}{% else %}{% translate "Desativado" %}{% endif %}</p>
+<p>{% translate "Leitura por IMAP em" %} <code>{{ imap }}:993</code> {% translate "com TLS. O perfil de envio do provedor é" %} <code>{{ smtp }}:465</code> {% translate "com TLS." %}</p>
 <form method="post">{% csrf_token %}
-<label>Domínio dos endereços de e-mail<input name="domain" value="{{ provider.domain }}" maxlength="253" required placeholder="empresa.com.br"></label>
-<label><input type="checkbox" name="enabled" {% if provider.enabled %}checked{% endif %}> Permitir que membros conectem suas caixas</label>
-<button>Salvar configuração</button></form>
-{% if provider.enabled %}<p>Membros da equipe interna podem abrir <strong>Meu e-mail</strong> em um espaço da instituição para conectar sua caixa e escolher quais IAs poderão ler ou enviar e-mails.</p>{% endif %}
+<label>{% translate "Domínio dos endereços de e-mail" %}<input name="domain" value="{{ provider.domain }}" maxlength="253" required placeholder="{% translate "empresa.com.br" %}"></label>
+<label><input type="checkbox" name="enabled" {% if provider.enabled %}checked{% endif %}> {% translate "Permitir que membros conectem suas caixas" %}</label>
+<button>{% translate "Salvar configuração" %}</button></form>
+{% if provider.enabled %}<p>{% translate "Membros da equipe interna podem abrir" %} <strong>{% translate "Meu e-mail" %}</strong> {% translate "em um espaço da instituição para conectar sua caixa e escolher quais IAs poderão ler ou enviar e-mails." %}</p>{% endif %}
 {% endblock %}

@@ -6,6 +6,9 @@ from smtplib import SMTPException
 
 from cryptography.fernet import InvalidToken
 from django import forms
+from django.utils.translation import gettext as translate_text
+from django.utils import translation
+from django.utils.translation import gettext_lazy as tr
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordResetForm
@@ -27,7 +30,7 @@ from django.views.decorators.http import require_http_methods
 
 from model_provider import cipher
 from portal_identity import bind_account
-from .models import PasswordResetDelivery, PlatformMailSettings
+from .models import AccountProfile, PasswordResetDelivery, PlatformMailSettings
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +46,7 @@ class PlatformBackend(BaseEmailBackend):
         profile = PlatformMailSettings.objects.filter(pk=1).first()
         try:
             if not profile or not profile.encrypted_password or profile.tls_mode not in ("ssl", "starttls"):
-                raise MailUnavailable("Configure o servidor e a senha SMTP da plataforma.")
+                raise MailUnavailable(translate_text("Configure o servidor e a senha SMTP da plataforma."))
             password = cipher().decrypt(bytes(profile.encrypted_password)).decode()
             backend = SMTPBackend(host=profile.host, port=profile.port, username=profile.address,
                                   password=password, use_ssl=profile.tls_mode == "ssl",
@@ -54,39 +57,39 @@ class PlatformBackend(BaseEmailBackend):
         except (InvalidToken, SMTPException, OSError, ValueError, MailUnavailable):
             if self.fail_silently:
                 return 0
-            raise MailUnavailable("Falha no envio. Verifique o servidor, a porta e as credenciais SMTP.") from None
+            raise MailUnavailable(translate_text("Falha no envio. Verifique o servidor, a porta e as credenciais SMTP.")) from None
 
 
 class SMTPForm(forms.ModelForm):
-    host = forms.CharField(label="Servidor SMTP", max_length=253, validators=[DomainNameValidator()])
-    port = forms.IntegerField(label="Porta", min_value=1, max_value=65535)
-    tls_mode = forms.ChoiceField(label="Criptografia", choices=[("ssl", "SSL/TLS"), ("starttls", "STARTTLS")])
-    password = forms.CharField(label="Senha da caixa de e-mail", required=False, strip=False, max_length=1024,
+    host = forms.CharField(label=tr("Servidor SMTP"), max_length=253, validators=[DomainNameValidator()])
+    port = forms.IntegerField(label=tr("Porta"), min_value=1, max_value=65535)
+    tls_mode = forms.ChoiceField(label=tr("Criptografia"), choices=[("ssl", "SSL/TLS"), ("starttls", "STARTTLS")])
+    password = forms.CharField(label=tr("Senha da caixa de e-mail"), required=False, strip=False, max_length=1024,
                                widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}))
 
     class Meta:
         model = PlatformMailSettings
         fields = ["address", "sender_name", "host", "port", "tls_mode"]
-        labels = {"address": "E-mail de envio e login SMTP", "sender_name": "Nome do remetente"}
+        labels = {"address": tr("E-mail de envio e login SMTP"), "sender_name": tr("Nome do remetente")}
 
     def clean_sender_name(self):
         value = self.cleaned_data["sender_name"]
         if not value.isprintable():
-            raise forms.ValidationError("Informe o nome do remetente em uma única linha.")
+            raise forms.ValidationError(translate_text("Informe o nome do remetente em uma única linha."))
         return value
 
     def clean(self):
         data = super().clean()
         if not data.get("password") and (not self.instance.encrypted_password or
                 {"host", "address", "port", "tls_mode"}.intersection(self.changed_data)):
-            self.add_error("password", "Informe a senha para vincular esta caixa ao servidor selecionado.")
+            self.add_error("password", translate_text("Informe a senha para vincular esta caixa ao servidor selecionado."))
         return data
 
 
 class NoticeForm(forms.Form):
-    recipient = forms.ModelChoiceField(label="Usuário destinatário", queryset=get_user_model().objects.none())
-    subject = forms.CharField(label="Assunto", max_length=200)
-    body = forms.CharField(label="Mensagem", max_length=10000, widget=forms.Textarea(attrs={"rows": 5}))
+    recipient = forms.ModelChoiceField(label=tr("Usuário destinatário"), queryset=get_user_model().objects.none())
+    subject = forms.CharField(label=tr("Assunto"), max_length=200)
+    body = forms.CharField(label=tr("Mensagem"), max_length=10000, widget=forms.Textarea(attrs={"rows": 5}))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -115,7 +118,7 @@ def configure(request):
             if smtp.cleaned_data["password"]:
                 profile.encrypted_password = cipher().encrypt(smtp.cleaned_data["password"].encode())
             smtp.save()
-            request.session["platform_mail_status"] = "Configuração de e-mail salva."
+            request.session["platform_mail_status"] = translate_text("Configuração de e-mail salva.")
             return redirect("platform_email")
     notice = NoticeForm(request.POST if action == "notice" else None)
     error = None
@@ -126,7 +129,7 @@ def configure(request):
             subject, body = notice.cleaned_data["subject"], notice.cleaned_data["body"]
         try:
             if send_mail(subject, body, None, [recipient]) != 1:
-                raise MailUnavailable("O servidor SMTP não confirmou o envio.")
+                raise MailUnavailable(translate_text("O servidor SMTP não confirmou o envio."))
         except MailUnavailable as exc:
             error = str(exc)
         else:
@@ -145,7 +148,8 @@ class QueuedResetForm(PasswordResetForm):
         if len(users) == 1:
             user = users[0]
             token = default_token_generator.make_token(user)
-            PasswordResetDelivery.objects.create(user=user, encrypted_token=cipher().encrypt(token.encode()),
+            preferred = AccountProfile.objects.filter(user=user).values_list("language", flat=True).first()
+            PasswordResetDelivery.objects.create(user=user, language=preferred or translation.get_language(), encrypted_token=cipher().encrypt(token.encode()),
                                                 due=timezone.now())
 
 
@@ -166,12 +170,15 @@ def deliver_reset(job_id=None):
     if user.is_active and user.has_usable_password() and default_token_generator.check_token(user, token):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         path = reverse("password_reset_confirm", args=[uid, token])
-        body = (f"Foi solicitada uma nova senha para sua conta {user.get_username()} no HUB IA.\n\n"
-                f"Abra o link para definir sua senha:\nhttps://hubia.psxt.io{path}\n\n"
-                "Se você não fez essa solicitação, pode ignorar esta mensagem.")
+        with translation.override(job.language):
+            subject = translation.gettext("Recuperação de senha do HUB IA")
+            greeting = translation.gettext("Foi solicitada uma nova senha para sua conta %(user)s no HUB IA.") % {"user": user.get_username()}
+            action = translation.gettext("Abra o link para definir sua senha:")
+            body = "\n\n".join((greeting, f"{action}\nhttps://hubia.psxt.io{path}",
+                                translation.gettext("Se você não fez essa solicitação, pode ignorar esta mensagem.")))
         try:
-            if send_mail("Recuperação de senha do HUB IA", body, None, [user.email]) != 1:
-                raise MailUnavailable("O servidor SMTP não confirmou o envio.")
+            if send_mail(subject, body, None, [user.email]) != 1:
+                raise MailUnavailable(translate_text("O servidor SMTP não confirmou o envio."))
         except MailUnavailable:
             job.attempts += 1
             if job.attempts < 5:

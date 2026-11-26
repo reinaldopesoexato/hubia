@@ -8,7 +8,7 @@ from django.db import connection
 from django.test import Client, override_settings
 from django.urls import reverse
 
-from bridge.models import AccountProfile
+from bridge.models import AccountProfile, ProfilePhoto
 from portal_identity import bind_account
 
 
@@ -61,7 +61,7 @@ def verify_registration():
         start = public.post(reverse('google_start'),secure=True)
         args = parse_qs(urlsplit(start.url).query)
         assert args['code_challenge_method']==['S256'] and args['nonce']
-        claims = dict(email=address,sub=subject,name='Pessoa Google')
+        claims = dict(email=address,sub=subject,name='Pessoa Google',picture='https://lh3.googleusercontent.com/example')
         with patch('registration.google_identity',return_value=claims) as exchange:
             response = public.get(reverse('google_callback'),{'code':'teste','state':'inválido' if bad_state else args['state'][0]},secure=True)
             assert exchange.call_count == int(not bad_state)
@@ -71,6 +71,13 @@ def verify_registration():
         assert google_login(google_email,sub,True).status_code==400
         assert google_login(google_email,sub).url==reverse('dashboard')
         google = get_user_model().objects.get(email=google_email)
+        assert ProfilePhoto.objects.get(user=google).google_url == 'https://lh3.googleusercontent.com/example'
+        assert public.post(reverse('choose_language'), {'language':'es','next':'/conta/perfil/'}, secure=True).status_code == 302
+        second_device = Client(**host)
+        second_device.force_login(google)
+        profile_page = second_device.get(reverse('edit_profile'), secure=True, HTTP_ACCEPT_LANGUAGE='en-US')
+        assert profile_page.headers['Content-Language'] == 'es' and 'Foto de perfil' in profile_page.content.decode()
+        assert public.post(reverse('choose_language'), {'language':'pt-br'}, secure=True).status_code == 302
         assert not google.has_usable_password() and int(public.session['_auth_user_id'])==google.pk
         public.logout()
         assert google_login(google_email,sub).url==reverse('dashboard')

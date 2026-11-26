@@ -177,6 +177,12 @@ def avihub_tools():
         spec["annotations"]["openWorldHint"] = True
     specs[avihub_api.ACCOUNTS] = tool(avihub_api.ACCOUNTS,
         "Listar as contas AviHUB vinculadas pelo usuário nesta instituição, com ID, apelido e e-mail.")
+    reset = tool(avihub_api.RESET_PASSWORD,
+        "Solicita ao AviHUB o envio do link de redefinição ao e-mail informado pelo usuário. "
+        "Use quando o usuário pedir para recuperar a senha. Funciona antes de vincular a conta.",
+        ("email",), write=True)
+    reset["annotations"].update(openWorldHint=True, idempotentHint=False)
+    specs[avihub_api.RESET_PASSWORD] = reset
     return specs
 
 
@@ -288,6 +294,11 @@ def execute_tool(link, ctx, name, args):
             entry = cursor.fetchone()
         if not entry:
             raise ValueError("AviHUB indisponível neste espaço.")
+        if name == avihub_api.RESET_PASSWORD:
+            agent = avihub.AviHubAgent.objects.filter(pk=entry[1], tenant=link.tenant).first()
+            if not agent:
+                raise ValueError("AviHUB indisponível neste espaço.")
+            return {"mensagem": avihub.request_password_reset(agent, link.user, args["email"])}
         url = ORIGIN + reverse("use_agent", args=[link.tenant, *entry])
         return avihub.query(link.tenant, link.user, args, name, link_url=url)
     if name in SPACE_TOOLS:

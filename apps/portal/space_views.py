@@ -2,6 +2,8 @@ import json
 from uuid import UUID, uuid4
 
 from django import forms
+from django.utils.translation import gettext as translate_text
+from django.utils.translation import gettext_lazy as tr
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -24,13 +26,13 @@ from bridge.models import CatalogAlerts, LibraryAccess
 class AgentForm(forms.Form):
     config_inputs = {"knowledge": "knowledge_text", "external": "external_url", "connector": "connector_id"}
 
-    name = forms.CharField(label="Nome", max_length=120)
-    description = forms.CharField(label="Descrição", max_length=500, required=False, widget=forms.Textarea(attrs={"rows": 2}))
-    kind = forms.ChoiceField(label="Funcionamento", choices=[
-        ("notifications","Notificações por canal"), ("knowledge","Consulta à base de conhecimento"),
-        ("external","Abrir portal externo"), ("connector","Consulta a uma API conectada")])
-    configuration = forms.CharField(label="Configuração", required=False, max_length=16000)
-    active = forms.BooleanField(label="Disponível aos membros", required=False, initial=True)
+    name = forms.CharField(label=tr("Nome"), max_length=120)
+    description = forms.CharField(label=tr("Descrição"), max_length=500, required=False, widget=forms.Textarea(attrs={"rows": 2}))
+    kind = forms.ChoiceField(label=tr("Funcionamento"), choices=[
+        ("notifications",tr("Notificações por canal")), ("knowledge",tr("Consulta à base de conhecimento")),
+        ("external",tr("Abrir portal externo")), ("connector",tr("Consulta a uma API conectada"))])
+    configuration = forms.CharField(label=tr("Configuração"), required=False, max_length=16000)
+    active = forms.BooleanField(label=tr("Disponível aos membros"), required=False, initial=True)
 
     def __init__(self, data=None, *, connectors, **kwargs):
         if data is not None:
@@ -49,11 +51,11 @@ class AgentForm(forms.Form):
             try:
                 https_url(value)
             except (ValidationError, ValueError):
-                self.add_error("configuration", "Informe uma URL HTTPS válida e sem credenciais.")
+                self.add_error("configuration", translate_text("Informe uma URL HTTPS válida e sem credenciais."))
         elif kind == "knowledge" and not value:
-            self.add_error("configuration", "Inclua ao menos um trecho para pesquisa.")
+            self.add_error("configuration", translate_text("Inclua ao menos um trecho para pesquisa."))
         elif kind == "connector" and value not in self.connectors:
-            self.add_error("configuration", "Escolha um conector configurado para este espaço.")
+            self.add_error("configuration", translate_text("Escolha um conector configurado para este espaço."))
         elif kind == "notifications":
             data["configuration"] = ""
         return data
@@ -74,13 +76,13 @@ def space_context(cursor, user, tenant, space, management=False):
     if management:
         cursor.execute("SELECT * FROM hub_admin.space_management(%s,%s)", [tenant,space])
     else:
-        cursor.execute("""SELECT coalesce(i.name,'Espaço pessoal'), w.name FROM hub_tenancy.workspaces w
+        cursor.execute("""SELECT i.name, w.name FROM hub_tenancy.workspaces w
             LEFT JOIN hub_tenancy.institutions i ON i.tenant_id=w.tenant_id
             WHERE w.tenant_id=%s AND w.id=%s""", [tenant,space])
     row = cursor.fetchone()
     if not row:
         raise Http404
-    return {"tenant":tenant,"space":space,"organization":row[0],"workspace":row[1],"principal":principal,"is_owner":is_owner}
+    return {"tenant":tenant,"space":space,"organization":row[0] or translate_text("Espaço pessoal"),"workspace":row[1],"principal":principal,"is_owner":is_owner}
 
 
 def rows(cursor):
@@ -133,7 +135,7 @@ def manage_agents(request, tenant, space, agent=None):
             from institution_agents import choices, save_selection
             if request.method == "POST":
                 if request.POST.get("action") != "select_agents" or agent:
-                    return HttpResponseBadRequest("Edite o cadastro no catálogo da instituição.")
+                    return HttpResponseBadRequest(translate_text("Edite o cadastro no catálogo da instituição."))
                 ctx["error"] = save_selection(cursor, tenant, space, request.POST)
                 if not ctx["error"]:
                     return redirect("manage_agents", tenant, space)
@@ -182,7 +184,7 @@ def manage_agents(request, tenant, space, agent=None):
                 except IntegrityError as exc:
                     if exc.__cause__.sqlstate != "23505":
                         raise
-                    form.add_error("name","Já existe um agente com esse nome no espaço.")
+                    form.add_error("name",translate_text("Já existe um agente com esse nome no espaço."))
             return render_editor(request, ctx, form, agent, initial, connectors)
         if not ctx["institutional"]:
             agents = catalog(cursor, tenant, space, True)
@@ -229,7 +231,7 @@ def use_agent(request, tenant, space, agent):
             if request.method == "POST":
                 action = request.POST.get("action")
                 if action not in ("buscar_notas", "ler_nota"):
-                    return HttpResponseBadRequest("Ação indisponível.")
+                    return HttpResponseBadRequest(translate_text("Ação indisponível."))
                 try:
                     ctx["result"] = library.query(tenant, space, action, request.POST)
                 except ValueError as exc:
@@ -264,14 +266,14 @@ def use_agent(request, tenant, space, agent):
         if cursor.fetchone()[0] == "viewer":
             return HttpResponseForbidden("Seu papel de leitor permite consultar o catálogo e o histórico.")
         if record["kind"]=="external":
-            return HttpResponseBadRequest("Abra o portal externo pelo link do agente.")
+            return HttpResponseBadRequest(translate_text("Abra o portal externo pelo link do agente."))
         question = request.POST.get("question","").strip()
         try:
             run = UUID(request.POST.get("request_id",""))
         except ValueError:
-            return HttpResponseBadRequest("Solicitação inválida. Reabra o agente.")
+            return HttpResponseBadRequest(translate_text("Solicitação inválida. Reabra o agente."))
         if not 1 <= len(question) <= 2000:
-            return HttpResponseBadRequest("Informe uma consulta de até 2.000 caracteres.")
+            return HttpResponseBadRequest(translate_text("Informe uma consulta de até 2.000 caracteres."))
         cursor.execute("""INSERT INTO hub_tenancy.agent_runs (id,tenant_id,workspace_id,agent_id,user_id,question,status)
             VALUES (%s,%s,%s,%s,%s,%s,'running') ON CONFLICT DO NOTHING RETURNING id""",
             [run,tenant,space,agent,ctx["principal"],question])
@@ -339,7 +341,7 @@ def configure_model(request, tenant, space):
                         if created:
                             catalog_alerts.announce(tenant, created[0], "Assistente de IA", space=space)
                     return redirect("configure_model",tenant,space)
-                form.add_error("api_key","Informe a chave para configurar o modelo pela primeira vez.")
+                form.add_error("api_key",translate_text("Informe a chave para configurar o modelo pela primeira vez."))
         ctx.update(form=form,configured=bool(current),reference=MODEL_REF)
     return render(request,"model.html",ctx,status=400 if form.errors else 200)
 
@@ -351,7 +353,7 @@ def manage_member(request, tenant, space):
         ctx = space_context(cursor,request.user,tenant,space,management=True)
         username = request.POST.get("username","").strip()
         pk = get_user_model().objects.filter(username=username,is_active=True).values_list("pk",flat=True).first()
-        error = "Usuário ativo não encontrado."
+        error = translate_text("Usuário ativo não encontrado.")
         if pk is not None:
             try:
                 with transaction.atomic():

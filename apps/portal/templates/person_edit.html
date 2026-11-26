@@ -1,27 +1,27 @@
-{% extends "base.html" %}
-{% block title %}{% if deleting %}Excluir{% else %}Editar{% endif %} usuário{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if deleting %}{% translate "Excluir" %}{% else %}{% translate "Editar" %}{% endif %} {% translate "usuário" %}{% endblock %}
 {% block body %}
-<nav><a href="{% url 'people' %}">← Usuários</a></nav>
-{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+<nav><a href="{% url 'people' %}">{% translate "← Usuários" %}</a></nav>
+{% if error %}<p class="error" role="alert">{% translate error %}</p>{% endif %}
 {% if deleting %}
-<h1>Excluir {{ account.get_full_name|default:account.username }}?</h1>
-<p>A conta e suas conexões pessoais serão removidas. O histórico de auditoria será preservado.</p>
-<form method="post">{% csrf_token %}<button class="agent-unlink">Confirmar exclusão</button> <a href="{% url 'people' %}">Cancelar</a></form>
+<h1>{% translate "Excluir" %} {{ account.get_full_name|default:account.username }}?</h1>
+<p>{% translate "A conta e suas conexões pessoais serão removidas. O histórico de auditoria será preservado." %}</p>
+<form method="post">{% csrf_token %}<button class="agent-unlink">{% translate "Confirmar exclusão" %}</button> <a href="{% url 'people' %}">{% translate "Cancelar" %}</a></form>
 {% else %}
-<h1>Editar usuário</h1><p>{{ account.email|default:account.username }}</p>
+<h1>{% translate "Editar usuário" %}</h1><p>{{ account.email|default:account.username }}</p>
 <form method="post">{% csrf_token %}<input type="hidden" name="revision" value="{{ revision }}">
 {{ form.as_p }}
-{% if account.pk != request.user.pk %}<label><input type="checkbox" name="active" {% if account.is_active %}checked{% endif %}> Conta ativa</label>{% endif %}
-<h2>Instituições, espaços e agentes</h2>
-<p>Selecione os espaços que o usuário pode abrir. Bloquear um agente impede seu uso em todos os espaços dessa instituição, inclusive pelas integrações.</p>
-<label><input type="checkbox" name="block_guide" {% if not guide_enabled %}checked{% endif %}> Bloquear o Guia dos meus espaços</label>
+{% if account.pk != request.user.pk %}<label><input type="checkbox" name="active" {% if account.is_active %}checked{% endif %}> {% translate "Conta ativa" %}</label>{% endif %}
+<h2>{% translate "Instituições, espaços e agentes" %}</h2>
+<p>{% translate "Selecione os espaços que o usuário pode abrir. Bloquear um agente impede seu uso em todos os espaços dessa instituição, inclusive pelas integrações." %}</p>
+<label><input type="checkbox" name="block_guide" {% if not guide_enabled %}checked{% endif %}> {% translate "Bloquear o Guia dos meus espaços" %}</label>
 {% for g in groups %}<fieldset class="access-group"><legend>{{ g.name }}</legend>
-{% if g.institution %}<label><input type="checkbox" name="institution" value="{{ g.institution.id }}" {% if g.institution.selected %}checked{% endif %} {% if g.institution.locked %}disabled{% endif %}> Vinculado à instituição{% if g.institution.locked %} (responsável){% endif %}</label>{% endif %}
-{% if g.institution.id == mail_institution %}<label><input type="checkbox" name="internal_mail" {% if internal_mail %}checked{% endif %}> Permitir Meu e-mail (equipe interna da Peso Exato)</label>{% endif %}
-{% if g.spaces %}<h3>Espaços</h3>{% for s in g.spaces %}<label><input type="checkbox" name="space" value="{{ s.id }}" {% if s.selected %}checked{% endif %} {% if s.locked %}disabled{% endif %}> {{ s.name }}</label>{% endfor %}{% endif %}
-{% if g.agents %}<h3>Bloqueios individuais</h3>{% for a in g.agents %}<label><input type="checkbox" name="agent" value="{{ a.id }}" {% if not a.selected %}checked{% endif %}> Bloquear {{ a.name }}</label>{% endfor %}{% endif %}
-</fieldset>{% empty %}<p>Nenhuma instituição ou agente disponível. A conta mantém o espaço pessoal.</p>{% endfor %}
-<button>Salvar alterações</button> <a href="{% url 'people' %}">Cancelar</a></form>
+{% if g.institution %}<label><input type="checkbox" name="institution" value="{{ g.institution.id }}" {% if g.institution.selected %}checked{% endif %} {% if g.institution.locked %}disabled{% endif %}> {% translate "Vinculado à instituição" %}{% if g.institution.locked %} {% translate "(responsável)" %}{% endif %}</label>{% endif %}
+{% if g.institution.id == mail_institution %}<label><input type="checkbox" name="internal_mail" {% if internal_mail %}checked{% endif %}> {% translate "Permitir Meu e-mail (equipe interna da Peso Exato)" %}</label>{% endif %}
+{% if g.spaces %}<h3>{% translate "Espaços" %}</h3>{% for s in g.spaces %}<label><input type="checkbox" name="space" value="{{ s.id }}" {% if s.selected %}checked{% endif %} {% if s.locked %}disabled{% endif %}> {{ s.name }}</label>{% endfor %}{% endif %}
+{% if g.agents %}<h3>{% translate "Bloqueios individuais" %}</h3>{% for a in g.agents %}<label><input type="checkbox" name="agent" value="{{ a.id }}" {% if not a.selected %}checked{% endif %}> {% translate "Bloquear" %} {{ a.name }}</label>{% endfor %}{% endif %}
+</fieldset>{% empty %}<p>{% translate "Nenhuma instituição ou agente disponível. A conta mantém o espaço pessoal." %}</p>{% endfor %}
+<button>{% translate "Salvar alterações" %}</button> <a href="{% url 'people' %}">{% translate "Cancelar" %}</a></form>
 <script>
 document.querySelectorAll('.access-group').forEach(group => {
   const org = group.querySelector('input[name=institution]');

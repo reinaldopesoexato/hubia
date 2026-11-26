@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#10372e"><meta name="description" content="Conheça os agentes de inteligência artificial da Peso Exato e acesse seu espaço de trabalho.">
 <link rel="icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>Agentes de inteligência artificial · Peso Exato</title>
+<title data-en="AI agents · Peso Exato" data-es="Agentes de inteligencia artificial · Peso Exato">Agentes de inteligência artificial · Peso Exato</title>
 <style>
 *{box-sizing:border-box}body{margin:0;color:#153a30;background:#f3f5ed;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit}.wrap{width:min(1180px,92%);margin:auto}
 header,.bar,.actions,.brand{display:flex;align-items:center}.bar{height:84px;justify-content:space-between}.brand{gap:12px;text-decoration:none;font-weight:700}.brand img{width:62px;height:62px;object-fit:contain}.brand span{border-left:1px solid #bbc9bc;padding-left:15px}.enter{font-weight:650;text-underline-offset:5px}
@@ -13,12 +13,51 @@ header,.bar,.actions,.brand{display:flex;align-items:center}.bar{height:84px;jus
 h1{max-width:18ch;font-size:clamp(2.5rem,5.9vw,5.2rem);letter-spacing:-.06em;line-height:1.04;margin:0 0 24px;font-weight:600;text-wrap:balance}.intro{max-width:46ch;color:#dfede4;font-size:clamp(1.05rem,1.8vw,1.28rem);line-height:1.52;margin:0}.actions{gap:20px;flex-wrap:wrap;margin-top:34px}.cta{padding:14px 22px;border-radius:9px;background:#d3f4aa;color:#163a2c;font-weight:750;text-decoration:none}.cta:hover{background:#e4ffc3}.secondary{text-underline-offset:5px;font-weight:600}
 .features{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,4vw,54px);padding:clamp(28px,4vw,52px) 1%}.features article{border-top:2px solid #94af97;padding-top:16px}h2{font-size:1.18rem;letter-spacing:-.025em;margin:0 0 8px}.features p{line-height:1.55;color:#405c4e;margin:0}
 a:focus-visible{outline:3px solid #d78837;outline-offset:5px}@media(max-width:690px){.bar{height:66px}.brand img{width:48px;height:48px}.features{grid-template-columns:1fr;gap:24px}.hero{padding:34px 24px}.hero:after{inset:10% -55% -18% 52%;opacity:.45}.secondary{padding-block:8px}}
+#language{display:flex;gap:3px;margin-inline:auto 12px}#language button{font:inherit;font-size:12px;white-space:nowrap;border:1px solid transparent;border-radius:5px;padding:4px;color:#153a30;background:transparent;cursor:pointer}#language button[aria-pressed=true]{border-color:#17644e;background:#e1efe4}@media(max-width:460px){.brand span{display:none}}
 </style></head><body>
-<header><div class="wrap bar"><a class="brand" href="/"><img src="/hub-ia.png" alt="HUB IA"><span>Peso Exato</span></a><a class="enter" href="/conta/entrar/">Entrar</a></div></header>
-<main class="wrap"><section class="hero"><h1>Agentes de inteligência artificial da Peso Exato</h1>
-<p class="intro">Consulte informações de equipamentos, encontre orientações e acompanhe sua operação com os agentes disponíveis no seu espaço.</p>
-<div class="actions"><a class="cta" href="/conta/cadastrar/">Criar minha conta</a><a class="secondary" href="/conta/entrar/">Acessar meu espaço</a></div></section>
-<section class="features" aria-label="Recursos do HUB IA"><article><h2>Seu espaço pessoal</h2><p>Comece com sua própria conta. O guia mostra os espaços e os agentes que você já pode acessar.</p></article>
-<article><h2>Conhecimento da equipe</h2><p>Consulte procedimentos e materiais que sua instituição disponibilizou para o seu trabalho.</p></article>
-<article><h2>Equipamentos no AviHUB</h2><p>Nos espaços com o agente AviHUB, vincule sua conta para consultar balanças e dados das unidades autorizadas.</p></article></section></main>
+<header><div class="wrap bar"><a class="brand" href="/"><img src="/hub-ia.png" alt="HUB IA"><span>Peso Exato</span></a><form id="language" action="/conta/idioma/" method="post" aria-label="Idioma">
+<input type="hidden" name="next" value="/"><input type="hidden" name="csrfmiddlewaretoken">
+<button name="language" value="pt-br" lang="pt-BR" aria-label="Português" title="Português">🇧🇷 PT</button>
+<button name="language" value="en" lang="en" aria-label="English" title="English">🇺🇸 EN</button>
+<button name="language" value="es" lang="es" aria-label="Español" title="Español">🇪🇸 ES</button>
+</form><a class="enter" href="/conta/entrar/" data-en="Sign in" data-es="Entrar">Entrar</a></div></header>
+<main class="wrap"><section class="hero"><h1 data-en="AI agents from Peso Exato" data-es="Agentes de inteligencia artificial de Peso Exato">Agentes de inteligência artificial da Peso Exato</h1>
+<p class="intro" data-en="Check equipment information, find guidance and follow your operations with the agents in your workspace." data-es="Consulta información de equipos, encuentra orientación y sigue tu operación con los agentes disponibles en tu espacio.">Consulte informações de equipamentos, encontre orientações e acompanhe sua operação com os agentes disponíveis no seu espaço.</p>
+<div class="actions"><a class="cta" href="/conta/cadastrar/" data-en="Create my account" data-es="Crear mi cuenta">Criar minha conta</a><a class="secondary" href="/conta/entrar/" data-en="Open my workspace" data-es="Acceder a mi espacio">Acessar meu espaço</a></div></section>
+<section class="features" aria-label="Recursos do HUB IA"><article><h2 data-en="Your personal workspace" data-es="Tu espacio personal">Seu espaço pessoal</h2><p data-en="Start with your own account. The guide shows the workspaces and agents you can access." data-es="Empieza con tu propia cuenta. La guía muestra los espacios y agentes a los que tienes acceso.">Comece com sua própria conta. O guia mostra os espaços e os agentes que você já pode acessar.</p></article>
+<article><h2 data-en="Team knowledge" data-es="Conocimiento del equipo">Conhecimento da equipe</h2><p data-en="Find procedures and resources your institution has made available for your work." data-es="Consulta los procedimientos y recursos que tu institución ha puesto a disposición para tu trabajo.">Consulte procedimentos e materiais que sua instituição disponibilizou para o seu trabalho.</p></article>
+<article><h2 data-en="Equipment in AviHUB" data-es="Equipos en AviHUB">Equipamentos no AviHUB</h2><p data-en="In workspaces with the AviHUB agent, link your account to check scales and data from your authorized units." data-es="En los espacios con el agente AviHUB, vincula tu cuenta para consultar balanzas y datos de las unidades autorizadas.">Nos espaços com o agente AviHUB, vincule sua conta para consultar balanças e dados das unidades autorizadas.</p></article></section></main>
+<script>
+const chooser = document.getElementById('language');
+function showLanguage(lang) {
+  document.documentElement.lang = lang;
+  for (const element of document.querySelectorAll('[data-en]')) {
+    element.dataset.pt ??= element.textContent;
+    element.textContent = element.dataset[lang === 'pt-br' ? 'pt' : lang];
+  }
+  chooser.setAttribute('aria-label', lang === 'en' ? 'Language' : 'Idioma');
+  document.querySelector('.features').setAttribute('aria-label', {en:'HUB IA features', es:'Funciones de HUB IA', 'pt-br':'Recursos do HUB IA'}[lang]);
+  document.querySelector('meta[name="description"]').content = document.querySelector('.intro').textContent;
+  for (const button of chooser.querySelectorAll('button')) {
+    button.setAttribute('aria-pressed', String(button.value === lang));
+  }
+}
+const regional = navigator.languages.map(locale => locale.split('-')[0]).find(code => ['pt','es','en'].includes(code));
+showLanguage(regional === 'en' || regional === 'es' ? regional : 'pt-br');
+const preference = fetch(chooser.action, {credentials:'same-origin', cache:'no-store'}).then(response => {
+  if (!response.ok) throw new Error();
+  return response.json();
+}).then(data => {
+  chooser.elements.csrfmiddlewaretoken.value = data.csrf;
+  showLanguage(data.language);
+}).catch(() => {});
+chooser.addEventListener('submit', async event => {
+  if (chooser.elements.csrfmiddlewaretoken.value) return;
+  event.preventDefault();
+  const button = event.submitter;
+  await preference;
+  if (chooser.elements.csrfmiddlewaretoken.value) chooser.requestSubmit(button);
+  else location.assign('/conta/entrar/');
+});
+</script>
 </body></html>

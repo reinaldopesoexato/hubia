@@ -2,6 +2,7 @@ import base64
 
 from cryptography.fernet import Fernet, InvalidToken
 from django import forms
+from django.utils.translation import gettext_lazy as tr
 from django.utils.crypto import salted_hmac
 
 from agent_runtime import ConnectorError, connectors_for
@@ -33,12 +34,12 @@ def available_connectors(cursor, tenant, space, *, secrets=False):
 
 
 class ModelForm(forms.Form):
-    install_agent = forms.BooleanField(label="Cadastrar o agente Assistente de IA neste espaço",required=False,initial=True)
-    model = forms.RegexField(label="Modelo habilitado na sua conta OpenAI",
+    install_agent = forms.BooleanField(label=tr("Cadastrar o agente Assistente de IA neste espaço"),required=False,initial=True)
+    model = forms.RegexField(label=tr("Modelo habilitado na sua conta OpenAI"),
         regex=r"^[A-Za-z0-9][a-zA-Z0-9._:/-]*$",max_length=120)
-    instructions = forms.CharField(label="Instruções para o modelo",max_length=4000,required=False,
+    instructions = forms.CharField(label=tr("Instruções para o modelo"),max_length=4000,required=False,
         widget=forms.Textarea(attrs={"rows":3}))
-    api_key = forms.CharField(label="Chave de API",max_length=512,required=False,
+    api_key = forms.CharField(label=tr("Chave de API"),max_length=512,required=False,
         widget=forms.PasswordInput(attrs={"autocomplete":"new-password"}))
 
 

@@ -1,12 +1,12 @@
-{% extends "base.html" %}{% block title %}Usuários e auditoria{% endblock %}
-{% block body %}<nav><a href="{% url 'administration' %}">← Administração</a></nav><h1>Usuários</h1>
-{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
-<details {% if form.errors %}open{% endif %}><summary>Cadastrar usuário</summary><form method="post">{% csrf_token %}{{ form.as_p }}<button name="action" value="create">Cadastrar</button></form></details>
-<form method="get"><label for="people-search">Buscar por nome, e-mail ou empresa</label><input id="people-search" type="search" name="q" value="{{ search }}" maxlength="254"><button>Buscar</button>{% if search %} <a href="{% url 'people' %}">Limpar busca</a>{% endif %}</form>
+{% extends "base.html" %}{% load i18n %}{% block title %}{% translate "Usuários e auditoria" %}{% endblock %}
+{% block body %}<nav><a href="{% url 'administration' %}">{% translate "← Administração" %}</a></nav><h1>{% translate "Usuários" %}</h1>
+{% if error %}<p role="alert" class="error">{% translate error %}</p>{% endif %}
+<details {% if form.errors %}open{% endif %}><summary>{% translate "Cadastrar usuário" %}</summary><form method="post">{% csrf_token %}{{ form.as_p }}<button name="action" value="create">{% translate "Cadastrar" %}</button></form></details>
+<form method="get"><label for="people-search">{% translate "Buscar por nome, e-mail ou empresa" %}</label><input id="people-search" type="search" name="q" value="{{ search }}" maxlength="254"><button>{% translate "Buscar" %}</button>{% if search %} <a href="{% url 'people' %}">{% translate "Limpar busca" %}</a>{% endif %}</form>
 <ul class="agent-directory">{% for u in users %}<li><div class="agent-summary"><div><strong>{{ u.get_full_name|default:u.username }}</strong><small>{{ u.email|default:u.username }}{% if u.accountprofile.company %} · {{ u.accountprofile.company }}{% endif %}</small></div></div>
-<span class="status{% if u.is_active %} done{% endif %}">{% if u.is_active %}Ativo{% else %}Desativado{% endif %}</span>
-<div class="agent-links"><a href="{% url 'edit_person' u.pk %}">Editar</a>{% if request.user.pk != u.pk %}<a href="{% url 'delete_person' u.pk %}">Excluir</a>{% endif %}</div></li>{% empty %}<li>Nenhum usuário encontrado.</li>{% endfor %}</ul>
-{% if users.has_other_pages %}<nav aria-label="Páginas de usuários">{% if users.has_previous %}<a href="?q={{ search|urlencode }}&amp;pagina={{ users.previous_page_number }}">Anterior</a> · {% endif %}Página {{ users.number }} de {{ users.paginator.num_pages }}{% if users.has_next %} · <a href="?q={{ search|urlencode }}&amp;pagina={{ users.next_page_number }}">Próxima</a>{% endif %}</nav>{% endif %}
-<h2>Atividade administrativa recente</h2>
-{% for date,org,actor,event in events %}<article><small>{{ date|date:"d/m/Y H:i" }} · {{ org }}</small><div>{{ actor }}</div><code>{{ event }}</code></article>{% empty %}<p>Nenhum evento registrado.</p>{% endfor %}
+<span class="status{% if u.is_active %} done{% endif %}">{% if u.is_active %}{% translate "Ativo" %}{% else %}{% translate "Desativado" %}{% endif %}</span>
+<div class="agent-links"><a href="{% url 'edit_person' u.pk %}">{% translate "Editar" %}</a>{% if request.user.pk != u.pk %}<a href="{% url 'delete_person' u.pk %}">{% translate "Excluir" %}</a>{% endif %}</div></li>{% empty %}<li>{% translate "Nenhum usuário encontrado." %}</li>{% endfor %}</ul>
+{% if users.has_other_pages %}<nav aria-label="{% translate "Páginas de usuários" %}">{% if users.has_previous %}<a href="?q={{ search|urlencode }}&amp;pagina={{ users.previous_page_number }}">{% translate "Anterior" %}</a> · {% endif %}{% translate "Página" %} {{ users.number }} {% translate "de" %} {{ users.paginator.num_pages }}{% if users.has_next %} · <a href="?q={{ search|urlencode }}&amp;pagina={{ users.next_page_number }}">{% translate "Próxima" %}</a>{% endif %}</nav>{% endif %}
+<h2>{% translate "Atividade administrativa recente" %}</h2>
+{% for date,org,actor,event in events %}<article><small>{{ date|date:"d/m/Y H:i" }} · {{ org }}</small><div>{{ actor }}</div><code>{{ event }}</code></article>{% empty %}<p>{% translate "Nenhum evento registrado." %}</p>{% endfor %}
 {% endblock %}

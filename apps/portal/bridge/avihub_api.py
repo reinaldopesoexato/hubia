@@ -4,6 +4,7 @@ from datetime import date
 from urllib.parse import parse_qs, urlsplit
 
 EXPIRED = "Sua sessão no AviHUB expirou. Vincule sua conta novamente no agente."
+RESET_PASSWORD = "solicitar_redefinicao_senha_avihub"
 ACCOUNTS = "listar_contas_avihub"
 UNITS = "listar_unidades_avihub"
 SELECT_UNIT = "selecionar_unidade_avihub"

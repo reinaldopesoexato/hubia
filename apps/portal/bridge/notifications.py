@@ -4,6 +4,8 @@ from uuid import UUID, uuid4
 
 from cryptography.fernet import InvalidToken
 from django import forms
+from django.utils.translation import gettext as translate_text
+from django.utils.translation import gettext_lazy as tr
 from django.contrib.auth.decorators import login_required
 from django.db import connection, transaction
 from django.db.models import Q
@@ -20,18 +22,18 @@ from .models import NotificationChannel, NotificationDestination
 
 
 class WhatsAppForm(forms.Form):
-    integration = forms.RegexField(label="Identificador da integração Leadfinder", regex=r"^[A-Za-z0-9_-]{1,80}$")
-    key = forms.RegexField(label="Chave da API", required=False, regex=r"^[\x21-\x7e]{1,1024}$",
+    integration = forms.RegexField(label=tr("Identificador da integração Leadfinder"), regex=r"^[A-Za-z0-9_-]{1,80}$")
+    key = forms.RegexField(label=tr("Chave da API"), required=False, regex=r"^[\x21-\x7e]{1,1024}$",
                            widget=forms.PasswordInput(attrs={"autocomplete":"new-password"}),
-                           help_text="Deixe em branco para manter a chave salva.")
-    enabled = forms.BooleanField(label="Habilitar WhatsApp", required=False)
+                           help_text=tr("Deixe em branco para manter a chave salva."))
+    enabled = forms.BooleanField(label=tr("Habilitar WhatsApp"), required=False)
 
 
 class DestinationForm(forms.Form):
-    name = forms.CharField(label="Nome do destino", max_length=100)
-    address = forms.RegexField(label="Telefone ou ID do grupo", regex=r"^[0-9]{1,100}(?:@g\.us|-group)?$",
-                               help_text="Use o identificador exato cadastrado na Leadfinder.")
-    sector = forms.ChoiceField(label="Quem pode enviar", required=False)
+    name = forms.CharField(label=tr("Nome do destino"), max_length=100)
+    address = forms.RegexField(label=tr("Telefone ou ID do grupo"), regex=r"^[0-9]{1,100}(?:@g\.us|-group)?$",
+                               help_text=tr("Use o identificador exato cadastrado na Leadfinder."))
+    sector = forms.ChoiceField(label=tr("Quem pode enviar"), required=False)
 
 
 def channels(tenant, space, agent):
@@ -56,26 +58,26 @@ def destinations(cursor, tenant, space, agent, permitted=None):
 def resolve_recipient(cursor, tenant, space, agent, data, permitted=None):
     channel = channels(tenant, space, agent).filter(enabled=True, channel=data.get("canal")).first()
     if channel is None:
-        raise ValueError("Canal de envio indisponível.")
+        raise ValueError(translate_text("Canal de envio indisponível."))
     saved_id = data.get("destino")
     direct = data.get("destinatario")
     if bool(saved_id) == bool(direct):
-        raise ValueError("Informe um destinatário ou selecione um destino salvo.")
+        raise ValueError(translate_text("Informe um destinatário ou selecione um destino salvo."))
     allowed = destinations(cursor, tenant, space, agent, permitted).filter(channel=channel)
     if saved_id:
         if not str(saved_id).isascii() or not str(saved_id).isdigit() or len(str(saved_id)) > 18:
-            raise ValueError("Destino salvo inválido.")
+            raise ValueError(translate_text("Destino salvo inválido."))
         saved = allowed.filter(pk=saved_id).first()
         if not saved:
-            raise ValueError("Destino indisponível.")
+            raise ValueError(translate_text("Destino indisponível."))
         return channel, saved.address, saved.name, saved.pk
     validator = RECIPIENT_VALIDATORS.get(channel.channel)
     if not validator:
-        raise ValueError("Este canal exige um destino salvo.")
+        raise ValueError(translate_text("Este canal exige um destino salvo."))
     address, equivalents = validator(direct)
     saved_addresses = channel.notificationdestination_set.filter(address__in=equivalents)
     if saved_addresses.exists() and not allowed.filter(address__in=equivalents).exists():
-        raise ValueError("Destino indisponível.")
+        raise ValueError(translate_text("Destino indisponível."))
     return channel, address, address, None
 
 
@@ -85,26 +87,26 @@ def send(cursor, user, ctx, agent, data, *, connection_name=None):
                       AND id=%s AND active AND kind='notifications'""", [tenant, space, agent])
     agent_row = cursor.fetchone()
     if not agent_row:
-        raise ValueError("Agente de notificações indisponível.")
+        raise ValueError(translate_text("Agente de notificações indisponível."))
     cursor.execute("""SELECT role FROM hub_tenancy.memberships
                       WHERE tenant_id=%s AND user_id=%s AND active""", [tenant, ctx["principal"]])
     role = cursor.fetchone()
     if not role or role[0]=="viewer":
-        raise ValueError("Seu papel não permite enviar avisos.")
+        raise ValueError(translate_text("Seu papel não permite enviar avisos."))
     try:
         run = UUID(str(data.get("request_id","")))
     except (ValueError, TypeError):
-        raise ValueError("Identificador de envio inválido.") from None
+        raise ValueError(translate_text("Identificador de envio inválido.")) from None
     message = data.get("mensagem")
     if not isinstance(message,str) or not 1 <= len(message.strip()) <= 2000:
-        raise ValueError("Informe uma mensagem de até 2.000 caracteres.")
+        raise ValueError(translate_text("Informe uma mensagem de até 2.000 caracteres."))
     message = message.strip()
     binding, address, name, saved_id = resolve_recipient(cursor, tenant, space, agent, data, ctx.get("spaces"))
     channel = binding.channel
     try:
         config = json.loads(cipher().decrypt(bytes(binding.encrypted)))
     except InvalidToken:
-        raise ValueError("O administrador precisa salvar novamente a credencial deste canal.") from None
+        raise ValueError(translate_text("O administrador precisa salvar novamente a credencial deste canal.")) from None
     fingerprint = hashlib.sha256(json.dumps([channel, saved_id, address, message]).encode()).hexdigest()
     label = f"{CHANNELS[channel][0]} · {name}"
     cursor.execute("""INSERT INTO hub_tenancy.agent_runs
@@ -131,7 +133,7 @@ def send(cursor, user, ctx, agent, data, *, connection_name=None):
             [run,tenant,space,agent,ctx["principal"],fingerprint])
         prior = cursor.fetchone()
         if not prior:
-            raise ValueError("Identificador de envio já utilizado. Confira o histórico.")
+            raise ValueError(translate_text("Identificador de envio já utilizado. Confira o histórico."))
         return {"id":str(run),"estado":prior[0],"resultado":prior[1]}
     return {"id":str(run),"estado":"registrado","destino":name}
 
@@ -183,7 +185,7 @@ def configure(request, tenant, space, agent):
                 NotificationDestination.objects.filter(channel=current,pk=request.POST["destination"]).delete()
                 return redirect("notification_config",tenant,space,agent)
             elif action not in ("settings","destination") or (action=="destination" and not current):
-                return HttpResponseBadRequest("Ação indisponível.")
+                return HttpResponseBadRequest(translate_text("Ação indisponível."))
         ctx.update(settings=settings,dest_form=dest_form,current=current,
                    targets=NotificationDestination.objects.filter(channel=current).order_by("name") if current else [])
     return render(request,"notification_config.html",ctx,status=400 if settings.errors or dest_form.errors else 200)

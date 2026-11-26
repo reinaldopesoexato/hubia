@@ -1,29 +1,30 @@
-<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+{% load i18n %}<!doctype html>
+{% get_current_language as current_language %}<html lang="{{ current_language }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64">
 <link rel="icon" type="image/png" sizes="512x512" href="/hub-ia.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<title>{% block title %}Minha conta{% endblock %} · HUB IA</title>
+<title>{% block title %}{% translate "Minha conta" %}{% endblock %} · HUB IA</title>
 <style>{% include "portal.css" %}</style>{% block head %}{% endblock %}</head>
 <body class="{% if request.user.is_authenticated %}signed-in{% else %}signed-out{% endif %}">
-{% include "icons.html" %}<a href="#conteudo" class="skip">Pular para o conteúdo</a>
+{% include "icons.html" %}<a href="#conteudo" class="skip">{% translate "Pular para o conteúdo" %}</a>
 {% if request.user.is_authenticated %}
 <aside class="rail">
-<a class="brand" href="{% url 'dashboard' %}" aria-label="HUB IA, painel"><img class="brand-logo" src="/hub-ia.png" width="76" height="76" alt="HUB IA"></a>
-<nav class="rail-nav" aria-label="Navegação principal">
-<a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>{% include "icon.html" with name="grid" %}Visão geral</a>
-<a href="{% url 'my_spaces' %}" {% if request.resolver_match.url_name == 'my_spaces' %}aria-current="page"{% elif workspace %}class="selected"{% endif %}>{% include "icon.html" with name="layers" %}Meus espaços</a>
-<a href="{% url 'ai_workspaces' %}" {% if request.resolver_match.url_name == 'ai_workspaces' %}aria-current="page"{% endif %}>{% include "icon.html" with name="layers" %}Espaços das minhas IAs</a>
-{% if is_owner %}<a href="{% url 'administration' %}" {% if request.resolver_match.url_name == 'administration' or request.resolver_match.url_name == 'people' or request.resolver_match.url_name == 'platform_email' or institution_editor %}class="selected"{% endif %}>{% include "icon.html" with name="shield" %}Administração</a>{% endif %}
+<a class="brand" href="{% url 'dashboard' %}" aria-label="{% translate "HUB IA, painel" %}"><img class="brand-logo" src="/hub-ia.png" width="76" height="76" alt="HUB IA"></a>
+<nav class="rail-nav" aria-label="{% translate "Navegação principal" %}">
+<a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>{% include "icon.html" with name="grid" %}{% translate "Visão geral" %}</a>
+<a href="{% url 'my_spaces' %}" {% if request.resolver_match.url_name == 'my_spaces' %}aria-current="page"{% elif workspace %}class="selected"{% endif %}>{% include "icon.html" with name="layers" %}{% translate "Meus espaços" %}</a>
+<a href="{% url 'ai_workspaces' %}" {% if request.resolver_match.url_name == 'ai_workspaces' %}aria-current="page"{% endif %}>{% include "icon.html" with name="layers" %}{% translate "Espaços das minhas IAs" %}</a>
+{% if is_owner %}<a href="{% url 'administration' %}" {% if request.resolver_match.url_name == 'administration' or request.resolver_match.url_name == 'people' or request.resolver_match.url_name == 'platform_email' or institution_editor %}class="selected"{% endif %}>{% include "icon.html" with name="shield" %}{% translate "Administração" %}</a>{% endif %}
 </nav>
-<div class="rail-foot"><a href="{% url 'password' %}">{% include "icon.html" with name="key" %}Alterar senha</a>
-<form action="/conta/sair/" method="post">{% csrf_token %}<button>{% include "icon.html" with name="logout" %}Sair</button></form></div>
+<div class="rail-foot"><a href="{% url 'edit_profile' %}" {% if request.resolver_match.url_name == 'edit_profile' %}aria-current="page"{% endif %}>{% include "icon.html" with name="user" %}{% translate "Editar perfil" %}</a>
+<a href="{% url 'password' %}">{% include "icon.html" with name="key" %}{% translate "Alterar senha" %}</a>
+<form action="/conta/sair/" method="post">{% csrf_token %}<button>{% include "icon.html" with name="logout" %}{% translate "Sair" %}</button></form></div>
 </aside>
 {% endif %}
 <div class="surface">
 {% if request.user.is_authenticated %}
-<header class="top"><span><b>HUB IA</b><i>/</i>{% if workspace %}{{ workspace }}{% elif request.resolver_match.url_name == 'people' or request.resolver_match.url_name == 'administration' or request.resolver_match.url_name == 'platform_email' or institution_editor %}Administração{% elif request.resolver_match.url_name == 'password' %}Conta{% else %}Painel{% endif %}</span>
-<div class="identity"><span class="avatar">{{ request.user.username|slice:":1"|upper }}</span><strong>{{ request.user.get_full_name|default:request.user.username }}</strong></div></header>
-{% else %}<header class="login-brand"><a class="brand" href="/"><img class="brand-logo" src="/hub-ia.png" width="76" height="76" alt="HUB IA"></a></header>{% endif %}
+<header class="top"><span><b>HUB IA</b><i>/</i>{% if workspace %}{{ workspace }}{% elif request.resolver_match.url_name == 'people' or request.resolver_match.url_name == 'administration' or request.resolver_match.url_name == 'platform_email' or institution_editor %}{% translate "Administração" %}{% elif request.resolver_match.url_name == 'password' %}{% translate "Conta" %}{% else %}{% translate "Painel" %}{% endif %}</span>
+{% include "language_selector.html" %}<a class="identity" href="{% url 'edit_profile' %}" aria-label="{% translate "Editar perfil" %}" title="{% translate "Editar perfil" %}">{% include "avatar.html" %}<strong>{{ request.user.get_full_name|default:request.user.username }}</strong></a></header>
+{% else %}<header class="login-brand"><a class="brand" href="/"><img class="brand-logo" src="/hub-ia.png" width="76" height="76" alt="HUB IA"></a>{% include "language_selector.html" %}</header>{% endif %}
 <main id="conteudo" class="{% block layout %}form-page{% endblock %}">{% block body %}{% endblock %}</main>
 </div></body></html>

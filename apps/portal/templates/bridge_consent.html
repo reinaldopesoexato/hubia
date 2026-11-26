@@ -1,12 +1,12 @@
-{% extends "base.html" %}{% block title %}Autorizar conexão{% endblock %}{% block body %}
-<h1>Autorizar conexão</h1>{% if error %}<p role="alert">Solicitação inválida. {{ error.description }}</p>{% else %}
-<p><strong>{{ application.name }}</strong> {% if email_only %}solicita acesso ao seu e-mail em {{ organization }}.{% else %}solicita acesso em seu nome a {{ organization }} · {% if all_spaces %}todos os espaços atuais e futuros aos quais você tiver acesso{% elif spaces %}{{ spaces.values|join:", " }}{% else %}{{ workspace }}{% endif %}.{% endif %}</p>
-{% if email_only %}<p>Escolha as permissões desta IA para sua caixa institucional.</p>{% else %}<ul>{% for permission in scopes_descriptions %}<li>{{ permission }}</li>{% endfor %}</ul>{% endif %}
+{% extends "base.html" %}{% load i18n %}{% block title %}{% translate "Autorizar conexão" %}{% endblock %}{% block body %}
+<h1>{% translate "Autorizar conexão" %}</h1>{% if error %}<p role="alert">{% translate "Solicitação inválida." %} {{ error.description }}</p>{% else %}
+<p><strong>{{ application.name }}</strong> {% if email_only %}{% translate "solicita acesso ao seu e-mail em" %} {{ organization }}.{% else %}{% translate "solicita acesso em seu nome a" %} {{ organization }} · {% if all_spaces %}{% translate "todos os espaços atuais e futuros aos quais você tiver acesso" %}{% elif spaces %}{{ spaces.values|join:", " }}{% else %}{{ workspace }}{% endif %}.{% endif %}</p>
+{% if email_only %}<p>{% translate "Escolha as permissões desta IA para sua caixa institucional." %}</p>{% else %}<ul>{% for permission in scopes_descriptions %}<li>{% translate permission %}</li>{% endfor %}</ul>{% endif %}
 <form method="post">{% csrf_token %}{% for field in form.hidden_fields %}{{ field }}{% endfor %}
 {% if hub_workspace %}<input type="hidden" name="hub_workspace" value="{{ hub_workspace }}">{% endif %}
 {% if mailbox_offer %}<input type="hidden" name="mailbox_offer" value="{{ mailbox_offer.pk }}">
-<label><input type="checkbox" name="allow_mail" checked> Permitir que esta IA leia minha caixa de entrada ({{ mailbox_offer.address }})</label>{% endif %}
+<label><input type="checkbox" name="allow_mail" checked> {% translate "Permitir que esta IA leia minha caixa de entrada (" %}{{ mailbox_offer.address }})</label>{% endif %}
 {% if send_box %}<input type="hidden" name="mail_send_offer" value="{{ send_nonce }}">
-<label><input type="checkbox" name="allow_mail_send"{% if send_enabled %} checked{% endif %}> Permitir que esta IA envie e-mails em meu nome e edite a assinatura usada pelas IAs ({{ send_box.address }})</label>{% endif %}
-{% if not email_only or mailbox_offer or send_box %}<p>Você pode ajustar o acesso desta conexão em <a href="{% url 'ai_workspaces' %}">Espaços das minhas IAs</a>.</p>{% endif %}
-<button name="allow" value="Autorizar">Autorizar</button><button type="submit">Recusar</button></form>{% endif %}{% endblock %}
+<label><input type="checkbox" name="allow_mail_send"{% if send_enabled %} checked{% endif %}> {% translate "Permitir que esta IA envie e-mails em meu nome e edite a assinatura usada pelas IAs (" %}{{ send_box.address }})</label>{% endif %}
+{% if not email_only or mailbox_offer or send_box %}<p>{% translate "Você pode ajustar o acesso desta conexão em" %} <a href="{% url 'ai_workspaces' %}">{% translate "Espaços das minhas IAs" %}</a>.</p>{% endif %}
+<button name="allow" value="Autorizar">{% translate "Autorizar" %}</button><button type="submit">{% translate "Recusar" %}</button></form>{% endif %}{% endblock %}

@@ -5,6 +5,9 @@ SECRET_KEY = os.environ["PORTAL_SESSION_SECRET"]
 ALLOWED_HOSTS = ["hubia.psxt.io"]
 ROOT_URLCONF = "views"
 LANGUAGE_CODE = "pt-br"
+LANGUAGES = [("pt-br", "Português"), ("en", "English"), ("es", "Español")]
+LANGUAGE_COOKIE_NAME = "hubia_language"
+LOCALE_PATHS = [Path(__file__).parent / "locale"]
 USE_TZ = True
 TIME_ZONE = "America/Sao_Paulo"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -16,13 +19,14 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "languages.AccountLocaleMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
     "APP_DIRS": True,
     "DIRS": [Path(__file__).parent / "templates"],
-    "OPTIONS": {"context_processors": ["django.template.context_processors.request"]},
+    "OPTIONS": {"context_processors": ["django.template.context_processors.request", "profile_photos.photo_context"]},
 }]
 DATABASES = {"default": {
     "ENGINE": "django.db.backends.postgresql", "NAME": "hubia",

@@ -1,4 +1,4 @@
-<form action="{% url 'google_start' %}" method="post">
+{% load i18n %}<form action="{% url 'google_start' %}" method="post">
   {% csrf_token %}
   {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
   <button class="auth-google" type="submit"{% if not google_enabled %} disabled{% endif %}>
@@ -8,6 +8,6 @@
       <path fill="#FBBC05" d="M10.53 28.59a14.45 14.45 0 0 1 0-9.18l-7.98-6.19a23.96 23.96 0 0 0 0 21.56l7.98-6.19z"/>
       <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.18 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
     </svg>
-    <span>Continuar com Google</span>
+    <span>{% translate "Continuar com Google" %}</span>
   </button>
 </form>

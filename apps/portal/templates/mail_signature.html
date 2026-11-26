@@ -1,34 +1,34 @@
-<section aria-labelledby="signature-title">
-  <h2 id="signature-title">Assinatura dos e-mails enviados por IA</h2>
-  <p>O HUB acrescenta esta assinatura somente aos e-mails que suas IAs enviam por <strong>{{ box.address }}</strong>. Seu webmail e seus aplicativos de e-mail continuam usando as próprias assinaturas.</p>
-  <p>Você pode editar aqui ou pedir a uma IA com permissão de envio. A alteração vale para todas as IAs que usam esta caixa. Para remover a assinatura, apague o conteúdo e salve.</p>
+{% load i18n %}<section aria-labelledby="signature-title">
+  <h2 id="signature-title">{% translate "Assinatura dos e-mails enviados por IA" %}</h2>
+  <p>{% translate "O HUB acrescenta esta assinatura somente aos e-mails que suas IAs enviam por" %} <strong>{{ box.address }}</strong>{% translate ". Seu webmail e seus aplicativos de e-mail continuam usando as próprias assinaturas." %}</p>
+  <p>{% translate "Você pode editar aqui ou pedir a uma IA com permissão de envio. A alteração vale para todas as IAs que usam esta caixa. Para remover a assinatura, apague o conteúdo e salve." %}</p>
   {{ box.signature_html|json_script:"stored-mail-signature" }}
   <form id="mail-signature" method="post">
     {% csrf_token %}
     <input type="hidden" name="action" value="signature">
     <input type="hidden" name="mailbox" value="{{ box.pk }}">
     <input type="hidden" name="revision" value="{{ signature_revision }}">
-    <div class="signature-modes" hidden role="group" aria-label="Modo de edição">
-      <button type="button" data-mode="visual">Editor visual</button>
-      <button type="button" data-mode="html">Código HTML</button>
+    <div class="signature-modes" hidden role="group" aria-label="{% translate "Modo de edição" %}">
+      <button type="button" data-mode="visual">{% translate "Editor visual" %}</button>
+      <button type="button" data-mode="html">{% translate "Código HTML" %}</button>
     </div>
     <div id="signature-visual" hidden>
-      <div class="signature-format" role="group" aria-label="Formatação">
-        <button type="button" data-command="bold" aria-label="Negrito"><b>N</b></button>
-        <button type="button" data-command="italic" aria-label="Itálico"><i>I</i></button>
-        <button type="button" data-command="underline" aria-label="Sublinhado"><u>S</u></button>
-        <button type="button" data-command="insertUnorderedList">Lista</button>
-        <button type="button" data-command="createLink">Link</button>
+      <div class="signature-format" role="group" aria-label="{% translate "Formatação" %}">
+        <button type="button" data-command="bold" aria-label="{% translate "Negrito" %}"><b>{% translate "N" %}</b></button>
+        <button type="button" data-command="italic" aria-label="{% translate "Itálico" %}"><i>{% translate "I" %}</i></button>
+        <button type="button" data-command="underline" aria-label="{% translate "Sublinhado" %}"><u>{% translate "S" %}</u></button>
+        <button type="button" data-command="insertUnorderedList">{% translate "Lista" %}</button>
+        <button type="button" data-command="createLink">{% translate "Link" %}</button>
       </div>
-      <div id="signature-editor" contenteditable="true" role="textbox" aria-label="Editar assinatura formatada" aria-multiline="true"></div>
+      <div id="signature-editor" contenteditable="true" role="textbox" aria-label="{% translate "Editar assinatura formatada" %}" aria-multiline="true"></div>
     </div>
     <div id="signature-source">
-      <label for="signature-html">Código HTML da assinatura</label>
+      <label for="signature-html">{% translate "Código HTML da assinatura" %}</label>
       <textarea id="signature-html" name="signature_html" rows="6" maxlength="6000" spellcheck="false">{{ signature_source }}</textarea>
-      <small>Até 6.000 caracteres. Use parágrafos, quebras de linha, negrito, itálico, sublinhado, listas e links HTTPS, de e-mail ou telefone.</small>
+      <small>{% translate "Até 6.000 caracteres. Use parágrafos, quebras de linha, negrito, itálico, sublinhado, listas e links HTTPS, de e-mail ou telefone." %}</small>
     </div>
-    <button type="submit">Salvar assinatura</button>
-    <span role="status" aria-live="polite" id="signature-status">{% if signature_saved %}Assinatura salva.{% endif %}</span>
+    <button type="submit">{% translate "Salvar assinatura" %}</button>
+    <span role="status" aria-live="polite" id="signature-status">{% if signature_saved %}{% translate "Assinatura salva." %}{% endif %}</span>
   </form>
 </section>
 <style>
@@ -65,15 +65,15 @@
     try {
       const response = await fetch(form.action, {method: 'POST', body: data, mode: 'same-origin'});
       if (!response.headers.get('content-type')?.includes('application/json')) {
-        throw new Error('Reabra Meu e-mail para validar sua sessão.');
+        throw new Error('{% translate "Reabra Meu e-mail para validar sua sessão." as js_label %}{{ js_label|escapejs }}');
       }
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Confira o código HTML.');
+      if (!response.ok) throw new Error(result.error || '{% translate "Confira o código HTML." as js_label %}{{ js_label|escapejs }}');
       if (draft !== source.value) return;
       editor.innerHTML = result.html;
       setMode(true);
     } catch (error) {
-      status.textContent = error.message || 'Não foi possível abrir o editor visual.';
+      status.textContent = error.message || '{% translate "Não foi possível abrir o editor visual." as js_label %}{{ js_label|escapejs }}';
     }
   }
   for (const button of buttons) {
@@ -98,13 +98,13 @@
       let value = null;
       if (command === 'createLink') {
         if (!window.getSelection().toString()) {
-          status.textContent = 'Selecione o texto que deseja transformar em link.';
+          status.textContent = '{% translate "Selecione o texto que deseja transformar em link." as js_label %}{{ js_label|escapejs }}';
           return;
         }
-        value = window.prompt('Endereço do link (https://, mailto: ou tel:)');
+        value = window.prompt('{% translate "Endereço do link (https://, mailto: ou tel:)" as js_label %}{{ js_label|escapejs }}');
         if (!value) return;
         if (!/^(https:\/\/|mailto:|tel:)/i.test(value)) {
-          status.textContent = 'Use um link HTTPS, de e-mail ou telefone.';
+          status.textContent = '{% translate "Use um link HTTPS, de e-mail ou telefone." as js_label %}{{ js_label|escapejs }}';
           return;
         }
       }

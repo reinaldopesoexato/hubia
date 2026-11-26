@@ -5,6 +5,7 @@ import secrets
 from base64 import b64decode
 from binascii import Error as Base64Error
 from urllib.parse import urlsplit, parse_qs, unquote_plus
+from django.utils.translation import gettext
 from django.contrib.auth.views import redirect_to_login
 from django.db import connection, transaction
 from django.http import Http404, JsonResponse
@@ -139,7 +140,7 @@ def pick_workspace(request, client_id, selected, *, email_only=False):
             rows = cursor.fetchall()
             if not rows:
                 continue
-            organization = rows[0][2] or "Espaço pessoal"
+            organization = rows[0][2] or gettext("Espaço pessoal")
             all_key = f"{tenant}:all"
             choices[all_key] = (tenant, rows[0][0], organization)
             groups.append((all_key, email_title(organization) if email_only else organization))

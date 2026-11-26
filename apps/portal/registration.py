@@ -12,6 +12,9 @@ from uuid import uuid4
 
 import jwt
 from django import forms
+from django.utils.translation import gettext as translate_text
+from django.utils import translation
+from django.utils.translation import gettext_lazy as tr
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.forms import AuthenticationForm, UsernameField
@@ -32,6 +35,9 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from auth_limits import allow_auth_attempt
+from profile_photos import google_photo_url
+from bridge.models import ProfilePhoto
 from bridge.models import AccountProfile, PendingRegistration, PlatformMailSettings
 from bridge.platform_email import MailUnavailable
 from portal_identity import bind_account
@@ -53,7 +59,7 @@ def lock_google_subject(subject):
 
 
 class EmailLoginForm(AuthenticationForm):
-    username = UsernameField(max_length=254, label="Usuário ou e-mail")
+    username = UsernameField(max_length=254, label=tr("Usuário ou e-mail"))
 
     def clean(self):
         identifier = self.cleaned_data.get('username', '')
@@ -66,18 +72,18 @@ class EmailLoginForm(AuthenticationForm):
 
 
 class RegistrationForm(forms.Form):
-    name = forms.CharField(label='Nome', max_length=150, widget=forms.TextInput(attrs={'autocomplete':'name'}))
-    email = forms.EmailField(label='E-mail', max_length=254, widget=forms.EmailInput(attrs={'autocomplete':'email'}))
-    phone = forms.RegexField(label='Telefone', max_length=32, regex=r'^\+?[\d() .-]{7,32}$',
+    name = forms.CharField(label=tr('Nome'), max_length=150, widget=forms.TextInput(attrs={'autocomplete':'name'}))
+    email = forms.EmailField(label=tr('E-mail'), max_length=254, widget=forms.EmailInput(attrs={'autocomplete':'email'}))
+    phone = forms.RegexField(label=tr('Telefone'), max_length=32, regex=r'^\+?[\d() .-]{7,32}$',
                             widget=forms.TextInput(attrs={'type':'tel','autocomplete':'tel'}))
-    company = forms.CharField(label='Empresa', max_length=150, widget=forms.TextInput(attrs={'autocomplete':'organization'}))
-    password = forms.CharField(label='Senha', min_length=12, max_length=256, strip=False,
+    company = forms.CharField(label=tr('Empresa'), max_length=150, widget=forms.TextInput(attrs={'autocomplete':'organization'}))
+    password = forms.CharField(label=tr('Senha'), min_length=12, max_length=256, strip=False,
                                widget=forms.PasswordInput(attrs={'autocomplete':'new-password'}))
 
     def clean_phone(self):
         value = self.cleaned_data['phone']
         if not 7 <= sum(c.isdigit() for c in value) <= 15:
-            raise forms.ValidationError('Informe um telefone com DDD.')
+            raise forms.ValidationError(tr('Informe um telefone com DDD.'))
         return value
 
     def clean(self):
@@ -110,13 +116,12 @@ def page(request, **context):
 
 
 def limited(request, key, limit):
-    from views import allow_auth_attempt
     ip = request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR','')
     return not allow_auth_attempt(key, ip, limit)
 
 
 def too_many():
-    return HttpResponse('Muitas tentativas. Tente novamente em cinco minutos.',status=429)
+    return HttpResponse(translate_text('Muitas tentativas. Tente novamente em cinco minutos.'),status=429)
 
 
 def email_in_use(email):
@@ -136,14 +141,13 @@ def signup(request):
     if request.method=='POST' and form.is_valid():
         data = form.cleaned_data
         email = data['email'].lower()
-        from views import allow_auth_attempt
         if not allow_auth_attempt('signup-address',email,3):
             return too_many()
         if not activation_mail_ready():
-            form.add_error(None,'O envio de e-mails de ativação está indisponível. Tente novamente mais tarde.')
+            form.add_error(None,tr('O envio de e-mails de ativação está indisponível. Tente novamente mais tarde.'))
             return page(request,form=form,mode='signup',status=503)
         if not email_in_use(email):
-            PendingRegistration.objects.create(name=data['name'],email=email,phone=data['phone'],
+            PendingRegistration.objects.create(language=translation.get_language(),name=data['name'],email=email,phone=data['phone'],
                 company=data['company'],password_hash=make_password(data['password']),delivery_due=timezone.now())
         return page(request,mode='sent')
     return page(request,mode='signup',form=form,status=400 if form.errors else 200)
@@ -171,10 +175,12 @@ def deliver_activation(job_id=None):
     token = signing.dumps(str(pending.pk),salt=SIGNUP_SALT)
     url = ORIGIN + reverse('activate_registration',args=[token])
     try:
-        if send_mail('Ative sua conta no HUB IA da Peso Exato',
-                f'Confirme seu cadastro usando este link. Ele vale por 24 horas a partir da solicitação.\n\n{url}\n\nSe você não fez este cadastro, ignore esta mensagem.',
-                None,[pending.email]) != 1:
-            raise MailUnavailable
+        with translation.override(pending.language):
+            subject = translation.gettext("Ative sua conta no HUB IA da Peso Exato")
+            body = "\n\n".join((translation.gettext("Confirme seu cadastro usando este link. Ele vale por 24 horas a partir da solicitação."),
+                                url, translation.gettext("Se você não fez este cadastro, ignore esta mensagem.")))
+            if send_mail(subject, body, None, [pending.email]) != 1:
+                raise MailUnavailable
     except MailUnavailable:
         pending.attempts += 1
         pending.delivery_due = now + timedelta(minutes=min(60,2**min(pending.attempts,6)))
@@ -276,6 +282,7 @@ def google_callback(request):
     except (URLError,OSError,ValueError,KeyError,TypeError,ValidationError,jwt.PyJWTError):
         return page(request,mode='google',error='Não foi possível confirmar a identidade com o Google.',status=400)
     email,sub = claims['email'].lower(),claims['sub']
+    picture = google_photo_url(claims.get('picture'))
     with transaction.atomic():
         lock_google_subject(sub)
         lock_email(email)
@@ -286,11 +293,12 @@ def google_callback(request):
             matches = list(get_user_model().objects.filter(email__iexact=email,is_active=True)[:2])
             if len(matches)!=1 or not matches[0].has_usable_password():
                 return page(request,mode='google',error='Entre com o método já vinculado a esta conta.',status=403)
-            request.session['google_link'] = dict(user=matches[0].pk,sub=sub,email=email,at=time.time(),next=flow['next'])
+            request.session['google_link'] = dict(user=matches[0].pk,sub=sub,email=email,picture=picture,at=time.time(),next=flow['next'])
             return page(request,mode='link')
         else:
             user = create_personal(email,claims.get('name') or email,google_subject=sub)
             PendingRegistration.objects.filter(email__iexact=email).delete()
+        ProfilePhoto.objects.update_or_create(user=user, defaults={"google_url": picture})
     return signed_in(request,user,flow['next'])
 
 
@@ -314,5 +322,6 @@ def google_link(request):
             return page(request,mode='google',error='Esta conta já possui outro vínculo.',status=409)
         profile.google_subject = claim['sub']
         profile.save(update_fields=['google_subject'])
+        ProfilePhoto.objects.update_or_create(user=user, defaults={"google_url": claim.get("picture", "")})
         request.session.pop('google_link')
     return signed_in(request,user,claim['next'])

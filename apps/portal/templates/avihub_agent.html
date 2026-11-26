@@ -1,27 +1,27 @@
-{% extends "base.html" %}
-{% block title %}Contas AviHUB{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Contas AviHUB" %}{% endblock %}
 {% block body %}
-<nav>{% if mode == "list" %}<a href="{% url 'workspace' tenant space %}">← {{ workspace }}</a>{% else %}<a href="{{ request.path }}">← Contas vinculadas</a>{% endif %}</nav>
+<nav>{% if mode == "list" %}<a href="{% url 'workspace' tenant space %}">← {{ workspace }}</a>{% else %}<a href="{{ request.path }}">{% translate "← Contas vinculadas" %}</a>{% endif %}</nav>
 <header class="agent-heading"><div><small>{{ organization }} · {{ agent_name|default:"AviHUB" }}</small>
-<h1>{% if mode == "add" %}Incluir conta{% elif mode == "edit" %}Editar conta{% elif mode == "confirm" %}Excluir vínculos{% else %}Contas vinculadas{% endif %}</h1></div>
-{% if mode == "list" %}<a class="agent-primary" href="?nova=1">Incluir conta</a>{% endif %}</header>
-{% if error %}<p class="error agent-feedback" role="alert">{{ error }}</p>{% endif %}
-{% if notice %}<p class="agent-saved" role="status">{{ notice }}</p>{% endif %}
+<h1>{% if mode == "reset" %}{% translate "Recuperar senha do AviHUB" %}{% elif mode == "add" %}{% translate "Incluir conta" %}{% elif mode == "edit" %}{% translate "Editar conta" %}{% elif mode == "confirm" %}{% translate "Excluir vínculos" %}{% else %}{% translate "Contas vinculadas" %}{% endif %}</h1></div>
+{% if mode == "list" %}<a class="agent-primary" href="?nova=1">{% translate "Incluir conta" %}</a>{% endif %}</header>
+{% if error %}<p class="error agent-feedback" role="alert">{% translate error %}</p>{% endif %}
+{% if notice %}<p class="agent-saved" role="status">{% translate notice %}</p>{% endif %}
 
 {% if mode == "list" %}
 {% if accounts %}
-<p><a href="{% url 'dashboard' %}#configured-ai">Ir para o guia de conexão das IAs</a></p>
+<p><a href="{% url 'dashboard' %}#configured-ai">{% translate "Ir para o guia de conexão das IAs" %}</a></p>
 <form method="post" id="account-list">{% csrf_token %}
 <div class="account-toolbar">
-<label id="account-select-all" hidden><input type="checkbox"> Selecionar todas</label>
-<button class="agent-unlink" name="action" value="review_delete">Excluir selecionadas</button>
+<label id="account-select-all" hidden><input type="checkbox"> {% translate "Selecionar todas" %}</label>
+<button class="agent-unlink" name="action" value="review_delete">{% translate "Excluir selecionadas" %}</button>
 <span role="status" id="account-count"></span></div>
 <ul class="linked-accounts">
 {% for account in accounts %}<li>
 <label><input type="checkbox" name="contas" value="{{ account.account_ref }}">
 <span><strong>{{ account.account_name }}</strong><small>{% if account.label and account.email %}{{ account.email }} · {% endif %}{{ account.account_ref }}</small></span></label>
-<span class="status{% if account.ready %} done{% endif %}">{% if account.ready %}Vinculada{% else %}Aguardando código{% endif %}</span>
-<a href="?conta={{ account.account_ref }}" aria-label="Editar {{ account.account_name }} ({{ account.account_ref }})">Editar</a>
+<span class="status{% if account.ready %} done{% endif %}">{% if account.ready %}{% translate "Vinculada" %}{% else %}{% translate "Aguardando código" %}{% endif %}</span>
+<a href="?conta={{ account.account_ref }}" aria-label="Editar {{ account.account_name }} ({{ account.account_ref }})">{% translate "Editar" %}</a>
 </li>{% endfor %}</ul></form>
 <script>
 (() => {
@@ -34,7 +34,7 @@
     list.querySelector('button').disabled = count === 0;
     all.checked = count === boxes.length;
     all.indeterminate = count > 0 && count < boxes.length;
-    document.getElementById('account-count').textContent = count === 1 ? '1 selecionada' : count + ' selecionadas';
+    document.getElementById('account-count').textContent = count === 1 ? '{% translate "1 selecionada" as js_label %}{{ js_label|escapejs }}' : count + ' {% translate "selecionadas" as js_label %}{{ js_label|escapejs }}';
   }
   all.addEventListener('change', () => { for (const box of boxes) box.checked = all.checked; });
   list.addEventListener('change', update);
@@ -43,36 +43,45 @@
   update();
 })();
 </script>
-{% else %}<p class="empty">Você ainda não vinculou uma conta AviHUB nesta instituição.</p>{% endif %}
+{% else %}<p class="empty">{% translate "Você ainda não vinculou uma conta AviHUB nesta instituição." %}</p>{% endif %}
 
 {% elif mode == "confirm" %}
-<p>As contas abaixo serão desvinculadas do HUB IA. Para voltar a usá-las pelo agente, será preciso entrar novamente.</p>
+<p>{% translate "As contas abaixo serão desvinculadas do HUB IA. Para voltar a usá-las pelo agente, será preciso entrar novamente." %}</p>
 <form method="post">{% csrf_token %}
 <ul>{% for account in selected %}<li><strong>{{ account.account_name }}</strong> · {% if account.label and account.email %}{{ account.email }} · {% endif %}{{ account.account_ref }}
 <input type="hidden" name="contas" value="{{ account.account_ref }}"></li>{% endfor %}</ul>
-<div class="agent-actions"><button class="agent-unlink" name="action" value="delete">Confirmar exclusão</button><a href="{{ request.path }}">Cancelar</a></div></form>
+<div class="agent-actions"><button class="agent-unlink" name="action" value="delete">{% translate "Confirmar exclusão" %}</button><a href="{{ request.path }}">{% translate "Cancelar" %}</a></div></form>
+
+{% elif mode == "reset" %}
+<p>{% translate "Informe o e-mail da sua conta no Portal Peso Exato. O AviHUB enviará as instruções para esse endereço." %}</p>
+<form method="post">{% csrf_token %}
+<label>{% translate "E-mail do AviHUB" %}<input name="email" type="email" maxlength="254" autocomplete="email" required value="{{ request.POST.email }}"></label>
+<button name="action" value="reset_password">{% translate "Solicitar link de redefinição" %}</button></form>
+<p>{% if from_dashboard %}<a href="{% url 'dashboard' %}">{% translate "Voltar ao painel" %}</a>{% else %}<a href="?nova=1">{% translate "Voltar ao vínculo da conta" %}</a>{% endif %}</p>
 
 {% elif mode == "add" %}
-<p>Use seu login de <strong>{{ agent.origin }}</strong>. O agente poderá consultar os dados que essa conta tem permissão para acessar.</p>
+<p>{% translate "Use seu login de" %} <strong>{{ agent.origin }}</strong>{% translate ". O agente poderá consultar os dados que essa conta tem permissão para acessar." %}</p>
 <form method="post">{% csrf_token %}
-<label>Apelido da conta (opcional)<input name="apelido" maxlength="80" value="{{ request.POST.apelido }}" placeholder="Ex. Granja Norte"></label>
-<label>E-mail do AviHUB<input type="email" name="email" maxlength="254" required autocomplete="username" value="{{ request.POST.email }}"></label>
-<label>Senha do AviHUB<input type="password" name="password" required autocomplete="current-password"></label>
-<div class="agent-actions"><button name="action" value="login">Vincular conta</button><a href="{{ request.path }}">Cancelar</a></div></form>
+<label>{% translate "Apelido da conta (opcional)" %}<input name="apelido" maxlength="80" value="{{ request.POST.apelido }}" placeholder="{% translate "Ex. Granja Norte" %}"></label>
+<label>{% translate "E-mail do AviHUB" %}<input type="email" name="email" maxlength="254" required autocomplete="username" value="{{ request.POST.email }}"></label>
+<label>{% translate "Senha do AviHUB" %}<input type="password" name="password" required autocomplete="current-password"></label>
+<div class="agent-actions"><button name="action" value="login">{% translate "Vincular conta" %}</button><a href="{{ request.path }}">{% translate "Cancelar" %}</a></div></form>
+
+<p><a href="?recuperar=1{% if from_dashboard %}&amp;origem=painel{% endif %}">{% translate "Esqueci minha senha do AviHUB" %}</a></p>
 
 {% elif mode == "edit" %}
 <p><strong>{{ session.email|default:session.account_name }}</strong> · {{ session.account_ref }}</p>
 {% if not session.ready %}
-<h2>Verificar conta</h2>
+<h2>{% translate "Verificar conta" %}</h2>
 <form method="post">{% csrf_token %}<input type="hidden" name="conta" value="{{ session.account_ref }}">
-<label>Código do AviHUB<input name="code" required maxlength="64" autocomplete="one-time-code"></label>
-<button name="action" value="verify">Verificar código</button></form>
+<label>{% translate "Código do AviHUB" %}<input name="code" required maxlength="64" autocomplete="one-time-code"></label>
+<button name="action" value="verify">{% translate "Verificar código" %}</button></form>
 <form method="post">{% csrf_token %}<input type="hidden" name="conta" value="{{ session.account_ref }}">
-<button name="action" value="sms">Receber por SMS</button> <button name="action" value="whatsapp">Receber por WhatsApp</button></form>
+<button name="action" value="sms">{% translate "Receber por SMS" %}</button> <button name="action" value="whatsapp">{% translate "Receber por WhatsApp" %}</button></form>
 {% endif %}
 <form method="post">{% csrf_token %}<input type="hidden" name="conta" value="{{ session.account_ref }}">
-<label>Apelido da conta<input name="apelido" maxlength="80" value="{% if request.POST.action == 'rename' %}{{ request.POST.apelido }}{% else %}{{ session.label }}{% endif %}" placeholder="Ex. Granja Norte"></label>
-<small>Use esse nome para indicar ao agente qual conta consultar.</small>
-<div class="agent-actions"><button name="action" value="rename">Salvar alterações</button><a href="{{ request.path }}">Cancelar</a></div></form>
+<label>{% translate "Apelido da conta" %}<input name="apelido" maxlength="80" value="{% if request.POST.action == 'rename' %}{{ request.POST.apelido }}{% else %}{{ session.label }}{% endif %}" placeholder="{% translate "Ex. Granja Norte" %}"></label>
+<small>{% translate "Use esse nome para indicar ao agente qual conta consultar." %}</small>
+<div class="agent-actions"><button name="action" value="rename">{% translate "Salvar alterações" %}</button><a href="{{ request.path }}">{% translate "Cancelar" %}</a></div></form>
 {% endif %}
 {% endblock %}

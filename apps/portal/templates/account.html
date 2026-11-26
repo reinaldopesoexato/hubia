@@ -1,13 +1,13 @@
-{% extends "base.html" %}
-{% block title %}Visão geral{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Visão geral" %}{% endblock %}
 {% block layout %}dashboard{% endblock %}
 {% block body %}
-<div class="welcome"><div><h1>Visão geral</h1><p>Olá, {{ request.user.first_name|default:request.user.username }}. <span>Hoje é {{ today|date:"j" }} de {{ today|date:"F" }}.</span></p></div>
-{% if connections %}<nav class="period" aria-label="Período do painel"><a href="?dias=7" {% if period == 7 %}aria-current="true"{% endif %}>7 dias</a><a href="?dias=30" {% if period == 30 %}aria-current="true"{% endif %}>30 dias</a></nav>{% endif %}</div>
+<div class="welcome"><div><h1>{% translate "Visão geral" %}</h1><p>{% translate "Olá," %} {{ request.user.first_name|default:request.user.username }}. <span>{% blocktranslate with data=today|date:"DATE_FORMAT" %}Hoje é {{ data }}.{% endblocktranslate %}</span></p></div>
+{% if connections %}<nav class="period" aria-label="{% translate "Período do painel" %}"><a href="?dias=7" {% if period == 7 %}aria-current="true"{% endif %}>{% translate "7 dias" %}</a><a href="?dias=30" {% if period == 30 %}aria-current="true"{% endif %}>{% translate "30 dias" %}</a></nav>{% endif %}</div>
 {% if avihub_setup.ready and not connections %}
-<section class="panel setup-card" aria-labelledby="portal-linked"><h2 id="portal-linked">Portal Peso Exato vinculado</h2>
-<p><strong>Parabéns! Sua conta do AviHUB está vinculada.</strong> O próximo passo é conectar sua primeira IA à instituição Peso Exato. Escolha ChatGPT ou Gemini no guia para começar a consultar suas operações.</p>
-<a class="setup-primary" href="#configured-ai">Conectar minha primeira IA</a></section>
+<section class="panel setup-card" aria-labelledby="portal-linked"><h2 id="portal-linked">{% translate "Portal Peso Exato vinculado" %}</h2>
+<p><strong>{% translate "Parabéns! Sua conta do AviHUB está vinculada." %}</strong> {% translate "O próximo passo é conectar sua primeira IA à instituição Peso Exato. Escolha ChatGPT ou Gemini no guia para começar a consultar suas operações." %}</p>
+<a class="setup-primary" href="#configured-ai">{% translate "Conectar minha primeira IA" %}</a></section>
 {% elif avihub_setup and not avihub_setup.ready %}{% include "avihub_welcome.html" %}{% endif %}
 {% if connections %}
 <dl class="stats">
@@ -19,28 +19,28 @@
 </dl>
 <div class="overview-grid">
 {% include "workspace_list.html" %}
-{% if runs %}<section class="panel"><div class="panel-head"><h2>Consultas por dia</h2><small>{{ period }} dias</small></div>
-<ol class="chart" aria-label="Quantidade de consultas por dia">{% for bar in bars %}<li aria-label="{{ bar.day|date:'d/m' }}: {{ bar.count }}" title="{{ bar.day|date:'d/m' }} · {{ bar.count }} consulta{{ bar.count|pluralize:'s' }}"><span class="bar" style="--height:{{ bar.height|stringformat:'.2f' }}%"></span></li>{% endfor %}</ol>
+{% if runs %}<section class="panel"><div class="panel-head"><h2>{% translate "Consultas por dia" %}</h2><small>{{ period }} {% translate "dias" %}</small></div>
+<ol class="chart" aria-label="{% translate "Quantidade de consultas por dia" %}">{% for bar in bars %}<li aria-label="{{ bar.day|date:'d/m' }}: {{ bar.count }}" title="{{ bar.day|date:'d/m' }} · {{ bar.count }} {% if bar.count == 1 %}{% translate "consulta" %}{% else %}{% translate "consultas" %}{% endif %}"><span class="bar" style="--height:{{ bar.height|stringformat:'.2f' }}%"></span></li>{% endfor %}</ol>
 <div class="chart-labels" aria-hidden="true">{% for bar in bars %}<span>{% if bar.label %}{{ bar.day|date:"d" }}{% endif %}</span>{% endfor %}</div>
 </section>{% endif %}
 </div>
 {% endif %}
 <section class="panel events-panel" aria-labelledby="configured-ai">
-<div class="panel-head"><h2 id="configured-ai">Minhas IAs configuradas</h2>{% if connections %}<small>Últimos {{ period }} dias</small>{% endif %}</div>
+<div class="panel-head"><h2 id="configured-ai">{% translate "Minhas IAs configuradas" %}</h2>{% if connections %}<small>{% translate "Últimos" %} {{ period }} {% translate "dias" %}</small>{% endif %}</div>
 {% if connections %}
-<p class="ai-usage-total">{{ connections|length }} conex{{ connections|length|pluralize:"ão,ões" }} · <strong>{{ connection_queries }} consulta{{ connection_queries|pluralize:"s" }}</strong></p>
+<p class="ai-usage-total">{{ connections|length }} {% if connections|length == 1 %}{% translate "conexão" %}{% else %}{% translate "conexões" %}{% endif %} · <strong>{{ connection_queries }} {% if connection_queries == 1 %}{% translate "consulta" %}{% else %}{% translate "consultas" %}{% endif %}</strong></p>
 <ul class="workspace-list">{% for ia in connections %}<li class="space-row">
 <span class="row-name"><strong>{{ ia.name }}</strong><small>{{ ia.protocol_label }} · {{ ia.organization }}</small></span>
-<span class="ai-usage-count">{{ ia.queries }} consulta{{ ia.queries|pluralize:"s" }}</span></li>{% endfor %}</ul>
-{% else %}<p class="empty">Você ainda não configurou uma conexão de IA.</p>{% endif %}
+<span class="ai-usage-count">{{ ia.queries }} {% if ia.queries == 1 %}{% translate "consulta" %}{% else %}{% translate "consultas" %}{% endif %}</span></li>{% endfor %}</ul>
+{% else %}<p class="empty">{% translate "Você ainda não configurou uma conexão de IA." %}</p>{% endif %}
 {% include "ai_connection_guide.html" %}
 </section>
 {% if connections and latest %}
-<section class="panel events-panel"><div class="panel-head"><h2>Atividade recente</h2><small>Consultas{% if internal_mail %} e envios de e-mail{% endif %}</small></div>
+<section class="panel events-panel"><div class="panel-head"><h2>{% translate "Atividade recente" %}</h2><small>{% translate "Consultas" %}{% if internal_mail %} {% translate "e envios de e-mail" %}{% endif %}</small></div>
 <ul class="events">{% for item in latest %}<li class="event"><span class="tile">{% include "icon.html" with name=item.icon|default:"activity" %}</span>
 <span class="row-name"><strong>{% if item.agent_id %}<a href="{% url 'use_agent' item.tenant item.space_id item.agent_id %}">{{ item.agent }}</a>{% else %}{{ item.agent }}{% endif %}</strong><small>{{ item.workspace }}</small></span>
 <time datetime="{{ item.time|date:'c' }}">{{ item.time|date:"d/m · H:i" }}</time>
-<span class="status {{ item.status }}">{% if item.label %}{{ item.label }}{% elif item.status == 'done' %}Concluída{% elif item.status == 'failed' %}Falhou{% elif item.status == 'unconfirmed' %}Sem confirmação{% else %}Em execução{% endif %}</span></li>{% endfor %}</ul>
+<span class="status {{ item.status }}">{% if item.label %}{% translate item.label %}{% elif item.status == 'done' %}{% translate "Concluída" %}{% elif item.status == 'failed' %}{% translate "Falhou" %}{% elif item.status == 'unconfirmed' %}{% translate "Sem confirmação" %}{% else %}{% translate "Em execução" %}{% endif %}</span></li>{% endfor %}</ul>
 </section>
 {% endif %}
 {% endblock %}

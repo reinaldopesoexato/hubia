@@ -1,19 +1,19 @@
-{% extends "base.html" %}
-{% block title %}E-mail da plataforma{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "E-mail da plataforma" %}{% endblock %}
 {% block body %}
-<nav><a href="{% url 'administration' %}">← Administração</a></nav>
-<h1>E-mail da plataforma</h1>
-<p>Este remetente envia links de recuperação de senha e avisos do HUB IA.</p>
-{% if status %}<p role="status" class="agent-saved">{{ status }}</p>{% endif %}
-{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
-<h2>Servidor de saída</h2>
+<nav><a href="{% url 'administration' %}">{% translate "← Administração" %}</a></nav>
+<h1>{% translate "E-mail da plataforma" %}</h1>
+<p>{% translate "Este remetente envia links de recuperação de senha e avisos do HUB IA." %}</p>
+{% if status %}<p role="status" class="agent-saved">{% translate status %}</p>{% endif %}
+{% if error %}<p role="alert" class="error">{% translate error %}</p>{% endif %}
+<h2>{% translate "Servidor de saída" %}</h2>
 <form method="post">{% csrf_token %}{{ form.as_p }}
-{% if configured %}<small>Deixe a senha em branco para manter a credencial salva. Ao trocar a caixa ou o servidor, informe a senha novamente.</small>{% endif %}
-<button name="action" value="save">Salvar configuração</button></form>
+{% if configured %}<small>{% translate "Deixe a senha em branco para manter a credencial salva. Ao trocar a caixa ou o servidor, informe a senha novamente." %}</small>{% endif %}
+<button name="action" value="save">{% translate "Salvar configuração" %}</button></form>
 {% if configured %}
-<form method="post">{% csrf_token %}<button name="action" value="test">Enviar teste para {{ address }}</button></form>
-<h2>Enviar aviso importante</h2>
-<form method="post">{% csrf_token %}{{ notice_form.as_p }}<button name="action" value="notice">Enviar aviso</button></form>
+<form method="post">{% csrf_token %}<button name="action" value="test">{% translate "Enviar teste para" %} {{ address }}</button></form>
+<h2>{% translate "Enviar aviso importante" %}</h2>
+<form method="post">{% csrf_token %}{{ notice_form.as_p }}<button name="action" value="notice">{% translate "Enviar aviso" %}</button></form>
 {% endif %}
-<p><a href="{% url 'people' %}">Gerenciar e-mails de recuperação dos usuários</a></p>
+<p><a href="{% url 'people' %}">{% translate "Gerenciar e-mails de recuperação dos usuários" %}</a></p>
 {% endblock %}

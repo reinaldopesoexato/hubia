@@ -3,6 +3,8 @@ import json
 import secrets
 from uuid import UUID, uuid4
 from django import forms
+from django.utils.translation import gettext as translate_text
+from django.utils.translation import gettext_lazy as tr
 from django.contrib.auth.decorators import login_required
 from django.db import connection, transaction
 from django.http import Http404
@@ -24,14 +26,14 @@ from .network import RemoteError
 
 
 class ConnectionForm(forms.Form):
-    name = forms.CharField(label="Nome da conexão",max_length=100)
-    protocol = forms.ChoiceField(label="Tipo",choices=[
-        ("mcp","Dot ou outro cliente MCP (OAuth)"), ("mail","MCP exclusivo de e-mail (OAuth)"),("a2a","Outro agente consulta o HUB (A2A)"),
-        ("peer","HUB consulta um agente remoto (A2A)")])
-    callback = forms.URLField(label="URI de retorno OAuth do cliente MCP",required=False,assume_scheme="https")
-    card = forms.URLField(label="URL do Agent Card remoto",required=False,assume_scheme="https")
-    token = forms.CharField(label="Bearer do agente remoto, se exigido",required=False,max_length=2048,widget=forms.PasswordInput)
-    writable = forms.BooleanField(label="Permitir que o cliente MCP responda às minhas tarefas",required=False)
+    name = forms.CharField(label=tr("Nome da conexão"),max_length=100)
+    protocol = forms.ChoiceField(label=tr("Tipo"),choices=[
+        ("mcp",tr("Dot ou outro cliente MCP (OAuth)")), ("mail",tr("MCP exclusivo de e-mail (OAuth)")),("a2a",tr("Outro agente consulta o HUB (A2A)")),
+        ("peer",tr("HUB consulta um agente remoto (A2A)"))])
+    callback = forms.URLField(label=tr("URI de retorno OAuth do cliente MCP"),required=False,assume_scheme="https")
+    card = forms.URLField(label=tr("URL do Agent Card remoto"),required=False,assume_scheme="https")
+    token = forms.CharField(label=tr("Bearer do agente remoto, se exigido"),required=False,max_length=2048,widget=forms.PasswordInput)
+    writable = forms.BooleanField(label=tr("Permitir que o cliente MCP responda às minhas tarefas"),required=False)
 
     def __init__(self, *args, internal_mail=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,7 +48,7 @@ class ConnectionForm(forms.Form):
             try:
                 https_url(data.get(field,""))
             except ValueError:
-                self.add_error(field,"Informe a URL HTTPS exata informada pelo serviço.")
+                self.add_error(field,translate_text("Informe a URL HTTPS exata informada pelo serviço."))
         return data
 
 
@@ -103,7 +105,7 @@ def integrations(request, tenant, space):
                 form = ConnectionForm(request.POST, internal_mail=internal_mail)
                 if form.is_valid():
                     if viewer and (form.cleaned_data["writable"] or form.cleaned_data["protocol"]=="peer"):
-                        form.add_error(None,"Seu papel permite somente consultas.")
+                        form.add_error(None,translate_text("Seu papel permite somente consultas."))
                     else:
                         created_link,secret=create_connection(request.user,tenant,space,form.cleaned_data)
                         if not secret:
@@ -135,7 +137,7 @@ def integrations(request, tenant, space):
                         if not remote_task:
                             return redirect("integrations",tenant,space)
                     else:
-                        error="Informe uma tarefa de até 2.000 caracteres."
+                        error=translate_text("Informe uma tarefa de até 2.000 caracteres.")
                 elif action=="poll" and link.protocol=="peer":
                     try:
                         ticket=Ticket.objects.get(link=link,pk=UUID(request.POST.get("ticket","")),state__in=["waiting","attention"])

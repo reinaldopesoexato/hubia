@@ -1,23 +1,23 @@
-<details class="connection-guide" {% if not connections %}open{% endif %}>
-  <summary>Como conectar minha IA</summary>
-  <p>Use o endereço do servidor MCP do HUB IA na configuração do conector.</p>
-  <label for="guide-mcp-url">Endereço do servidor MCP</label>
+{% load i18n %}<details class="connection-guide" {% if not connections %}open{% endif %}>
+  <summary>{% translate "Como conectar minha IA" %}</summary>
+  <p>{% translate "Use o endereço do servidor MCP do HUB IA na configuração do conector." %}</p>
+  <label for="guide-mcp-url">{% translate "Endereço do servidor MCP" %}</label>
   <div class="setup-address"><input id="guide-mcp-url" value="{{ mcp_url }}" readonly>
-    <button type="button" id="guide-copy-url" hidden>Copiar endereço</button></div>
+    <button type="button" id="guide-copy-url" hidden>{% translate "Copiar endereço" %}</button></div>
   <small role="status" id="guide-copy-status"></small>
   <details><summary>ChatGPT</summary>
-    <ol><li>Abra a área de aplicativos ou conectores do ChatGPT e adicione um servidor MCP personalizado.</li>
-      <li>Cole o endereço acima e escolha <strong>OAuth</strong>. O cadastro automático conecta seu espaço pessoal.</li>
-      <li>Para conectar um espaço da Peso Exato, use o <strong>Cadastro manual de conexão</strong> {% if avihub_setup %}em <a href="{{ avihub_setup.integrations }}#cadastro-manual">Minhas integrações</a>{% else %}em <strong>Minhas integrações</strong> do espaço desejado em <a href="{% url 'my_spaces' %}">Meus espaços</a>{% endif %}. Selecione MCP e informe a URI de retorno exibida pelo ChatGPT. Copie o Client ID e o segredo gerados para os campos correspondentes no ChatGPT.</li>
-      <li>Conclua a conexão, entre no HUB IA e autorize o acesso.</li></ol>
+    <ol><li>{% translate "Abra a área de aplicativos ou conectores do ChatGPT e adicione um servidor MCP personalizado." %}</li>
+      <li>{% translate "Cole o endereço acima e escolha" %} <strong>OAuth</strong>{% translate ". O cadastro automático conecta seu espaço pessoal." %}</li>
+      <li>{% translate "Para conectar um espaço da Peso Exato, use o" %} <strong>{% translate "Cadastro manual de conexão" %}</strong> {% if avihub_setup %}{% translate "em" %} <a href="{{ avihub_setup.integrations }}#cadastro-manual">{% translate "Minhas integrações" %}</a>{% else %}{% translate "em" %} <strong>{% translate "Minhas integrações" %}</strong> {% translate "do espaço desejado em" %} <a href="{% url 'my_spaces' %}">{% translate "Meus espaços" %}</a>{% endif %}{% translate ". Selecione MCP e informe a URI de retorno exibida pelo ChatGPT. Copie o Client ID e o segredo gerados para os campos correspondentes no ChatGPT." %}</li>
+      <li>{% translate "Conclua a conexão, entre no HUB IA e autorize o acesso." %}</li></ol>
   </details>
   <details><summary>Gemini</summary>
-    <ol><li>Em <strong>Customize → Connectors</strong>, crie um aplicativo personalizado e cole o endereço MCP acima.</li>
-      <li>Deixe Client ID e Client secret em branco e inicie a conexão. Entre no HUB IA e, se houver uma escolha de instituição, selecione a que deseja consultar.</li>
-      <li>Revise as permissões e selecione <strong>Autorizar</strong>.</li></ol>
+    <ol><li>{% translate "Em" %} <strong>{% translate "Customize → Connectors" %}</strong>{% translate ", crie um aplicativo personalizado e cole o endereço MCP acima." %}</li>
+      <li>{% translate "Deixe Client ID e Client secret em branco e inicie a conexão. Entre no HUB IA e, se houver uma escolha de instituição, selecione a que deseja consultar." %}</li>
+      <li>{% translate "Revise as permissões e selecione" %} <strong>{% translate "Autorizar" %}</strong>.</li></ol>
   </details>
-  <p>Para testar, peça à IA: <em>“Liste os agentes disponíveis no meu espaço.”</em>
-    Você pode ajustar as permissões em <a href="{% url 'ai_workspaces' %}">Espaços das minhas IAs</a>.</p>
+  <p>{% translate "Para testar, peça à IA:" %} <em>{% translate "“Liste os agentes disponíveis no meu espaço.”" %}</em>
+    {% translate "Você pode ajustar as permissões em" %} <a href="{% url 'ai_workspaces' %}">{% translate "Espaços das minhas IAs" %}</a>.</p>
 </details>
 <script>
 (() => {
@@ -28,11 +28,11 @@
     const status = document.getElementById('guide-copy-status');
     try {
       await navigator.clipboard.writeText(field.value);
-      status.textContent = 'Endereço copiado.';
+      status.textContent = '{% translate "Endereço copiado." as js_label %}{{ js_label|escapejs }}';
     } catch {
       field.focus();
       field.select();
-      status.textContent = 'Endereço selecionado. Use o comando Copiar do seu dispositivo.';
+      status.textContent = '{% translate "Endereço selecionado. Use o comando Copiar do seu dispositivo." as js_label %}{{ js_label|escapejs }}';
     }
   });
 })();

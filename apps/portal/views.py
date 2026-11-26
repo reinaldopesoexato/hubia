@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from django.utils.translation import gettext as translate_text
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import (LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView,
@@ -9,7 +10,7 @@ from django.db import DatabaseError, connection, transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import path
-from django.utils.crypto import salted_hmac
+from auth_limits import allow_auth_attempt
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from django.utils.text import slugify
@@ -23,22 +24,12 @@ from bridge.models import AccountProfile, CatalogAlerts, LibraryAccess, Link, No
 from bridge.catalog_alerts import cancel_pending
 from dashboard import accessible_tenants, agent_directory, overview, tenant_workspaces
 import registration
+from languages import choose_language
+from profile_photos import edit_profile, profile_photo
 from account_admin import people, edit_person
 from portal_identity import bind_account
 from bridge.notifications import configure as notification_config
 from space_views import configure_model, manage_agents, manage_member, use_agent, workspace
-
-
-def allow_auth_attempt(namespace, identifier, limit):
-    key = salted_hmac(namespace, identifier).hexdigest()
-    with connection.cursor() as cursor:
-        cursor.execute("DELETE FROM login_limits WHERE started_at < now() - interval '5 minutes'")
-        cursor.execute("""
-            INSERT INTO login_limits (source) VALUES (%s)
-            ON CONFLICT (source) DO UPDATE SET attempts = login_limits.attempts + 1
-            WHERE login_limits.attempts < %s RETURNING attempts
-        """, [key, limit])
-        return cursor.fetchone() is not None
 
 
 class PortalLogin(LoginView):
@@ -53,7 +44,7 @@ class PortalLogin(LoginView):
     def post(self, request, *args, **kwargs):
         source = request.META.get("HTTP_X_REAL_IP", request.META["REMOTE_ADDR"])
         if not allow_auth_attempt("portal-login", source, 20):
-            return HttpResponse("Muitas tentativas. Aguarde cinco minutos.", status=429,
+            return HttpResponse(translate_text("Muitas tentativas. Aguarde cinco minutos."), status=429,
                                 headers={"Retry-After": "300"})
         return super().post(request, *args, **kwargs)
 
@@ -65,11 +56,11 @@ class PortalReset(PasswordResetView):
 
     def form_valid(self, form):
         if not platform_email.PlatformMailSettings.objects.filter(pk=1).exclude(encrypted_password=b"").exists():
-            form.add_error(None, "A recuperação por e-mail está indisponível. Entre em contato com a administração do HUB IA.")
+            form.add_error(None, translate_text("A recuperação por e-mail está indisponível. Entre em contato com a administração do HUB IA."))
             return self.form_invalid(form)
         source = self.request.META.get("HTTP_X_REAL_IP", self.request.META["REMOTE_ADDR"])
         if not allow_auth_attempt("portal-reset-source", source, 10):
-            return HttpResponse("Muitas tentativas. Aguarde cinco minutos.", status=429, headers={"Retry-After": "300"})
+            return HttpResponse(translate_text("Muitas tentativas. Aguarde cinco minutos."), status=429, headers={"Retry-After": "300"})
         if not allow_auth_attempt("portal-reset-email", form.cleaned_data["email"].casefold(), 2):
             return redirect(self.success_url)
         return super().form_valid(form)
@@ -84,10 +75,10 @@ def account(request):
         principal, is_owner = bind_account(cursor, request.user)
         if principal is None:
             logout(request)
-            return HttpResponse("O acesso desta conta está desativado.", status=403)
+            return HttpResponse(translate_text("O acesso desta conta está desativado."), status=403)
         if request.method == "POST":
             if request.POST.get("action") != "defer_avihub":
-                return HttpResponse("Opção de configuração inválida.", status=400)
+                return HttpResponse(translate_text("Opção de configuração inválida."), status=400)
             AccountProfile.objects.update_or_create(user=request.user, defaults={"avihub_setup_deferred": True})
             return redirect("dashboard")
         context = overview(cursor, principal, period, request.user.pk)
@@ -119,7 +110,7 @@ def active_agents(request, personal_guide=False):
         principal, is_owner = bind_account(cursor, request.user)
         if principal is None:
             logout(request)
-            return HttpResponse("O acesso desta conta está desativado.", status=403)
+            return HttpResponse(translate_text("O acesso desta conta está desativado."), status=403)
         guide_available = AccountProfile.may_open_guide(request.user)
         if personal_guide and not guide_available:
             raise Http404
@@ -132,12 +123,12 @@ def apply_admin_form(cursor, form):
     actions = {"create_org", "rename_org", "activate", "suspend", "create_space",
                "rename_space", "grant_space", "revoke_space"}
     if action not in actions:
-        raise ValueError("Operação inválida.")
+        raise ValueError(translate_text("Operação inválida."))
     try:
         tenant = None if action == "create_org" else UUID(form.get("tenant", ""))
         workspace = UUID(form.get("workspace", "")) if action in {"rename_space", "grant_space", "revoke_space"} else None
     except ValueError:
-        raise ValueError("Selecione uma instituição e um espaço válidos.") from None
+        raise ValueError(translate_text("Selecione uma instituição e um espaço válidos.")) from None
     name = form.get("name", "").strip()
     target = None
     username = form.get("username", "").strip()
@@ -147,7 +138,7 @@ def apply_admin_form(cursor, form):
             cursor.execute("SELECT hub_admin.portal_principal(%s)", [str(account_id)])
             target = cursor.fetchone()[0]
         if target is None:
-            raise ValueError("Usuário ativo não encontrado.")
+            raise ValueError(translate_text("Usuário ativo não encontrado."))
     slug = slugify(name).replace("_", "-")[:80].rstrip("-")
     cursor.execute("SELECT hub_admin.manage_organization(%s,%s,%s,%s,%s,%s)",
                    [action, tenant, workspace, name, slug, target])
@@ -163,7 +154,7 @@ def administration(request):
     with transaction.atomic(), connection.cursor() as cursor:
         _, is_owner = bind_account(cursor, request.user)
         if not is_owner:
-            return HttpResponse("A administração exige uma conta de administrador geral.", status=403)
+            return HttpResponse(translate_text("A administração exige uma conta de administrador geral."), status=403)
         if request.method == "POST":
             try:
                 with transaction.atomic():
@@ -174,7 +165,7 @@ def administration(request):
             except DatabaseError as exc:
                 code = getattr(exc.__cause__, "sqlstate", None)
                 if code == "23505":
-                    error = "Já existe um cadastro com esse identificador."
+                    error = translate_text("Já existe um cadastro com esse identificador.")
                 elif code == "22023":
                     error = exc.__cause__.diag.message_primary
                 else:
@@ -212,7 +203,7 @@ def workspace_settings(request, tenant, space):
         if request.method == "POST":
             action = request.POST.get("action")
             if action not in ("rename_space", "trash_space", "restore_space"):
-                return HttpResponse("Operação inválida.", status=400)
+                return HttpResponse(translate_text("Operação inválida."), status=400)
             label = request.POST.get("name", "").strip()
             try:
                 with transaction.atomic():
@@ -255,6 +246,9 @@ urlpatterns = [
     path("conta/google/",registration.google_start,name="google_start"),
     path("conta/google/retorno/",registration.google_callback,name="google_callback"),
     path("conta/google/vincular/",registration.google_link,name="google_link"),
+    path("conta/idioma/", choose_language, name="choose_language"),
+    path("conta/perfil/", edit_profile, name="edit_profile"),
+    path("conta/perfil/foto/", profile_photo, name="profile_photo"),
     path("conta/espacos/", my_spaces, name="my_spaces"),
     path("conta/guia/", active_agents, {"personal_guide":True}, name="personal_guide"),
     path("conta/administracao/instituicoes/<uuid:tenant>/agentes/", institution_agents, name="institution_agents"),

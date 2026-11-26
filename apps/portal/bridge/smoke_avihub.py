@@ -53,6 +53,14 @@ def verify_avihub(manager, viewer, user, tenant, workspace, other, second_space)
             lookup.assert_not_called()
 
     check_link_required()
+    reset_page = viewer.get(url + "?recuperar=1", secure=True)
+    assert reset_page.status_code == 200 and b'name="password"' not in reset_page.content
+    with patch.object(avihub.Panel, "request_password_reset") as reset:
+        result = mcp.call_tool(link, {}, False, {"name": avihub.api.RESET_PASSWORD,
+                                                "arguments": {"email": "reset@example.org"}})
+        assert "Se o e-mail" in result["mensagem"]
+        reset.assert_called_once_with("reset@example.org")
+        assert not avihub.personal(tenant, user).exists()
     with patch.object(avihub.Panel, "authenticate", return_value=False):
         response = viewer.post(url, {"action":"login","email":"person@example.org","password":"fixture"}, secure=True)
         assert response.status_code == 302

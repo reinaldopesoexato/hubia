@@ -215,6 +215,7 @@ class PlatformMailSettings(models.Model):
 
 
 class PasswordResetDelivery(models.Model):
+    language = models.CharField(max_length=8, default="pt-br")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     encrypted_token = models.BinaryField()
     due = models.DateTimeField(db_index=True)
@@ -222,6 +223,7 @@ class PasswordResetDelivery(models.Model):
 
 
 class AccountProfile(models.Model):
+    language = models.CharField(max_length=8, blank=True, default="")
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
     phone = models.CharField(max_length=32, blank=True)
     company = models.CharField(max_length=150, blank=True)
@@ -235,6 +237,7 @@ class AccountProfile(models.Model):
 
 
 class PendingRegistration(models.Model):
+    language = models.CharField(max_length=8, default="pt-br")
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     name = models.CharField(max_length=150)
     email = models.EmailField()
@@ -244,3 +247,9 @@ class PendingRegistration(models.Model):
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     delivery_due = models.DateTimeField(null=True,db_index=True)
     attempts = models.PositiveSmallIntegerField(default=0)
+
+
+class ProfilePhoto(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
+    image = models.BinaryField(null=True)
+    google_url = models.URLField(max_length=2048, blank=True, default="")

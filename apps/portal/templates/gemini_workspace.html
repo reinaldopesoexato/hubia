@@ -1,12 +1,12 @@
-{% extends "base.html" %}{% block title %}{% if email_only %}Conectar meu e-mail{% else %}Conectar Gemini{% endif %}{% endblock %}{% block body %}
-<h1>{% if email_only %}Conectar meu e-mail à IA{% else %}Conectar Gemini ao HUB IA{% endif %}</h1>
+{% extends "base.html" %}{% load i18n %}{% block title %}{% if email_only %}{% translate "Conectar meu e-mail" %}{% else %}{% translate "Conectar Gemini" %}{% endif %}{% endblock %}{% block body %}
+<h1>{% if email_only %}{% translate "Conectar meu e-mail à IA" %}{% else %}{% translate "Conectar Gemini ao HUB IA" %}{% endif %}</h1>
 {% if groups %}
 <form method="get">
 {% for key,value in params %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
-<label>{% if email_only %}Caixa institucional{% else %}Conta ou instituição{% endif %}<select name="hub_workspace" required>
-<option value="">Selecione uma opção</option>
+<label>{% if email_only %}{% translate "Caixa institucional" %}{% else %}{% translate "Conta ou instituição" %}{% endif %}<select name="hub_workspace" required>
+<option value="">{% translate "Selecione uma opção" %}</option>
 {% for key,label in groups %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
-</select></label><button>Continuar</button>
+</select></label><button>{% translate "Continuar" %}</button>
 </form>
-{% else %}<p>{% if email_only %}Vincule sua caixa em Meu e-mail na instituição para conectar este MCP.{% else %}Sua conta ainda não tem acesso a um espaço ativo.{% endif %}</p>{% endif %}
+{% else %}<p>{% if email_only %}{% translate "Vincule sua caixa em Meu e-mail na instituição para conectar este MCP." %}{% else %}{% translate "Sua conta ainda não tem acesso a um espaço ativo." %}{% endif %}</p>{% endif %}
 {% endblock %}

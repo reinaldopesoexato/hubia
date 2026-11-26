@@ -1,27 +1,27 @@
-{% extends "base.html" %}{% block title %}Integrações{% endblock %}{% block body %}
+{% extends "base.html" %}{% load i18n %}{% block title %}{% translate "Integrações" %}{% endblock %}{% block body %}
 <nav><a href="{% url 'workspace' tenant space %}">← {{ workspace }}</a></nav>
-<small>{{ organization }} · {{ workspace }}</small><h1>Minhas integrações</h1>
-<p>As conexões e tarefas desta página pertencem à sua conta neste espaço.</p>
+<small>{{ organization }} · {{ workspace }}</small><h1>{% translate "Minhas integrações" %}</h1>
+<p>{% translate "As conexões e tarefas desta página pertencem à sua conta neste espaço." %}</p>
 {% if internal_mail %}{% include "mail_mcp_setup.html" %}{% endif %}
-<h2>Conectar meu Dot</h2>
-<p>No ChatGPT, abra <strong>Plugins → Adicionar servidor MCP personalizado</strong>, escolha OAuth e use <code>{{ mcp_url }}</code>. O cadastro automático abre seu espaço pessoal. Para conectar o ChatGPT a esta instituição, cadastre um cliente abaixo com a URI de retorno mostrada pelo ChatGPT.</p>
-<p>Na conversa com o Dot, peça: “Liste os agentes no HUB IA e assine o evento hub.task.created. Quando chegar uma tarefa, leia-a com fetch_task e responda com reply_task se disponível.”</p>
-<h2>Conectar meu Gemini</h2>
-<p>No Gemini, abra <strong>Customize → Connectors → Create custom app</strong> e informe <code>{{ mcp_url }}</code>. Continue com os campos Client ID e Client secret vazios. Entre no HUB e autorize a conexão. Se houver mais de uma conta ou instituição disponível, escolha qual conectar.</p>
-{% if secret %}<div role="status"><h2>Credencial de {{ created_link.name }}</h2>
-{% if created_link.protocol == 'mcp' %}<p>Client ID: <code>{{ created_link.client_id }}</code></p>{% endif %}
-<p>Copie a credencial para o cliente agora. Ela é exibida uma vez.</p><code>{{ secret }}</code></div>{% endif %}
-{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-<details id="cadastro-manual" {% if form.errors %}open{% endif %}><summary>Cadastro manual de conexão</summary><form method="post">{% csrf_token %}{{ form.as_p }}<button name="action" value="create">Criar conexão</button></form>
-<p>Agent Card público do HUB: <code>{{ card_url }}</code></p></details>
-<h2>Conexões deste espaço</h2>
-<p><a href="{% url 'ai_workspaces' %}">Gerenciar espaços das minhas IAs</a></p>
-<p>Quando os avisos de catálogo estão ativos no espaço, o MCP oferece os avisos em <code>list_tasks</code>. Clientes A2A de entrada podem consultar “listar avisos”.</p>
-{% for item in links %}<article><h3>{{ item.name }}</h3><p>{% if item.protocol == "mcp" %}MCP · {% if item.email_only %}somente e-mail{% elif item.subscribed %}assinatura de eventos ativa{% else %}aguardando assinatura de eventos{% endif %}
-{% elif item.protocol == "peer" %}A2A · agente remoto{% else %}A2A · acesso ao catálogo do HUB{% endif %}</p>
+<h2>{% translate "Conectar meu Dot" %}</h2>
+<p>{% translate "No ChatGPT, abra" %} <strong>{% translate "Plugins → Adicionar servidor MCP personalizado" %}</strong>{% translate ", escolha OAuth e use" %} <code>{{ mcp_url }}</code>{% translate ". O cadastro automático abre seu espaço pessoal. Para conectar o ChatGPT a esta instituição, cadastre um cliente abaixo com a URI de retorno mostrada pelo ChatGPT." %}</p>
+<p>{% translate "Na conversa com o Dot, peça: “Liste os agentes no HUB IA e assine o evento hub.task.created. Quando chegar uma tarefa, leia-a com fetch_task e responda com reply_task se disponível.”" %}</p>
+<h2>{% translate "Conectar meu Gemini" %}</h2>
+<p>{% translate "No Gemini, abra" %} <strong>{% translate "Customize → Connectors → Create custom app" %}</strong> {% translate "e informe" %} <code>{{ mcp_url }}</code>{% translate ". Continue com os campos Client ID e Client secret vazios. Entre no HUB e autorize a conexão. Se houver mais de uma conta ou instituição disponível, escolha qual conectar." %}</p>
+{% if secret %}<div role="status"><h2>{% translate "Credencial de" %} {{ created_link.name }}</h2>
+{% if created_link.protocol == 'mcp' %}<p>{% translate "Client ID:" %} <code>{{ created_link.client_id }}</code></p>{% endif %}
+<p>{% translate "Copie a credencial para o cliente agora. Ela é exibida uma vez." %}</p><code>{{ secret }}</code></div>{% endif %}
+{% if error %}<p class="error" role="alert">{% translate error %}</p>{% endif %}
+<details id="cadastro-manual" {% if form.errors %}open{% endif %}><summary>{% translate "Cadastro manual de conexão" %}</summary><form method="post">{% csrf_token %}{{ form.as_p }}<button name="action" value="create">{% translate "Criar conexão" %}</button></form>
+<p>{% translate "Agent Card público do HUB:" %} <code>{{ card_url }}</code></p></details>
+<h2>{% translate "Conexões deste espaço" %}</h2>
+<p><a href="{% url 'ai_workspaces' %}">{% translate "Gerenciar espaços das minhas IAs" %}</a></p>
+<p>{% translate "Quando os avisos de catálogo estão ativos no espaço, o MCP oferece os avisos em" %} <code>list_tasks</code>{% translate ". Clientes A2A de entrada podem consultar “listar avisos”." %}</p>
+{% for item in links %}<article><h3>{{ item.name }}</h3><p>{% if item.protocol == "mcp" %}MCP · {% if item.email_only %}{% translate "somente e-mail" %}{% elif item.subscribed %}{% translate "assinatura de eventos ativa" %}{% else %}{% translate "aguardando assinatura de eventos" %}{% endif %}
+{% elif item.protocol == "peer" %}{% translate "A2A · agente remoto" %}{% else %}{% translate "A2A · acesso ao catálogo do HUB" %}{% endif %}</p>
 {% if not viewer and item.protocol != "a2a" and not item.email_only %}<form method="post">{% csrf_token %}<input type="hidden" name="link" value="{{ item.id }}"><input type="hidden" name="request_id" value="{{ item.nonce }}">
-<label>Tarefa para {{ item.name }}<textarea name="question" maxlength="2000" required></textarea></label><button name="action" value="send">Enviar tarefa</button></form>{% endif %}
-{% for job in item.jobs %}<article><small>{{ job.created|date:"d/m H:i" }} · {% if job.notice_agent %}Aviso de catálogo · {% endif %}{% if job.state == "read" %}Lido{% elif job.state == "stopped" %}Encerrado{% elif job.state == "answered" %}Respondida{% elif job.state == "failed" %}Falhou{% elif job.state == "attention" %}Requer intervenção no agente remoto{% elif job.state == "waiting" %}Em processamento remoto{% elif "sent" in job.deliveries %}Notificação aceita pelo destino{% elif "failed" in job.deliveries %}Falha de notificação{% else %}Disponível para consulta{% endif %}</small><p>{{ job.question }}</p><div class="output">{{ job.answer }}</div>
-{% if job.remote_id and job.state != "answered" and job.state != "failed" %}<form method="post">{% csrf_token %}<input type="hidden" name="link" value="{{ item.id }}"><input type="hidden" name="ticket" value="{{ job.id }}"><button name="action" value="poll">Consultar andamento</button></form>{% endif %}</article>{% endfor %}
-<form method="post">{% csrf_token %}<input type="hidden" name="link" value="{{ item.id }}"><button name="action" value="revoke">Remover conexão e suas tarefas</button></form></article>
-{% empty %}<p>Você ainda não conectou um cliente neste espaço.</p>{% endfor %}{% endblock %}
+<label>{% translate "Tarefa para" %} {{ item.name }}<textarea name="question" maxlength="2000" required></textarea></label><button name="action" value="send">{% translate "Enviar tarefa" %}</button></form>{% endif %}
+{% for job in item.jobs %}<article><small>{{ job.created|date:"d/m H:i" }} · {% if job.notice_agent %}{% translate "Aviso de catálogo ·" %} {% endif %}{% if job.state == "read" %}{% translate "Lido" %}{% elif job.state == "stopped" %}{% translate "Encerrado" %}{% elif job.state == "answered" %}{% translate "Respondida" %}{% elif job.state == "failed" %}{% translate "Falhou" %}{% elif job.state == "attention" %}{% translate "Requer intervenção no agente remoto" %}{% elif job.state == "waiting" %}{% translate "Em processamento remoto" %}{% elif "sent" in job.deliveries %}{% translate "Notificação aceita pelo destino" %}{% elif "failed" in job.deliveries %}{% translate "Falha de notificação" %}{% else %}{% translate "Disponível para consulta" %}{% endif %}</small><p>{{ job.question }}</p><div class="output">{{ job.answer }}</div>
+{% if job.remote_id and job.state != "answered" and job.state != "failed" %}<form method="post">{% csrf_token %}<input type="hidden" name="link" value="{{ item.id }}"><input type="hidden" name="ticket" value="{{ job.id }}"><button name="action" value="poll">{% translate "Consultar andamento" %}</button></form>{% endif %}</article>{% endfor %}
+<form method="post">{% csrf_token %}<input type="hidden" name="link" value="{{ item.id }}"><button name="action" value="revoke">{% translate "Remover conexão e suas tarefas" %}</button></form></article>
+{% empty %}<p>{% translate "Você ainda não conectou um cliente neste espaço." %}</p>{% endfor %}{% endblock %}

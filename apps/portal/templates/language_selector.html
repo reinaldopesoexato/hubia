@@ -1,0 +1,7 @@
+{% load i18n %}{% get_current_language as current_language %}
+<form class="language-selector" method="post" action="{% url 'choose_language' %}" aria-label="{% translate 'Idioma' %}">
+  {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <button type="submit" name="language" value="pt-br" lang="pt-BR" title="Português" aria-label="Português" aria-pressed="{% if current_language == 'pt-br' %}true{% else %}false{% endif %}"><span aria-hidden="true">🇧🇷</span> PT</button>
+  <button type="submit" name="language" value="en" lang="en" title="English" aria-label="English" aria-pressed="{% if current_language == 'en' %}true{% else %}false{% endif %}"><span aria-hidden="true">🇺🇸</span> EN</button>
+  <button type="submit" name="language" value="es" lang="es" title="Español" aria-label="Español" aria-pressed="{% if current_language == 'es' %}true{% else %}false{% endif %}"><span aria-hidden="true">🇪🇸</span> ES</button>
+</form>

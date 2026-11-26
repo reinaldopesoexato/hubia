@@ -1,5 +1,5 @@
-{% extends "base.html" %}
-{% block title %}Espaços das minhas IAs{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Espaços das minhas IAs" %}{% endblock %}
 {% block layout %}access-page{% endblock %}
 {% block head %}<style>
 .access-page{max-width:1050px;padding-bottom:16px}
@@ -25,8 +25,8 @@
 @media(max-width:600px){.ai-row-head{align-items:stretch;flex-direction:column;gap:.6rem}.ai-row select{width:100%}.ai-save{gap:.5rem;padding:.7rem}.ai-save button{flex:none}}
 </style>{% endblock %}
 {% block body %}
-<h1>Espaços das minhas IAs</h1>
-<p>Por padrão, cada conexão inclui os espaços atuais e futuros aos quais você tem acesso na instituição ou conta pessoal conectada. Você pode limitar os espaços ou pausar uma conexão.{% if internal_mail %} Também pode ajustar as permissões de e-mail.{% endif %}</p>
+<h1>{% translate "Espaços das minhas IAs" %}</h1>
+<p>{% translate "Por padrão, cada conexão inclui os espaços atuais e futuros aos quais você tem acesso na instituição ou conta pessoal conectada. Você pode limitar os espaços ou pausar uma conexão." %}{% if internal_mail %} {% translate "Também pode ajustar as permissões de e-mail." %}{% endif %}</p>
 {% if entries %}
 <form method="post" id="access-form">{% csrf_token %}
 {% regroup entries by tenant as groups %}
@@ -36,28 +36,28 @@
 <input type="hidden" name="link" value="{{ item.link.pk }}">
 <input type="hidden" name="initial-{{ item.link.pk }}" value="{{ item.initial }}">
 <div class="ai-row-head"><div class="ai-name"><h3>{{ item.link.name }}</h3>
-<small class="scope-summary">{% if item.mode == 'all' %}Inclui os espaços atuais e futuros{% elif item.count %}{{ item.count }} espaço{{ item.count|pluralize:"s" }} selecionado{{ item.count|pluralize:"s" }}{% else %}Acesso pausado{% endif %}</small></div>
-<label><span class="access-sr">Acesso de {{ item.link.name }}</span>
+<small class="scope-summary">{% if item.mode == 'all' %}{% translate "Inclui os espaços atuais e futuros" %}{% elif item.count %}{% if item.count == 1 %}{% translate "1 espaço selecionado" %}{% else %}{{ item.count }} {% translate "espaços selecionados" %}{% endif %}{% else %}{% translate "Acesso pausado" %}{% endif %}</small></div>
+<label><span class="access-sr">{% translate "Acesso de" %} {{ item.link.name }}</span>
 <select name="mode-{{ item.link.pk }}">
-<option value="selected" {% if item.mode == 'selected' %}selected{% endif %}>Escolher espaços</option>
-<option value="all" {% if item.mode == 'all' %}selected{% endif %}>Todos, inclusive futuros</option>
-<option value="paused" {% if item.mode == 'paused' %}selected{% endif %}>Pausar acesso</option>
+<option value="selected" {% if item.mode == 'selected' %}selected{% endif %}>{% translate "Escolher espaços" %}</option>
+<option value="all" {% if item.mode == 'all' %}selected{% endif %}>{% translate "Todos, inclusive futuros" %}</option>
+<option value="paused" {% if item.mode == 'paused' %}selected{% endif %}>{% translate "Pausar acesso" %}</option>
 </select></label></div>
-<fieldset><legend>Espaços disponíveis para {{ item.link.name }}</legend><div class="space-list">
+<fieldset><legend>{% translate "Espaços disponíveis para" %} {{ item.link.name }}</legend><div class="space-list">
 {% for id,name,checked in item.choices %}<label><input type="checkbox" name="spaces-{{ item.link.pk }}" value="{{ id }}" {% if checked %}checked{% endif %}>{{ name }}</label>{% endfor %}
 </div></fieldset>
-{% if item.box %}<fieldset><legend>Permissões MCP de e-mail · {{ item.box.address }}</legend>
+{% if item.box %}<fieldset><legend>{% translate "Permissões MCP de e-mail ·" %} {{ item.box.address }}</legend>
 <input type="hidden" name="mailbox-{{ item.link.pk }}" value="{{ item.box.pk }}">
 <input type="hidden" name="initial-read-{{ item.link.pk }}" value="{{ item.read_mail|yesno:'1,0' }}">
 <input type="hidden" name="initial-send-{{ item.link.pk }}" value="{{ item.send_mail|yesno:'1,0' }}">
-<div class="space-list"><label><input type="checkbox" data-mail name="read-{{ item.link.pk }}" {% if item.read_mail %}checked{% endif %}>Ler minha caixa de entrada</label>
-<label><input type="checkbox" data-mail name="send-{{ item.link.pk }}" {% if not item.can_enable_send and not item.send_mail %}disabled{% endif %} {% if item.send_mail %}checked{% endif %}>Enviar e-mails em meu nome e editar a assinatura de IA</label></div>
-<small>{% if not item.can_enable_send %}Seu papel nesta instituição permite apenas leitura.{% else %}Para enviar, a IA precisa do escopo OAuth <code>hub.mail.send</code>. Se a conexão for anterior, autorize-a novamente com esse escopo.{% endif %}</small>
+<div class="space-list"><label><input type="checkbox" data-mail name="read-{{ item.link.pk }}" {% if item.read_mail %}checked{% endif %}>{% translate "Ler minha caixa de entrada" %}</label>
+<label><input type="checkbox" data-mail name="send-{{ item.link.pk }}" {% if not item.can_enable_send and not item.send_mail %}disabled{% endif %} {% if item.send_mail %}checked{% endif %}>{% translate "Enviar e-mails em meu nome e editar a assinatura de IA" %}</label></div>
+<small>{% if not item.can_enable_send %}{% translate "Seu papel nesta instituição permite apenas leitura." %}{% else %}{% translate "Para enviar, a IA precisa do escopo OAuth" %} <code>hub.mail.send</code>{% translate ". Se a conexão for anterior, autorize-a novamente com esse escopo." %}{% endif %}</small>
 </fieldset>{% endif %}
-<small>{% if item.observed %}Última consulta ao catálogo MCP em {{ item.observed.0|date:"d/m/Y H:i" }}.{% if item.send_mail and item.can_enable_send and not item.observed.1 %} O token usado nessa consulta precisa de nova autorização para enviar e-mails.{% endif %}{% else %}Aguardando a primeira consulta ao catálogo MCP.{% endif %}</small>
+<small>{% if item.observed %}{% translate "Última consulta ao catálogo MCP em" %} {{ item.observed.0|date:"d/m/Y H:i" }}.{% if item.send_mail and item.can_enable_send and not item.observed.1 %} {% translate "O token usado nessa consulta precisa de nova autorização para enviar e-mails." %}{% endif %}{% else %}{% translate "Aguardando a primeira consulta ao catálogo MCP." %}{% endif %}</small>
 </div>{% endfor %}
 </section>{% endfor %}
-<div class="ai-save"><span role="status" aria-live="polite" data-saved="{{ saved|yesno:'yes,no' }}">{% if saved %}Permissões salvas.{% endif %}</span><button type="submit">Salvar permissões</button></div>
+<div class="ai-save"><span role="status" aria-live="polite" data-saved="{{ saved|yesno:'yes,no' }}">{% if saved %}{% translate "Permissões salvas." %}{% endif %}</span><button type="submit">{% translate "Salvar permissões" %}</button></div>
 </form>
 <script>
 const accessForm = document.querySelector('#access-form');
@@ -73,18 +73,18 @@ function updatePermissions() {
     if (dirty) changes++;
     row.toggleAttribute('data-dirty', dirty);
     row.querySelector('fieldset').hidden = mode !== 'selected';
-    let summary = ids.length === 1 ? '1 espaço selecionado' : ids.length + ' espaços selecionados';
-    if (mode === 'all') summary = 'Inclui os espaços atuais e futuros';
-    else if (mode === 'paused' || !ids.length) summary = 'Acesso pausado';
-    row.querySelector('.scope-summary').textContent = dirty ? summary + ' · Alterado' : summary;
+    let summary = ids.length === 1 ? '{% translate "1 espaço selecionado" as js_label %}{{ js_label|escapejs }}' : ids.length + ' {% translate "espaços selecionados" as js_label %}{{ js_label|escapejs }}';
+    if (mode === 'all') summary = '{% translate "Inclui os espaços atuais e futuros" as js_label %}{{ js_label|escapejs }}';
+    else if (mode === 'paused' || !ids.length) summary = '{% translate "Acesso pausado" as js_label %}{{ js_label|escapejs }}';
+    row.querySelector('.scope-summary').textContent = dirty ? summary + ' {% translate "· Alterado" as js_label %}{{ js_label|escapejs }}' : summary;
   }
   accessForm.querySelector('button[type=submit]').disabled = changes === 0;
-  accessStatus.textContent = changes ? (changes === 1 ? '1 conexão alterada' : changes + ' conexões alteradas') :
-    (accessStatus.dataset.saved === 'yes' ? 'Permissões salvas.' : 'Nenhuma alteração pendente.');
+  accessStatus.textContent = changes ? (changes === 1 ? '{% translate "1 conexão alterada" as js_label %}{{ js_label|escapejs }}' : changes + ' {% translate "conexões alteradas" as js_label %}{{ js_label|escapejs }}') :
+    (accessStatus.dataset.saved === 'yes' ? '{% translate "Permissões salvas." as js_label %}{{ js_label|escapejs }}' : '{% translate "Nenhuma alteração pendente." as js_label %}{{ js_label|escapejs }}');
 }
 accessForm.addEventListener('change', updatePermissions);
 window.addEventListener('pageshow', updatePermissions);
 updatePermissions();
 </script>
-{% else %}<p>Abra <strong>Minhas integrações</strong> em um dos seus espaços para conectar sua primeira IA.</p>{% endif %}
+{% else %}<p>{% translate "Abra" %} <strong>{% translate "Minhas integrações" %}</strong> {% translate "em um dos seus espaços para conectar sua primeira IA." %}</p>{% endif %}
 {% endblock %}

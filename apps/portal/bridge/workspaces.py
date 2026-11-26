@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from django.utils.translation import gettext as translate_text
 from django.contrib.auth.decorators import login_required
 from django.db import connection, transaction
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
@@ -14,10 +15,10 @@ from .models import CatalogObservation, Link, MailProvider, Mailbox, WorkspaceSe
 
 def visible(cursor, tenant):
     cursor.execute("SELECT set_config('hub.tenant_id', %s, true)", [str(tenant)])
-    cursor.execute("""SELECT w.id, w.name, coalesce(i.name,'Espaço pessoal') FROM hub_tenancy.workspaces w
+    cursor.execute("""SELECT w.id, w.name, i.name FROM hub_tenancy.workspaces w
                       LEFT JOIN hub_tenancy.institutions i ON i.tenant_id=w.tenant_id
                       WHERE w.tenant_id=%s ORDER BY lower(w.name), w.id""", [tenant])
-    return cursor.fetchall()
+    return [(space, name, org or translate_text("Espaço pessoal")) for space, name, org in cursor.fetchall()]
 
 
 def mail_write_access(cursor, tenant):
@@ -54,7 +55,7 @@ def save_permissions(request, cursor, links):
     except ValueError:
         raise Http404
     if not keys or len(keys) != len(set(keys)) or (legacy and len(keys) != 1):
-        return HttpResponseBadRequest("Seleção de conexões inválida.")
+        return HttpResponseBadRequest(translate_text("Seleção de conexões inválida."))
     requested = links.filter(pk__in=keys)
     if any(key.startswith("mailbox-") for key in form):
         # The mailbox connection and OAuth consent views also lock providers first.
@@ -70,12 +71,12 @@ def save_permissions(request, cursor, links):
         suffix = "" if legacy else f"-{link.pk}"
         mode = form.get("mode" + suffix)
         if mode not in ("all", "selected", "paused"):
-            return HttpResponseBadRequest("Escolha o acesso de cada conexão.")
+            return HttpResponseBadRequest(translate_text("Escolha o acesso de cada conexão."))
         selected = set(form.getlist("spaces" + suffix))
         desired = None if mode == "all" else sorted(selected) if mode == "selected" else []
         initial = form.get("initial" + suffix)
         if not legacy and initial is None:
-            return HttpResponseBadRequest("Recarregue as permissões antes de salvar.")
+            return HttpResponseBadRequest(translate_text("Recarregue as permissões antes de salvar."))
         mail_id = form.get("mailbox" + suffix) if not legacy else None
         mail_edits = []
         if mail_id:
@@ -84,7 +85,7 @@ def save_permissions(request, cursor, links):
             for field, relation in (("read", "links"), ("send", "send_links")):
                 original = form.get("initial-" + field + suffix)
                 if original not in ("0", "1"):
-                    return HttpResponseBadRequest("Recarregue as permissões de e-mail.")
+                    return HttpResponseBadRequest(translate_text("Recarregue as permissões de e-mail."))
                 checked = form.get(field + suffix) == "on"
                 if checked != (original == "1"):
                     mail_edits.append((relation, checked))
@@ -98,17 +99,17 @@ def save_permissions(request, cursor, links):
         if mail_edits:
             box = Mailbox.objects.filter(provider_id=link.tenant, user=request.user, provider__enabled=True).first()
             if box is None or mail_id != str(box.pk):
-                return HttpResponse("Sua caixa mudou. Recarregue a página antes de salvar.", status=409)
+                return HttpResponse(translate_text("Sua caixa mudou. Recarregue a página antes de salvar."), status=409)
             if ("send_links", True) in mail_edits and not mail_write_access(cursor, link.tenant):
-                return HttpResponse("Seu papel permite apenas leitura.", status=403)
+                return HttpResponse(translate_text("Seu papel permite apenas leitura."), status=403)
             mail_changes.extend((box, link, relation, checked) for relation, checked in mail_edits)
         if not legacy and initial == state_key(desired):
             continue
         if mode == "selected" and selected - {str(space) for space,_,_ in rows}:
-            return HttpResponseBadRequest("Selecione apenas espaços disponíveis nesta instituição.")
+            return HttpResponseBadRequest(translate_text("Selecione apenas espaços disponíveis nesta instituição."))
         current = None if selection(link) is None else [str(space) for space in effective(link, rows)]
         if not legacy and initial != state_key(current) and state_key(desired) != state_key(current):
-            return HttpResponse("As permissões mudaram em outra sessão. Recarregue a página e revise suas escolhas.", status=409)
+            return HttpResponse(translate_text("As permissões mudaram em outra sessão. Recarregue a página e revise suas escolhas."), status=409)
         changes.append((link, desired))
     for link, desired in changes:
         WorkspaceSelection.objects.update_or_create(link=link, defaults={"spaces":desired})

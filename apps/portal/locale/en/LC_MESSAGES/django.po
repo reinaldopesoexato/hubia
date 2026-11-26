@@ -1,0 +1,2168 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "(em branco para assumir)"
+msgstr "(leave blank to take ownership)"
+
+msgid "(indisponível)"
+msgstr "(unavailable)"
+
+msgid "(opcional)"
+msgstr "(optional)"
+
+msgid "(responsável)"
+msgstr "(owner)"
+
+msgid ", conecte sua IA para consultar as operações da sua conta."
+msgstr ", connect your AI to query your account's operations."
+
+msgid ", crie um aplicativo personalizado e cole o endereço MCP acima."
+msgstr ", create a custom app and paste the MCP address above."
+
+msgid ", escolha OAuth e use"
+msgstr ", choose OAuth and use"
+
+msgid ", use"
+msgstr ", use"
+
+msgid ". A disponibilidade é verificada durante a consulta."
+msgstr ". Availability is checked during the query."
+
+msgid ". A restauração reabre o espaço com os membros e as configurações salvas."
+msgstr ". Restoring reopens the workspace with its saved members and settings."
+
+msgid ". Clientes A2A de entrada podem consultar “listar avisos”."
+msgstr ". Incoming A2A clients can request “listar avisos”."
+
+msgid ". Continue com os campos Client ID e Client secret vazios. Entre no HUB e autorize a conexão. Se houver mais de uma conta ou instituição disponível, escolha qual conectar."
+msgstr ". Leave Client ID and Client secret blank. Sign in to the HUB and authorize the connection. If more than one account or institution is available, choose which one to connect."
+
+msgid ". Depois, escolha os repositórios durante a instalação."
+msgstr ". Then choose the repositories during installation."
+
+msgid ". O agente poderá consultar os dados que essa conta tem permissão para acessar."
+msgstr ". The agent can query the data this account is allowed to access."
+
+msgid ". O cadastro automático abre seu espaço pessoal. Para conectar o ChatGPT a esta instituição, cadastre um cliente abaixo com a URI de retorno mostrada pelo ChatGPT."
+msgstr ". Automatic registration opens your personal workspace. To connect ChatGPT to this institution, register a client below using the callback URI shown by ChatGPT."
+
+msgid ". O cadastro automático conecta seu espaço pessoal."
+msgstr ". Automatic registration connects your personal workspace."
+
+msgid ". Se a conexão for anterior, autorize-a novamente com esse escopo."
+msgstr ". If this is an older connection, authorize it again with this scope."
+
+msgid ". Se o AviHUB solicitar um código, confirme-o na próxima tela."
+msgstr ". If AviHUB asks for a code, confirm it on the next screen."
+
+msgid ". Selecione MCP e informe a URI de retorno exibida pelo ChatGPT. Copie o Client ID e o segredo gerados para os campos correspondentes no ChatGPT."
+msgstr ". Select MCP and enter the callback URI shown by ChatGPT. Copy the generated client ID and secret into the corresponding fields in ChatGPT."
+
+msgid ". Seu webmail e seus aplicativos de e-mail continuam usando as próprias assinaturas."
+msgstr ". Your webmail and email apps keep their own signatures."
+
+msgid "1 conexão alterada"
+msgstr "1 connection changed"
+
+msgid "1 espaço selecionado"
+msgstr "1 workspace selected"
+
+msgid "1 selecionada"
+msgstr "1 selected"
+
+msgid "30 dias"
+msgstr "30 days"
+
+msgid "7 dias"
+msgstr "7 days"
+
+msgid "A administração exige uma conta de administrador geral."
+msgstr "A platform administrator account is required."
+
+msgid "A assinatura mudou. Reabra Meu e-mail antes de editar novamente."
+msgstr "The signature has changed. Reopen My email before editing again."
+
+msgid "A caixa foi alterada. Reabra Meu e-mail."
+msgstr "The mailbox has changed. Reopen My email."
+
+msgid "A consulta será enviada ao serviço configurado. Para um modelo de IA, também serão enviadas até quatro consultas anteriores suas com as respectivas respostas neste agente."
+msgstr "Your query will be sent to the configured service. When using an AI model, up to four of your previous queries to this agent and their answers are included."
+
+msgid "A consulta usa o conector e as permissões do espaço em que o agente for aberto."
+msgstr "The query uses the connector and permissions of the workspace where you open the agent."
+
+msgid "A conta e suas conexões pessoais serão removidas. O histórico de auditoria será preservado."
+msgstr "The account and its personal connections will be removed. The audit history will be preserved."
+
+msgid "A conta não pode ser alterada."
+msgstr "The account cannot be changed."
+
+msgid "A entrada pelo Google foi cancelada ou expirou."
+msgstr "Google sign-in was canceled or expired."
+
+msgid "A foto padrão vem da conta Google vinculada ou do Gravatar associado ao seu e-mail."
+msgstr "Your default photo comes from your linked Google account or the Gravatar associated with your email."
+
+msgid "A lista de contas mudou. Confira os vínculos e selecione novamente."
+msgstr "The account list has changed. Check the linked accounts and select again."
+
+msgid "A página de autenticação do AviHUB está indisponível."
+msgstr "The AviHUB sign-in page is unavailable."
+
+msgid "A recuperação por e-mail está indisponível. Entre em contato com a administração do HUB IA."
+msgstr "Email recovery is unavailable. Contact your HUB IA administrator."
+
+msgid "A2A externo"
+msgstr "External A2A"
+
+msgid "A2A · acesso ao catálogo do HUB"
+msgstr "A2A · HUB catalog access"
+
+msgid "A2A · agente remoto"
+msgstr "A2A · remote agent"
+
+msgid "Abra"
+msgstr "Open"
+
+msgid "Abra a área de aplicativos ou conectores do ChatGPT e adicione um servidor MCP personalizado."
+msgstr "Open the apps or connectors section in ChatGPT and add a custom MCP server."
+
+msgid "Abra o link para definir sua senha:"
+msgstr "Open the link to set your password:"
+
+msgid "Abra o portal externo pelo link do agente."
+msgstr "Use the agent link to open the external portal."
+
+msgid "Abre o portal externo vinculado ao agente."
+msgstr "Opens the external portal linked to the agent."
+
+msgid "Abrir espaço"
+msgstr "Open workspace"
+
+msgid "Abrir portal externo"
+msgstr "Open external portal"
+
+msgid "Abrir portal externo ↗"
+msgstr "Open external portal ↗"
+
+msgid "Aceito pelo servidor de e-mail"
+msgstr "Accepted by the mail server"
+
+msgid "Acesse seu espaço pessoal e as instituições vinculadas à sua conta."
+msgstr "Access your personal workspace and the institutions linked to your account."
+
+msgid "Acesso ao espaço"
+msgstr "Workspace access"
+
+msgid "Acesso de"
+msgstr "Access for"
+
+msgid "Acesso pausado"
+msgstr "Access paused"
+
+msgid "Acesso à conta · HUB IA"
+msgstr "Account access · HUB IA"
+
+msgid "Adicionar destino"
+msgstr "Add recipient"
+
+msgid "Administrador institucional"
+msgstr "Institution administrator"
+
+msgid "Administração"
+msgstr "Administration"
+
+msgid "Agent Card público do HUB:"
+msgstr "Public HUB Agent Card:"
+
+msgid "Agente de notificações indisponível."
+msgstr "Notification agent unavailable."
+
+msgid "Agente desativado"
+msgstr "Disabled agent"
+
+msgid "Agentes"
+msgstr "Agents"
+
+msgid "Agentes ativos"
+msgstr "Active agents"
+
+msgid "Agentes da instituição"
+msgstr "Institution agents"
+
+msgid "Agentes de"
+msgstr "Agents of"
+
+msgid "Agentes do espaço"
+msgstr "Workspace agents"
+
+msgid "Agentes do espaço e membros"
+msgstr "Workspace agents and members"
+
+msgid "Agentes excluídos"
+msgstr "Deleted agents"
+
+msgid "Aguardando a primeira consulta ao catálogo MCP."
+msgstr "Waiting for the first MCP catalog query."
+
+msgid "Aguardando código"
+msgstr "Awaiting code"
+
+msgid "Aguardando instalação e teste"
+msgstr "Awaiting installation and testing"
+
+msgid "Aguarde alguns minutos antes de solicitar outro link."
+msgstr "Wait a few minutes before requesting another link."
+
+msgid "Alterar ou excluir espaço"
+msgstr "Edit or delete workspace"
+
+msgid "Alterar papel na instituição"
+msgstr "Change institution role"
+
+msgid "Alterar senha"
+msgstr "Change password"
+
+msgid "Anterior"
+msgstr "Previous"
+
+msgid "Ao ativar uma nova conexão de IA via MCP nesta instituição, a opção de leitura da sua caixa virá marcada. Você pode desmarcá-la ao autorizar a conexão."
+msgstr "When you activate a new AI connection via MCP in this institution, mailbox reading is selected by default. You can uncheck it when authorizing the connection."
+
+msgid "Ao mover"
+msgstr "When you move"
+
+msgid "Ao reconectar, você escolherá novamente as IAs autorizadas."
+msgstr "After reconnecting, you can choose the authorized AIs again."
+
+msgid "Apelido atualizado."
+msgstr "Account nickname updated."
+
+msgid "Apelido da conta"
+msgstr "Account nickname"
+
+msgid "Apelido da conta (opcional)"
+msgstr "Account nickname (optional)"
+
+msgid "As conexões e tarefas desta página pertencem à sua conta neste espaço."
+msgstr "The connections and tasks on this page belong to your account in this workspace."
+
+msgid "As contas abaixo serão desvinculadas do HUB IA. Para voltar a usá-las pelo agente, será preciso entrar novamente."
+msgstr "The accounts below will be unlinked from HUB IA. Sign in again to use them with the agent."
+
+msgid "As permissões mudaram em outra sessão. Recarregue a página e revise suas escolhas."
+msgstr "Permissions changed in another session. Reload the page and review your choices."
+
+msgid "Assinatura dos e-mails enviados por IA"
+msgstr "Signature for emails sent by AI"
+
+msgid "Assinatura salva."
+msgstr "Signature saved."
+
+msgid "Assunto"
+msgstr "Subject"
+
+msgid "Ativa"
+msgstr "Active"
+
+msgid "Ativar e entrar"
+msgstr "Activate and sign in"
+
+msgid "Ativas"
+msgstr "Active"
+
+msgid "Ative sua conta"
+msgstr "Activate your account"
+
+msgid "Ative sua conta no HUB IA da Peso Exato"
+msgstr "Activate your Peso Exato HUB IA account"
+
+msgid "Atividade administrativa recente"
+msgstr "Recent administrative activity"
+
+msgid "Atividade recente"
+msgstr "Recent activity"
+
+msgid "Ativo"
+msgstr "Active"
+
+msgid "Ativo nos espaços selecionados"
+msgstr "Active in selected workspaces"
+
+msgid "Até 6.000 caracteres. Use parágrafos, quebras de linha, negrito, itálico, sublinhado, listas e links HTTPS, de e-mail ou telefone."
+msgstr "Up to 6,000 characters. Use paragraphs, line breaks, bold, italic, underline, lists, and HTTPS, email or phone links."
+
+msgid "Autorizar"
+msgstr "Authorize"
+
+msgid "Autorizar conexão"
+msgstr "Authorize connection"
+
+msgid "Avisar as integrações deste espaço quando um agente ficar disponível"
+msgstr "Notify this workspace's integrations when an agent becomes available"
+
+msgid "Aviso de catálogo ·"
+msgstr "Catalog notification ·"
+
+msgid "Avisos de catálogo ·"
+msgstr "Catalog notifications ·"
+
+msgid "Avisos às integrações"
+msgstr "Integration notifications"
+
+msgid "Ação de conta indisponível."
+msgstr "Account action unavailable."
+
+msgid "Ação indisponível."
+msgstr "Action unavailable."
+
+msgid "Base de conhecimento"
+msgstr "Knowledge base"
+
+msgid "Bearer do agente remoto, se exigido"
+msgstr "Remote agent bearer token, if required"
+
+msgid "Biblioteca de notas"
+msgstr "Note library"
+
+msgid "Biblioteca ·"
+msgstr "Library ·"
+
+msgid "Bloqueado"
+msgstr "Blocked"
+
+msgid "Bloquear"
+msgstr "Block"
+
+msgid "Bloquear o Guia dos meus espaços"
+msgstr "Block My workspace guide"
+
+msgid "Bloqueios individuais"
+msgstr "Individual restrictions"
+
+msgid "Buscar"
+msgstr "Search"
+
+msgid "Buscar agente"
+msgstr "Search agents"
+
+msgid "Buscar nas notas"
+msgstr "Search notes"
+
+msgid "Buscar por nome, e-mail ou empresa"
+msgstr "Search by name, email or company"
+
+msgid "Cadastrar"
+msgstr "Register"
+
+msgid "Cadastrar agente"
+msgstr "Register agent"
+
+msgid "Cadastrar o agente Assistente de IA neste espaço"
+msgstr "Register the AI Assistant agent in this workspace"
+
+msgid "Cadastrar usuário"
+msgstr "Register user"
+
+msgid "Cadastre o agente aqui. Depois, abra"
+msgstr "Register the agent here. Then open"
+
+msgid "Cadastro expirado ou inválido. Inicie a conexão novamente no HUB."
+msgstr "Registration expired or invalid. Start the connection again in the HUB."
+
+msgid "Cadastro manual de conexão"
+msgstr "Manual connection setup"
+
+msgid "Caixa institucional"
+msgstr "Institutional mailbox"
+
+msgid "Caixa vinculada ·"
+msgstr "Linked mailbox ·"
+
+msgid "Canais de notificação"
+msgstr "Notification channels"
+
+msgid "Canal"
+msgstr "Channel"
+
+msgid "Canal de envio indisponível."
+msgstr "Delivery channel unavailable."
+
+msgid "Cancelar"
+msgstr "Cancel"
+
+msgid "Catálogo da instituição"
+msgstr "Institution catalog"
+
+msgid "Chave da API"
+msgstr "API key"
+
+msgid "Chave de API"
+msgstr "API key"
+
+msgid "Cole o endereço acima e escolha"
+msgstr "Paste the address above and choose"
+
+msgid "Como conectar minha IA"
+msgstr "How to connect my AI"
+
+msgid "Conceder acesso"
+msgstr "Grant access"
+
+msgid "Conclua a conexão, entre no HUB IA e autorize o acesso."
+msgstr "Complete the connection, sign in to HUB IA and authorize access."
+
+msgid "Concluída"
+msgstr "Completed"
+
+msgid "Conectado"
+msgstr "Connected"
+
+msgid "Conectar Gemini"
+msgstr "Connect Gemini"
+
+msgid "Conectar Gemini ao HUB IA"
+msgstr "Connect Gemini to HUB IA"
+
+msgid "Conectar ao GitHub"
+msgstr "Connect to GitHub"
+
+msgid "Conectar meu Dot"
+msgstr "Connect my Dot"
+
+msgid "Conectar meu Gemini"
+msgstr "Connect my Gemini"
+
+msgid "Conectar meu e-mail"
+msgstr "Connect my email"
+
+msgid "Conectar meu e-mail à IA"
+msgstr "Connect my email to the AI"
+
+msgid "Conectar minha primeira IA"
+msgstr "Connect my first AI"
+
+msgid "Conecte uma organização para consultar a branch padrão e a revisão dos repositórios selecionados. A GitHub App solicita leitura de conteúdo."
+msgstr "Connect an organization to view the default branch and revision of the selected repositories. The GitHub App requests read access to content."
+
+msgid "Conector do espaço"
+msgstr "Workspace connector"
+
+msgid "Conectores"
+msgstr "Connectors"
+
+msgid "Conectores · GitHub"
+msgstr "Connectors · GitHub"
+
+msgid "Conexões deste espaço"
+msgstr "Workspace connections"
+
+msgid "Configurar acesso ao Portal Peso Exato (AviHUB)"
+msgstr "Set up access to the Peso Exato Portal (AviHUB)"
+
+msgid "Configurar biblioteca"
+msgstr "Configure library"
+
+msgid "Configurar canais e destinos"
+msgstr "Configure channels and recipients"
+
+msgid "Configurar depois"
+msgstr "Set up later"
+
+msgid "Configurar modelo de IA"
+msgstr "Configure AI model"
+
+msgid "Configuração"
+msgstr "Configuration"
+
+msgid "Configuração atual"
+msgstr "Current settings"
+
+msgid "Configuração de e-mail salva."
+msgstr "Email settings saved."
+
+msgid "Configuração salva. Nos agentes do tipo"
+msgstr "Settings saved. For agents of type"
+
+msgid "Configurações de"
+msgstr "Settings for"
+
+msgid "Configure o servidor e a senha SMTP da plataforma."
+msgstr "Configure the platform SMTP server and password."
+
+msgid "Confira a senha informada no cadastro."
+msgstr "Check the password you entered when registering."
+
+msgid "Confira o código HTML."
+msgstr "Check the HTML code."
+
+msgid "Confira seu e-mail"
+msgstr "Check your email"
+
+msgid "Confira sua senha e tente novamente."
+msgstr "Check your password and try again."
+
+msgid "Confirmar exclusão"
+msgstr "Confirm removal"
+
+msgid "Confirme a senha que escolheu para ativar e entrar no seu espaço pessoal."
+msgstr "Confirm your chosen password to activate and enter your personal workspace."
+
+msgid "Confirme seu cadastro usando este link. Ele vale por 24 horas a partir da solicitação."
+msgstr "Confirm your registration using this link. It is valid for 24 hours from your request."
+
+msgid "Consulta a uma API conectada"
+msgstr "Query a connected API"
+
+msgid "Consulta à base de conhecimento"
+msgstr "Knowledge base query"
+
+msgid "Consultar andamento"
+msgstr "Check progress"
+
+msgid "Consultar catálogo, tarefas e notas do espaço."
+msgstr "View the workspace catalog, tasks and notes."
+
+msgid "Consultas"
+msgstr "Queries"
+
+msgid "Consultas por dia"
+msgstr "Queries per day"
+
+msgid "Consulte seu papel e os agentes disponíveis em cada espaço."
+msgstr "View your role and the agents available in each workspace."
+
+msgid "Conta"
+msgstr "Account"
+
+msgid "Conta ativa"
+msgstr "Active account"
+
+msgid "Conta ou instituição"
+msgstr "Account or institution"
+
+msgid "Conta verificada e vinculada."
+msgstr "Account verified and linked."
+
+msgid "Conta vinculada."
+msgstr "Account linked."
+
+msgid "Contas AviHUB"
+msgstr "AviHUB accounts"
+
+msgid "Contas vinculadas"
+msgstr "Linked accounts"
+
+msgid "Continuar"
+msgstr "Continue"
+
+msgid "Continuar com Google"
+msgstr "Continue with Google"
+
+msgid "Continuar leitura"
+msgstr "Continue reading"
+
+msgid "Continuar verificação"
+msgstr "Continue verification"
+
+msgid "Copiar endereço"
+msgstr "Copy address"
+
+msgid "Copie a credencial para o cliente agora. Ela é exibida uma vez."
+msgstr "Copy the credential into your client now. It is shown only once."
+
+msgid "Credencial de"
+msgstr "Credential for"
+
+msgid "Criar agente de biblioteca"
+msgstr "Create library agent"
+
+msgid "Criar conexão"
+msgstr "Create connection"
+
+msgid "Criar espaço"
+msgstr "Create workspace"
+
+msgid "Criar instituição"
+msgstr "Create institution"
+
+msgid "Criar uma conta"
+msgstr "Create an account"
+
+msgid "Crie sua conta"
+msgstr "Create your account"
+
+msgid "Crie sua conta para acessar seu espaço pessoal e os recursos disponíveis para clientes."
+msgstr "Create an account to access your personal workspace and the resources available to clients."
+
+msgid "Criptografia"
+msgstr "Encryption"
+
+msgid "Código HTML"
+msgstr "HTML code"
+
+msgid "Código HTML da assinatura"
+msgstr "Signature HTML code"
+
+msgid "Código do AviHUB"
+msgstr "AviHUB code"
+
+msgid "Definir nova senha"
+msgstr "Set new password"
+
+msgid "Deixe Client ID e Client secret em branco e inicie a conexão. Entre no HUB IA e, se houver uma escolha de instituição, selecione a que deseja consultar."
+msgstr "Leave Client ID and Client secret blank and start the connection. Sign in to HUB IA and select the institution you want to query if prompted."
+
+msgid "Deixe a chave em branco para manter a atual."
+msgstr "Leave the key blank to keep the current one."
+
+msgid "Deixe a senha em branco para manter a credencial salva. Ao trocar a caixa ou o servidor, informe a senha novamente."
+msgstr "Leave the password blank to keep the saved credential. When changing the mailbox or server, enter the password again."
+
+msgid "Deixe em branco para manter a chave salva."
+msgstr "Leave blank to keep the saved key."
+
+msgid "Desativado"
+msgstr "Disabled"
+
+msgid "Desconectar caixa e revogar acessos"
+msgstr "Disconnect mailbox and revoke access"
+
+msgid "Desconectar modelo deste espaço"
+msgstr "Disconnect this workspace's model"
+
+msgid "Desconecte as caixas vinculadas antes de alterar o domínio."
+msgstr "Disconnect linked mailboxes before changing the domain."
+
+msgid "Descrição"
+msgstr "Description"
+
+msgid "Destinatário"
+msgstr "Recipient"
+
+msgid "Destino indisponível."
+msgstr "Recipient unavailable."
+
+msgid "Destino salvo inválido."
+msgstr "Invalid saved recipient."
+
+msgid "Destinos salvos do WhatsApp"
+msgstr "Saved WhatsApp recipients"
+
+msgid "Digite o nome atual do espaço para confirmar"
+msgstr "Type the current workspace name to confirm"
+
+msgid "Disponível aos membros"
+msgstr "Available to members"
+
+msgid "Disponível aos membros do espaço"
+msgstr "Available to workspace members"
+
+msgid "Disponível para consulta"
+msgstr "Available to query"
+
+msgid "Domínio dos endereços de e-mail"
+msgstr "Email domain"
+
+msgid "Dot ou outro cliente MCP (OAuth)"
+msgstr "Dot or another MCP client (OAuth)"
+
+msgid "E-mail"
+msgstr "Email"
+
+msgid "E-mail corporativo"
+msgstr "Corporate email"
+
+msgid "E-mail da plataforma"
+msgstr "Platform email"
+
+msgid "E-mail de envio e login SMTP"
+msgstr "Sender email and SMTP login"
+
+msgid "E-mail de recuperação"
+msgstr "Recovery email"
+
+msgid "E-mail de teste enviado."
+msgstr "Test email sent."
+
+msgid "E-mail do AviHUB"
+msgstr "AviHUB email"
+
+msgid "E-mail institucional"
+msgstr "Institutional email"
+
+msgid "Editar"
+msgstr "Edit"
+
+msgid "Editar agente"
+msgstr "Edit agent"
+
+msgid "Editar assinatura formatada"
+msgstr "Edit formatted signature"
+
+msgid "Editar conta"
+msgstr "Edit account"
+
+msgid "Editar modelo e instruções do espaço"
+msgstr "Edit workspace model and instructions"
+
+msgid "Editar perfil"
+msgstr "Edit profile"
+
+msgid "Editar usuário"
+msgstr "Edit user"
+
+msgid "Edite o cadastro no catálogo da instituição."
+msgstr "Edit this entry in the institution catalog."
+
+msgid "Editor visual"
+msgstr "Visual editor"
+
+msgid "Em"
+msgstr "In"
+
+msgid "Em execução"
+msgstr "Running"
+
+msgid "Em execução. Atualize para ver o resultado."
+msgstr "Running. Refresh to see the result."
+
+msgid "Em processamento remoto"
+msgstr "Processing remotely"
+
+msgid "Empresa"
+msgstr "Company"
+
+msgid "Encaminha sua consulta ao serviço conectado a este espaço."
+msgstr "Sends your query to the service connected to this workspace."
+
+msgid "Encerrado"
+msgstr "Closed"
+
+msgid "Endereço copiado."
+msgstr "Address copied."
+
+msgid "Endereço do link (https://, mailto: ou tel:)"
+msgstr "Link address (https://, mailto: or tel:)"
+
+msgid "Endereço do portal"
+msgstr "Portal address"
+
+msgid "Endereço do servidor MCP"
+msgstr "MCP server address"
+
+msgid "Endereço selecionado. Use o comando Copiar do seu dispositivo."
+msgstr "Address selected. Use your device’s Copy command."
+
+msgid "Entrar"
+msgstr "Sign in"
+
+msgid "Entrar com Google"
+msgstr "Sign in with Google"
+
+msgid "Entrar com a nova senha"
+msgstr "Sign in with new password"
+
+msgid "Entrar no HUB IA"
+msgstr "Sign in to HUB IA"
+
+msgid "Entre com o método já vinculado a esta conta."
+msgstr "Sign in using the method already linked to this account."
+
+msgid "Envia avisos pelos canais habilitados para a sua conta."
+msgstr "Sends notifications through the channels enabled for your account."
+
+msgid "Enviar aviso"
+msgstr "Send notification"
+
+msgid "Enviar aviso importante"
+msgstr "Send important notice"
+
+msgid "Enviar avisos externos nos canais e destinos autorizados do espaço"
+msgstr "Send external notifications to authorized workspace channels and recipients"
+
+msgid "Enviar e-mails em meu nome e editar a assinatura de IA"
+msgstr "Send emails on my behalf and edit the AI signature"
+
+msgid "Enviar e-mails pela sua caixa e editar a assinatura dos envios por IA quando você autorizar"
+msgstr "Send email from your mailbox and edit the AI signature when authorized"
+
+msgid "Enviar link de ativação"
+msgstr "Send activation link"
+
+msgid "Enviar tarefa"
+msgstr "Send task"
+
+msgid "Enviar teste para"
+msgstr "Send test to"
+
+msgid "Escolha as permissões desta IA para sua caixa institucional."
+msgstr "Choose this AI's permissions for your institutional mailbox."
+
+msgid "Escolha o acesso de cada conexão."
+msgstr "Choose access for each connection."
+
+msgid "Escolha quais IAs podem ler sua caixa e quais podem enviar mensagens em seu nome."
+msgstr "Choose which AIs can read your mailbox and which can send messages on your behalf."
+
+msgid "Escolha um apelido de até 80 caracteres diferente de um ID de conta."
+msgstr "Choose a nickname of up to 80 characters that differs from an account ID."
+
+msgid "Escolha um conector"
+msgstr "Choose a connector"
+
+msgid "Escolha um conector configurado para este espaço."
+msgstr "Choose a connector configured for this workspace."
+
+msgid "Escolha uma ação para a foto."
+msgstr "Choose a photo action."
+
+msgid "Escolha uma foto de até 5 MB."
+msgstr "Choose a photo up to 5 MB in size."
+
+msgid "Escolha uma imagem JPG, PNG ou WebP válida."
+msgstr "Choose a valid JPG, PNG or WebP image."
+
+msgid "Escolha uma imagem de até 25 megapixels."
+msgstr "Choose an image up to 25 megapixels."
+
+msgid "Escolha uma imagem."
+msgstr "Choose an image."
+
+msgid "Escolher espaços"
+msgstr "Choose workspaces"
+
+msgid "Escolher nova foto"
+msgstr "Choose a new photo"
+
+msgid "Espaço pessoal"
+msgstr "Personal workspace"
+
+msgid "Espaços"
+msgstr "Workspaces"
+
+msgid "Espaços atuais e futuros"
+msgstr "Current and future workspaces"
+
+msgid "Espaços das minhas IAs"
+msgstr "My AI workspaces"
+
+msgid "Espaços disponíveis para"
+msgstr "Available workspaces for"
+
+msgid "Esqueci minha senha"
+msgstr "I forgot my password"
+
+msgid "Esqueci minha senha do AviHUB"
+msgstr "I forgot my AviHUB password"
+
+msgid "Esse e-mail já está vinculado a outro usuário."
+msgstr "This email is already linked to another user."
+
+msgid "Esta conta está desativada."
+msgstr "This account is disabled."
+
+msgid "Esta conta está indisponível."
+msgstr "This account is unavailable."
+
+msgid "Esta conta já está vinculada."
+msgstr "This account is already linked."
+
+msgid "Esta conta já possui outro vínculo."
+msgstr "This account already has another linked identity."
+
+msgid "Esta sessão AviHUB está indisponível. Escolha uma conta vinculada."
+msgstr "This AviHUB session is unavailable. Choose a linked account."
+
+msgid "Este cadastro mudou. Reabra a edição para carregar a versão atual."
+msgstr "This record has changed. Reopen the editor to load the current version."
+
+msgid "Este canal exige um destino salvo."
+msgstr "This channel requires a saved recipient."
+
+msgid "Este endereço já está vinculado a uma conta."
+msgstr "This address is already linked to an account."
+
+msgid "Este remetente envia links de recuperação de senha e avisos do HUB IA."
+msgstr "This sender delivers password recovery links and HUB IA notifications."
+
+msgid "Este usuário já está cadastrado."
+msgstr "This user is already registered."
+
+msgid "Este é o espaço principal usado para receber novos membros da instituição. Você pode alterar seu nome."
+msgstr "This is the main workspace for new institution members. You can change its name."
+
+msgid "Ex. Granja Norte"
+msgstr "E.g. North Farm"
+
+msgid "Excluir"
+msgstr "Delete"
+
+msgid "Excluir espaço"
+msgstr "Delete workspace"
+
+msgid "Excluir selecionadas"
+msgstr "Remove selected"
+
+msgid "Excluir vínculos"
+msgstr "Unlink accounts"
+
+msgid "Executar consulta"
+msgstr "Run query"
+
+msgid "Execução interrompida ou sem confirmação de resposta."
+msgstr "Run interrupted or response unconfirmed."
+
+msgid "Falha de notificação"
+msgstr "Notification failed"
+
+msgid "Falha na execução"
+msgstr "Run failed"
+
+msgid "Falha no envio. Verifique o servidor, a porta e as credenciais SMTP."
+msgstr "Sending failed. Check the SMTP server, port and credentials."
+
+msgid "Falhou"
+msgstr "Failed"
+
+msgid "Finalidade ainda não cadastrada."
+msgstr "No purpose has been specified yet."
+
+msgid "Foi solicitada uma nova senha para sua conta %(user)s no HUB IA."
+msgstr "A password reset was requested for your HUB IA account %(user)s."
+
+msgid "Formatação"
+msgstr "Formatting"
+
+msgid "Foto de perfil"
+msgstr "Profile photo"
+
+msgid "Foto de perfil atualizada."
+msgstr "Profile photo updated."
+
+msgid "Funcionamento"
+msgstr "Agent behavior"
+
+msgid "Gerenciar agentes"
+msgstr "Manage agents"
+
+msgid "Gerenciar agentes e ver membros"
+msgstr "Manage agents and view members"
+
+msgid "Gerenciar contas"
+msgstr "Manage accounts"
+
+msgid "Gerenciar contas AviHUB"
+msgstr "Manage AviHUB accounts"
+
+msgid "Gerenciar e-mails de recuperação dos usuários"
+msgstr "Manage user recovery emails"
+
+msgid "Gerenciar espaços das minhas IAs"
+msgstr "Manage my AI workspaces"
+
+msgid "Gerenciar permissões das minhas IAs"
+msgstr "Manage my AI permissions"
+
+msgid "Gerenciar repositórios no GitHub ↗"
+msgstr "Manage repositories on GitHub ↗"
+
+msgid "Guia dos meus espaços"
+msgstr "My workspace guide"
+
+msgid "HUB IA, painel"
+msgstr "HUB IA dashboard"
+
+msgid "HUB consulta um agente remoto (A2A)"
+msgstr "HUB queries a remote agent (A2A)"
+
+msgid "Habilitado"
+msgstr "Enabled"
+
+msgid "Habilitar WhatsApp"
+msgstr "Enable WhatsApp"
+
+msgid "Hoje é"
+msgstr "Today is"
+
+msgid "Hoje é %(data)s."
+msgstr "Today is %(data)s."
+
+msgid "I"
+msgstr "I"
+
+msgid "Identificador da integração Leadfinder"
+msgstr "Leadfinder integration ID"
+
+msgid "Identificador de conta AviHUB inválido."
+msgstr "Invalid AviHUB account ID."
+
+msgid "Identificador de envio inválido."
+msgstr "Invalid delivery ID."
+
+msgid "Identificador de envio já utilizado. Confira o histórico."
+msgstr "This delivery ID has already been used. Check the history."
+
+msgid "Idioma"
+msgstr "Language"
+
+msgid "Inclua ao menos um trecho para pesquisa."
+msgstr "Add at least one passage to search."
+
+msgid "Inclui os espaços atuais e futuros"
+msgstr "Includes current and future workspaces"
+
+msgid "Incluir conta"
+msgstr "Add account"
+
+msgid "Informe a URL HTTPS exata informada pelo serviço."
+msgstr "Enter the exact HTTPS URL provided by the service."
+
+msgid "Informe a chave para configurar o modelo pela primeira vez."
+msgstr "Enter the key to set up the model for the first time."
+
+msgid "Informe a senha para vincular esta caixa ao servidor selecionado."
+msgstr "Enter the password to link this mailbox to the selected server."
+
+msgid "Informe o código de verificação."
+msgstr "Enter the verification code."
+
+msgid "Informe o e-mail cadastrado na sua conta do HUB IA."
+msgstr "Enter the email registered with your HUB IA account."
+
+msgid "Informe o e-mail da sua conta no Portal Peso Exato. O AviHUB enviará as instruções para esse endereço."
+msgstr "Enter your Peso Exato Portal account email. AviHUB will send instructions to that address."
+
+msgid "Informe o e-mail e a senha da sua conta AviHUB."
+msgstr "Enter your AviHUB account email and password."
+
+msgid "Informe o e-mail e a senha que você usa no Portal Peso Exato (AviHUB)."
+msgstr "Enter the email and password you use for the Peso Exato Portal (AviHUB)."
+
+msgid "Informe o nome da organização no GitHub."
+msgstr "Enter the GitHub organization name."
+
+msgid "Informe o nome do remetente em uma única linha."
+msgstr "Enter the sender name on a single line."
+
+msgid "Informe seu endereço corporativo completo e a senha da caixa."
+msgstr "Enter your full corporate email address and mailbox password."
+
+msgid "Informe um destinatário ou selecione um destino salvo."
+msgstr "Enter a recipient or select a saved one."
+
+msgid "Informe um domínio corporativo válido."
+msgstr "Enter a valid corporate domain."
+
+msgid "Informe um e-mail válido do AviHUB."
+msgstr "Enter a valid AviHUB email address."
+
+msgid "Informe um telefone com DDD."
+msgstr "Enter a phone number with its area code."
+
+msgid "Informe uma URL HTTPS válida e sem credenciais."
+msgstr "Enter a valid HTTPS URL without credentials."
+
+msgid "Informe uma consulta de até 2.000 caracteres."
+msgstr "Enter a query of up to 2,000 characters."
+
+msgid "Informe uma mensagem de até 2.000 caracteres."
+msgstr "Enter a message of up to 2,000 characters."
+
+msgid "Informe uma tarefa de até 2.000 caracteres."
+msgstr "Enter a task of up to 2,000 characters."
+
+msgid "Instalar no GitHub ↗"
+msgstr "Install on GitHub ↗"
+
+msgid "Instituições"
+msgstr "Institutions"
+
+msgid "Instituições, espaços e agentes"
+msgstr "Institutions, workspaces and agents"
+
+msgid "Instruções para o modelo"
+msgstr "Instructions for the model"
+
+msgid "Integrações"
+msgstr "Integrations"
+
+msgid "Ir para o guia de conexão das IAs"
+msgstr "Open the AI connection guide"
+
+msgid "Itálico"
+msgstr "Italic"
+
+msgid "JPG, PNG ou WebP, até 5 MB e 25 megapixels."
+msgstr "JPG, PNG or WebP, up to 5 MB and 25 megapixels."
+
+msgid "Já existe um agente com esse nome no espaço."
+msgstr "An agent with this name already exists in the workspace."
+
+msgid "Já existe um cadastro com esse e-mail. Confirme a senha do HUB IA para usar o Google nos próximos acessos."
+msgstr "An account already uses this email. Confirm your HUB IA password to use Google for future sign-ins."
+
+msgid "Já existe um cadastro com esse identificador."
+msgstr "This identifier is already registered."
+
+msgid "Leitor"
+msgstr "Viewer"
+
+msgid "Leitura por IMAP em"
+msgstr "IMAP access at"
+
+msgid "Ler minha caixa de entrada"
+msgstr "Read my inbox"
+
+msgid "Libere uma pasta por linha usando o caminho a partir da raiz do repositório. Os membros do espaço e suas conexões MCP poderão consultar as notas dessas pastas e subpastas. Para liberar as notas da raiz e de todas as pastas atuais e futuras, informe"
+msgstr "Allow one folder per line using its path from the repository root. Workspace members and their MCP connections will be able to read notes in these folders and subfolders. To allow notes in the root and all current and future folders, enter"
+
+msgid "Lido"
+msgstr "Read"
+
+msgid "Limpar busca"
+msgstr "Clear search"
+
+msgid "Link"
+msgstr "Link"
+
+msgid "Link indisponível"
+msgstr "Link unavailable"
+
+msgid "Link inválido ou expirado"
+msgstr "Invalid or expired link"
+
+msgid "Lista"
+msgstr "List"
+
+msgid "Lixeira de espaços"
+msgstr "Deleted workspaces"
+
+msgid "MCP de e-mail"
+msgstr "Email MCP"
+
+msgid "MCP exclusivo de e-mail (OAuth)"
+msgstr "Email-only MCP (OAuth)"
+
+msgid "Marque a instituição de cada espaço selecionado."
+msgstr "Select the institution for each selected workspace."
+
+msgid "Membro"
+msgstr "Member"
+
+msgid "Membros com acesso"
+msgstr "Members with access"
+
+msgid "Membros da equipe interna podem abrir"
+msgstr "Internal team members can open"
+
+msgid "Mensagem"
+msgstr "Message"
+
+msgid "Meu e-mail"
+msgstr "My email"
+
+msgid "Meus avisos recentes"
+msgstr "My recent notifications"
+
+msgid "Meus espaços"
+msgstr "My workspaces"
+
+msgid "Minha conta"
+msgstr "My account"
+
+msgid "Minhas IAs configuradas"
+msgstr "My configured AIs"
+
+msgid "Minhas consultas"
+msgstr "My queries"
+
+msgid "Minhas consultas recentes"
+msgstr "My recent queries"
+
+msgid "Minhas integrações"
+msgstr "My integrations"
+
+msgid "Minhas integrações · Dot, MCP e A2A"
+msgstr "My integrations · Dot, MCP and A2A"
+
+msgid "Modelo de IA"
+msgstr "AI model"
+
+msgid "Modelo habilitado na sua conta OpenAI"
+msgstr "Model enabled in your OpenAI account"
+
+msgid "Modo de edição"
+msgstr "Editing mode"
+
+msgid "Mover para a lixeira"
+msgstr "Move to trash"
+
+msgid "Muitas tentativas. Aguarde cinco minutos."
+msgstr "Too many attempts. Wait five minutes."
+
+msgid "Muitas tentativas. Tente novamente em cinco minutos."
+msgstr "Too many attempts. Try again in five minutes."
+
+msgid "N"
+msgstr "B"
+
+msgid "Na autorização, escolha sua instituição e as permissões de leitura e envio. Este conector oferece apenas as ferramentas de e-mail autorizadas."
+msgstr "During authorization, choose your institution and its read and send permissions. This connector offers only the email tools you authorize."
+
+msgid "Na conversa com o Dot, peça: “Liste os agentes no HUB IA e assine o evento hub.task.created. Quando chegar uma tarefa, leia-a com fetch_task e responda com reply_task se disponível.”"
+msgstr "In your conversation with Dot, ask: “List the agents in HUB IA and subscribe to hub.task.created. When a task arrives, read it with fetch_task and respond with reply_task if available.”"
+
+msgid "Na lixeira desde"
+msgstr "In trash since"
+
+msgid "Navegação principal"
+msgstr "Main navigation"
+
+msgid "Negrito"
+msgstr "Bold"
+
+msgid "Nenhum agente ativo neste espaço."
+msgstr "No active agents in this workspace."
+
+msgid "Nenhum agente ativo nos espaços aos quais você tem acesso."
+msgstr "There are no active agents in your available workspaces."
+
+msgid "Nenhum agente cadastrado na instituição."
+msgstr "No agents are registered in the institution."
+
+msgid "Nenhum agente cadastrado nesta instituição."
+msgstr "No agents are registered in this institution."
+
+msgid "Nenhum agente cadastrado neste espaço."
+msgstr "No agents are registered in this workspace."
+
+msgid "Nenhum agente corresponde à busca."
+msgstr "No agents match your search."
+
+msgid "Nenhum canal de envio habilitado neste agente."
+msgstr "No delivery channels are enabled for this agent."
+
+msgid "Nenhum conector disponível neste espaço."
+msgstr "No connectors are available in this workspace."
+
+msgid "Nenhum espaço selecionado"
+msgstr "No workspaces selected"
+
+msgid "Nenhum evento registrado."
+msgstr "No events recorded."
+
+msgid "Nenhum membro ativo."
+msgstr "No active members."
+
+msgid "Nenhum usuário encontrado."
+msgstr "No users found."
+
+msgid "Nenhuma alteração pendente."
+msgstr "No pending changes."
+
+msgid "Nenhuma execução registrada."
+msgstr "No runs recorded."
+
+msgid "Nenhuma instituição cadastrada."
+msgstr "No institutions registered."
+
+msgid "Nenhuma instituição ou agente disponível. A conta mantém o espaço pessoal."
+msgstr "No institutions or agents available. The account retains its personal workspace."
+
+msgid "Nenhuma nota encontrada nesta página."
+msgstr "No notes found on this page."
+
+msgid "Nenhuma pasta foi liberada para este espaço."
+msgstr "No folders are authorized for this workspace."
+
+msgid "Nenhuma pasta liberada"
+msgstr "No folders authorized"
+
+msgid "No ChatGPT, abra"
+msgstr "In ChatGPT, open"
+
+msgid "No Gemini, abra"
+msgstr "In Gemini, open"
+
+msgid "No GitHub, selecione"
+msgstr "On GitHub, select"
+
+msgid "Nome"
+msgstr "Name"
+
+msgid "Nome da conexão"
+msgstr "Connection name"
+
+msgid "Nome da instituição"
+msgstr "Institution name"
+
+msgid "Nome do agente"
+msgstr "Agent name"
+
+msgid "Nome do destino"
+msgstr "Recipient name"
+
+msgid "Nome do espaço"
+msgstr "Workspace name"
+
+msgid "Nome do remetente"
+msgstr "Sender name"
+
+msgid "Nome ou tipo"
+msgstr "Name or type"
+
+msgid "Notificação aceita pelo destino"
+msgstr "Notification accepted by recipient"
+
+msgid "Notificações por canal"
+msgstr "Notifications by channel"
+
+msgid "Novo agente"
+msgstr "New agent"
+
+msgid "Novo espaço"
+msgstr "New workspace"
+
+msgid "Não foi possível abrir o editor visual."
+msgstr "The visual editor could not be opened."
+
+msgid "Não foi possível confirmar a identidade com o Google."
+msgstr "We couldn't verify your identity with Google."
+
+msgid "O AviHUB ainda requer a verificação da conta."
+msgstr "AviHUB still requires account verification."
+
+msgid "O AviHUB confirmou o envio do código."
+msgstr "AviHUB confirmed the code was sent."
+
+msgid "O AviHUB não aceitou o login ou o código de verificação."
+msgstr "AviHUB didn't accept the login or verification code."
+
+msgid "O AviHUB não apresentou o formulário de autenticação esperado."
+msgstr "AviHUB did not provide the expected sign-in form."
+
+msgid "O AviHUB não confirmou o pedido de redefinição. Tente novamente mais tarde."
+msgstr "AviHUB didn't confirm the reset request. Try again later."
+
+msgid "O AviHUB não respondeu com uma página válida. Tente novamente."
+msgstr "AviHUB did not return a valid page. Try again."
+
+msgid "O AviHUB recebeu muitos pedidos. Aguarde alguns minutos antes de tentar novamente."
+msgstr "AviHUB received too many requests. Wait a few minutes before trying again."
+
+msgid "O HUB IA não conseguiu salvar o vínculo. Peça à administração para verificar o banco do HUB IA."
+msgstr "HUB IA couldn't save the account link. Ask your administrator to check the HUB IA database."
+
+msgid "O HUB acrescenta esta assinatura somente aos e-mails que suas IAs enviam por"
+msgstr "The HUB adds this signature only to emails your AIs send using"
+
+msgid "O HUB publica um aviso por conexão. Clientes MCP com assinatura ativa recebem o evento de tarefa. Agentes A2A com destino configurado recebem uma mensagem."
+msgstr "The HUB publishes one notification per connection. MCP clients with an active subscription receive the task event. A2A agents with a configured destination receive a message."
+
+msgid "O acesso com Google aguarda configuração pela plataforma."
+msgstr "Google sign-in is awaiting platform setup."
+
+msgid "O acesso desta conta está desativado."
+msgstr "Access to this account is disabled."
+
+msgid "O administrador precisa salvar novamente a credencial deste canal."
+msgstr "The administrator needs to save this channel's credential again."
+
+msgid "O agente será criado sem acesso a pastas."
+msgstr "The agent will be created without folder access."
+
+msgid "O agente será removido do catálogo de"
+msgstr "The agent will be removed from the catalog of"
+
+msgid "O conector de e-mail está desativado nesta instituição."
+msgstr "The email connector is disabled for this institution."
+
+msgid "O conector está desativado."
+msgstr "The connector is disabled."
+
+msgid "O destinatário pode ser informado no envio. Salve um destino para oferecer um atalho ou restringir seu uso a um setor."
+msgstr "You can enter a recipient when sending. Save a recipient as a shortcut or restrict it to a department."
+
+msgid "O envio de e-mails de ativação está indisponível. Tente novamente mais tarde."
+msgstr "Activation emails are unavailable. Try again later."
+
+msgid "O link expirou ou já foi usado."
+msgstr "The link has expired or has already been used."
+
+msgid "O login com Google ainda não foi configurado."
+msgstr "Google sign-in hasn't been configured yet."
+
+msgid "O papel se aplica a todos os espaços desta instituição aos quais o usuário tem acesso."
+msgstr "The role applies to every workspace the user can access in this institution."
+
+msgid "O próximo passo é conectar sua primeira IA à instituição Peso Exato. Escolha ChatGPT ou Gemini no guia para começar a consultar suas operações."
+msgstr "Next, connect your first AI to the Peso Exato institution. Choose ChatGPT or Gemini in the guide to start checking your operations."
+
+msgid "O servidor SMTP não confirmou o envio."
+msgstr "The SMTP server did not confirm delivery."
+
+msgid "O token usado nessa consulta precisa de nova autorização para enviar e-mails."
+msgstr "The token used for this query requires new authorization to send email."
+
+msgid "Olá,"
+msgstr "Hello,"
+
+msgid "Operação inválida."
+msgstr "Invalid operation."
+
+msgid "Opção de configuração inválida."
+msgstr "Invalid setup option."
+
+msgid "Organização no GitHub"
+msgstr "GitHub organization"
+
+msgid "Os canais e destinos são configurados em cada espaço."
+msgstr "Channels and recipients are configured in each workspace."
+
+msgid "Os membros que usarem esse modelo consumirão a cota da conta OpenAI configurada neste espaço."
+msgstr "Members using this model will consume the quota of the OpenAI account configured in this workspace."
+
+msgid "Ou selecione um destino salvo"
+msgstr "Or select a saved recipient"
+
+msgid "Outro agente consulta o HUB (A2A)"
+msgstr "Another agent queries the HUB (A2A)"
+
+msgid "Painel"
+msgstr "Dashboard"
+
+msgid "Papel institucional"
+msgstr "Institution role"
+
+msgid "Para conectar um espaço da Peso Exato, use o"
+msgstr "To connect a Peso Exato workspace, use"
+
+msgid "Para endereços disponíveis, enviamos um link válido por 24 horas. Se já tem conta, entre com seu método habitual."
+msgstr "For eligible addresses, we send a link valid for 24 hours. If you already have an account, use your usual sign-in method."
+
+msgid "Para enviar, a IA precisa do escopo OAuth"
+msgstr "To send email, the AI needs the OAuth scope"
+
+msgid "Para testar, peça à IA:"
+msgstr "To test, ask your AI:"
+
+msgid "Para usar sua caixa como uma integração separada na IA, adicione um servidor MCP com OAuth. Use"
+msgstr "To use your mailbox as a separate AI integration, add an MCP server with OAuth. Use"
+
+msgid "Parabéns! Sua conta do AviHUB está vinculada."
+msgstr "Congratulations! Your AviHUB account is linked."
+
+msgid "Pausar acesso"
+msgstr "Pause access"
+
+msgid "Permissões MCP"
+msgstr "MCP permissions"
+
+msgid "Permissões MCP de e-mail ·"
+msgstr "Email MCP permissions ·"
+
+msgid "Permissões salvas."
+msgstr "Permissions saved."
+
+msgid "Permitir Meu e-mail (equipe interna da Peso Exato)"
+msgstr "Allow My email (internal Peso Exato team)"
+
+msgid "Permitir que esta IA envie e-mails em meu nome e edite a assinatura usada pelas IAs ("
+msgstr "Allow this AI to send email on my behalf and edit the signature used by AIs ("
+
+msgid "Permitir que esta IA leia minha caixa de entrada ("
+msgstr "Allow this AI to read my inbox ("
+
+msgid "Permitir que membros conectem suas caixas"
+msgstr "Allow members to connect their mailboxes"
+
+msgid "Permitir que o cliente MCP responda às minhas tarefas"
+msgstr "Allow the MCP client to respond to my tasks"
+
+msgid "Período do painel"
+msgstr "Dashboard period"
+
+msgid "Pesquisa informações na base de conhecimento deste espaço."
+msgstr "Searches this workspace’s knowledge base."
+
+msgid "Pesquisar próxima página"
+msgstr "Search next page"
+
+msgid "Plugins → Adicionar servidor MCP personalizado"
+msgstr "Plugins → Add custom MCP server"
+
+msgid "Por padrão, cada conexão inclui os espaços atuais e futuros aos quais você tem acesso na instituição ou conta pessoal conectada. Você pode limitar os espaços ou pausar uma conexão."
+msgstr "By default, each connection includes the current and future workspaces you can access in the connected institution or personal account. You can limit workspaces or pause a connection."
+
+msgid "Porta"
+msgstr "Port"
+
+msgid "Portal Peso Exato vinculado"
+msgstr "Peso Exato Portal linked"
+
+msgid "Preencha a configuração correspondente ao funcionamento escolhido."
+msgstr "Complete the settings for the selected behavior."
+
+msgid "Primeiro acesso?"
+msgstr "First time here?"
+
+msgid "Próxima"
+msgstr "Next"
+
+msgid "Pular para o conteúdo"
+msgstr "Skip to content"
+
+msgid "Página"
+msgstr "Page"
+
+msgid "Páginas de usuários"
+msgstr "User pages"
+
+msgid "Quando os avisos de catálogo estão ativos no espaço, o MCP oferece os avisos em"
+msgstr "When catalog notifications are enabled for the workspace, MCP delivers notifications through"
+
+msgid "Quantidade de consultas por dia"
+msgstr "Number of queries per day"
+
+msgid "Quem pode enviar"
+msgstr "Who can send"
+
+msgid "Reabra Meu e-mail para validar sua sessão."
+msgstr "Reopen My email to validate your session."
+
+msgid "Reativar instituição"
+msgstr "Reactivate institution"
+
+msgid "Recarregue as permissões antes de salvar."
+msgstr "Reload permissions before saving."
+
+msgid "Recarregue as permissões de e-mail."
+msgstr "Reload the email permissions."
+
+msgid "Receber por SMS"
+msgstr "Receive by SMS"
+
+msgid "Receber por WhatsApp"
+msgstr "Receive by WhatsApp"
+
+msgid "Reconectar caixa"
+msgstr "Reconnect mailbox"
+
+msgid "Recuperar senha"
+msgstr "Reset password"
+
+msgid "Recuperar senha do AviHUB"
+msgstr "Reset AviHUB password"
+
+msgid "Recuperação de senha"
+msgstr "Password recovery"
+
+msgid "Recuperação de senha do HUB IA"
+msgstr "HUB IA password recovery"
+
+msgid "Recusado"
+msgstr "Rejected"
+
+msgid "Recusar"
+msgstr "Decline"
+
+msgid "Registrado"
+msgstr "Recorded"
+
+msgid "Registrar GitHub App no GitHub ↗"
+msgstr "Register GitHub App on GitHub ↗"
+
+msgid "Registre a GitHub App privada da organização"
+msgstr "Register the private GitHub App for the organization"
+
+msgid "Remover conexão e suas tarefas"
+msgstr "Remove connection and its tasks"
+
+msgid "Remover destino"
+msgstr "Remove recipient"
+
+msgid "Renovar a conexão"
+msgstr "Renew the connection"
+
+msgid "Repositório"
+msgstr "Repository"
+
+msgid "Repositório de notas"
+msgstr "Notes repository"
+
+msgid "Repositório para verificar"
+msgstr "Repository to verify"
+
+msgid "Repositórios autorizados"
+msgstr "Authorized repositories"
+
+msgid "Requer intervenção no agente remoto"
+msgstr "Requires remote agent intervention"
+
+msgid "Responder às tarefas da conexão"
+msgstr "Respond to connection tasks"
+
+msgid "Respondida"
+msgstr "Answered"
+
+msgid "Responsável institucional"
+msgstr "Institution owner"
+
+msgid "Restaurar espaço"
+msgstr "Restore workspace"
+
+msgid "Restaurar no catálogo"
+msgstr "Restore to catalog"
+
+msgid "Revise as permissões e selecione"
+msgstr "Review the permissions and select"
+
+msgid "Revise os campos indicados para salvar o agente."
+msgstr "Check the highlighted fields to save the agent."
+
+msgid "Revisão verificada"
+msgstr "Verified revision"
+
+msgid "Revogar acesso"
+msgstr "Revoke access"
+
+msgid "S"
+msgstr "U"
+
+msgid "Sair"
+msgstr "Sign out"
+
+msgid "Salvar acesso de"
+msgstr "Save access for"
+
+msgid "Salvar alterações"
+msgstr "Save changes"
+
+msgid "Salvar assinatura"
+msgstr "Save signature"
+
+msgid "Salvar avisos"
+msgstr "Save notifications"
+
+msgid "Salvar canal"
+msgstr "Save channel"
+
+msgid "Salvar configuração"
+msgstr "Save settings"
+
+msgid "Salvar foto"
+msgstr "Save photo"
+
+msgid "Salvar nome"
+msgstr "Save name"
+
+msgid "Salvar nova senha"
+msgstr "Save new password"
+
+msgid "Salvar papel"
+msgstr "Save role"
+
+msgid "Salvar permissões"
+msgstr "Save permissions"
+
+msgid "Salvar seleção"
+msgstr "Save selection"
+
+msgid "Salve o agente para configurar os canais e destinos."
+msgstr "Save the agent to configure its channels and recipients."
+
+msgid "Se o e-mail estiver cadastrado no AviHUB, você receberá um link para redefinir a senha."
+msgstr "If the email address is registered with AviHUB, you will receive a password reset link."
+
+msgid "Se o endereço corresponder a uma conta ativa, você receberá um link para definir uma nova senha. Confira também a pasta de spam."
+msgstr "If the address matches an active account, you will receive a link to set a new password. Check your spam folder too."
+
+msgid "Se você não fez essa solicitação, pode ignorar esta mensagem."
+msgstr "If you didn't request this, you can ignore this message."
+
+msgid "Se você não fez este cadastro, ignore esta mensagem."
+msgstr "If you didn't register, you can ignore this message."
+
+msgid "Selecionar agentes do espaço"
+msgstr "Select workspace agents"
+
+msgid "Selecionar todas"
+msgstr "Select all"
+
+msgid "Selecione"
+msgstr "Select"
+
+msgid "Selecione apenas espaços disponíveis nesta instituição."
+msgstr "Select only workspaces available in this institution."
+
+msgid "Selecione apenas suas conexões desta instituição."
+msgstr "Select only your connections in this institution."
+
+msgid "Selecione o texto que deseja transformar em link."
+msgstr "Select the text you want to turn into a link."
+
+msgid "Selecione os espaços que o usuário pode abrir. Bloquear um agente impede seu uso em todos os espaços dessa instituição, inclusive pelas integrações."
+msgstr "Select the workspaces this user can open. Blocking an agent prevents its use across this institution, including through integrations."
+
+msgid "Selecione pelo menos uma conta para excluir."
+msgstr "Select at least one account to remove."
+
+msgid "Selecione um repositório verificado e informe o nome do agente."
+msgstr "Select a verified repository and enter the agent name."
+
+msgid "Selecione uma instituição e um espaço válidos."
+msgstr "Select a valid institution and workspace."
+
+msgid "Selecione uma opção"
+msgstr "Select an option"
+
+msgid "Seleção de conexões inválida."
+msgstr "Invalid connection selection."
+
+msgid "Sem confirmação"
+msgstr "Unconfirmed"
+
+msgid "Senha"
+msgstr "Password"
+
+msgid "Senha atualizada"
+msgstr "Password updated"
+
+msgid "Senha da caixa de e-mail"
+msgstr "Mailbox password"
+
+msgid "Senha do AviHUB"
+msgstr "AviHUB password"
+
+msgid "Senha do HUB IA"
+msgstr "HUB IA password"
+
+msgid "Separe os trechos com uma linha em branco."
+msgstr "Separate passages with a blank line."
+
+msgid "Servidor SMTP"
+msgstr "SMTP server"
+
+msgid "Servidor de saída"
+msgstr "Outgoing server"
+
+msgid "Seu papel de leitor permite consultar o catálogo e o histórico de suas execuções."
+msgstr "Your viewer role allows you to view the catalog and your run history."
+
+msgid "Seu papel de leitor permite consultar o histórico."
+msgstr "Your viewer role allows you to view the history."
+
+msgid "Seu papel nesta instituição permite apenas leitura."
+msgstr "Your role in this institution only allows reading."
+
+msgid "Seu papel não permite enviar avisos."
+msgstr "Your role does not allow sending notifications."
+
+msgid "Seu papel permite apenas leitura."
+msgstr "Your role only allows reading."
+
+msgid "Seu papel permite somente consultas."
+msgstr "Your role only allows queries."
+
+msgid "Seu papel ·"
+msgstr "Your role ·"
+
+msgid "Seu vínculo aguarda o código de verificação do AviHUB. Abra a conta para concluir esta etapa."
+msgstr "Your account link is waiting for an AviHUB verification code. Open the account to finish this step."
+
+msgid "Solicitar link de recuperação"
+msgstr "Request recovery link"
+
+msgid "Solicitar link de redefinição"
+msgstr "Request reset link"
+
+msgid "Solicitar outro link"
+msgstr "Request another link"
+
+msgid "Solicitação inválida."
+msgstr "Invalid request."
+
+msgid "Solicitação inválida. Reabra o agente."
+msgstr "Invalid request. Reopen the agent."
+
+msgid "Solicite um novo cadastro"
+msgstr "Request a new registration"
+
+msgid "Sua caixa mudou. Recarregue a página antes de salvar."
+msgstr "Your mailbox has changed. Reload the page before saving."
+
+msgid "Sua consulta"
+msgstr "Your query"
+
+msgid "Sua conta ainda não tem acesso a um espaço ativo."
+msgstr "Your account doesn't have access to an active workspace yet."
+
+msgid "Sua conta ainda não tem acesso a um espaço."
+msgstr "Your account doesn't have access to any workspaces yet."
+
+msgid "Sublinhado"
+msgstr "Underline"
+
+msgid "Suspender instituição"
+msgstr "Suspend institution"
+
+msgid "Suspensa"
+msgstr "Suspended"
+
+msgid "Também pode ajustar as permissões de e-mail."
+msgstr "You can also adjust email permissions."
+
+msgid "Tarefa para"
+msgstr "Task for"
+
+msgid "Telefone"
+msgstr "Phone"
+
+msgid "Telefone com código do país ou ID do grupo"
+msgstr "Phone number with country code or group ID"
+
+msgid "Telefone ou ID do grupo"
+msgstr "Phone number or group ID"
+
+msgid "Testar conexão"
+msgstr "Test connection"
+
+msgid "Tipo"
+msgstr "Type"
+
+msgid "Titular"
+msgstr "Owner"
+
+msgid "Todas as pastas"
+msgstr "All folders"
+
+msgid "Todos, inclusive futuros"
+msgstr "All, including future ones"
+
+msgid "URI de retorno OAuth do cliente MCP"
+msgstr "MCP client's OAuth callback URI"
+
+msgid "URL do Agent Card remoto"
+msgstr "Remote Agent Card URL"
+
+msgid "Uma das permissões mudou. Reabra a edição."
+msgstr "A permission changed. Reopen the editor."
+
+msgid "Usar o destinatário informado acima"
+msgstr "Use the recipient entered above"
+
+msgid "Use esse nome para indicar ao agente qual conta consultar."
+msgstr "Use this name to tell the agent which account to query."
+
+msgid "Use o endereço do servidor MCP do HUB IA na configuração do conector."
+msgstr "Use the HUB IA MCP server address when configuring the connector."
+
+msgid "Use o identificador exato cadastrado na Leadfinder."
+msgstr "Use the exact ID registered in Leadfinder."
+
+msgid "Use seu login de"
+msgstr "Use your login for"
+
+msgid "Use um link HTTPS, de e-mail ou telefone."
+msgstr "Use an HTTPS, email or phone link."
+
+msgid "Use uma URL HTTPS sem credenciais."
+msgstr "Use an HTTPS URL without credentials."
+
+msgid "Use uma senha de pelo menos 12 caracteres."
+msgstr "Use a password with at least 12 characters."
+
+msgid "Usuário ativo não encontrado."
+msgstr "Active user not found."
+
+msgid "Usuário cadastrado"
+msgstr "Registered user"
+
+msgid "Usuário deste espaço"
+msgstr "Workspace user"
+
+msgid "Usuário destinatário"
+msgstr "Recipient user"
+
+msgid "Usuário ou e-mail"
+msgstr "Username or email"
+
+msgid "Usuário responsável"
+msgstr "Institution owner"
+
+msgid "Usuário, e-mail ou senha inválidos."
+msgstr "Invalid username, email or password."
+
+msgid "Usuários"
+msgstr "Users"
+
+msgid "Usuários e auditoria"
+msgstr "Users and audit log"
+
+msgid "Validar e conectar caixa"
+msgstr "Validate and connect mailbox"
+
+msgid "Ver e restaurar"
+msgstr "View and restore"
+
+msgid "Ver revisão no GitHub"
+msgstr "View revision on GitHub"
+
+msgid "Verificar conta"
+msgstr "Verify account"
+
+msgid "Verificar código"
+msgstr "Verify code"
+
+msgid "Verificação pendente"
+msgstr "Verification pending"
+
+msgid "Verifique a conexão para escolher o repositório de notas."
+msgstr "Verify the connection to choose the notes repository."
+
+msgid "Verifique seu e-mail"
+msgstr "Check your email"
+
+msgid "Vinculada"
+msgstr "Linked"
+
+msgid "Vinculado à instituição"
+msgstr "Linked to institution"
+
+msgid "Vincular conta"
+msgstr "Link account"
+
+msgid "Vincular e entrar"
+msgstr "Link and sign in"
+
+msgid "Vincule sua caixa em Meu e-mail na instituição para conectar este MCP."
+msgstr "Link your mailbox under My email in the institution to connect this MCP server."
+
+msgid "Vincule sua conta Google"
+msgstr "Link your Google account"
+
+msgid "Visão geral"
+msgstr "Overview"
+
+msgid "Você ainda não conectou um cliente neste espaço."
+msgstr "You haven't connected a client in this workspace yet."
+
+msgid "Você ainda não configurou uma conexão de IA."
+msgstr "You haven't configured an AI connection yet."
+
+msgid "Você ainda não vinculou uma conta AviHUB nesta instituição."
+msgstr "You haven't linked an AviHUB account in this institution yet."
+
+msgid "Você pode ajustar as permissões em"
+msgstr "You can adjust permissions in"
+
+msgid "Você pode ajustar o acesso desta conexão em"
+msgstr "You can adjust access for this connection in"
+
+msgid "Você pode editar aqui ou pedir a uma IA com permissão de envio. A alteração vale para todas as IAs que usam esta caixa. Para remover a assinatura, apague o conteúdo e salve."
+msgstr "Edit it here or ask an AI with sending permission. The change applies to all AIs using this mailbox. To remove the signature, clear the contents and save."
+
+msgid "Voltar ao editor"
+msgstr "Back to editor"
+
+msgid "Voltar ao login"
+msgstr "Back to sign-in"
+
+msgid "Voltar ao painel"
+msgstr "Back to dashboard"
+
+msgid "Voltar ao vínculo da conta"
+msgstr "Back to account linking"
+
+msgid "Voltar para entrar"
+msgstr "Back to sign-in"
+
+msgid "Voltar à foto padrão"
+msgstr "Restore default photo"
+
+msgid "Vínculo excluído."
+msgstr "Account unlinked."
+
+msgid "agente"
+msgstr "agent"
+
+msgid "aguardando assinatura de eventos"
+msgstr "awaiting event subscription"
+
+msgid "assinatura de eventos ativa"
+msgstr "event subscription active"
+
+msgid "ativos"
+msgstr "active"
+
+msgid "atualizado"
+msgstr "updated"
+
+msgid "cadastrado"
+msgstr "registered"
+
+msgid "com TLS."
+msgstr "with TLS."
+
+msgid "com TLS. O perfil de envio do provedor é"
+msgstr "with TLS. The provider's outgoing mail profile is"
+
+msgid "como nome e copie esta URL."
+msgstr "as the name and copy this URL."
+
+msgid "conex"
+msgstr "connections"
+
+msgid "conexão"
+msgstr "connection"
+
+msgid "conexões"
+msgstr "connections"
+
+msgid "conexões alteradas"
+msgstr "connections changed"
+
+msgid "consulta"
+msgstr "query"
+
+msgid "consultas"
+msgstr "queries"
+
+msgid "de"
+msgstr "of"
+
+msgid "desativados"
+msgstr "disabled"
+
+msgid "dias"
+msgstr "days"
+
+msgid "do espaço desejado em"
+msgstr "for the workspace you want under"
+
+msgid "e de todos os espaços em que está disponível. O histórico de uso será preservado."
+msgstr "and from all workspaces where it is available. Its usage history will be preserved."
+
+msgid "e envios de e-mail"
+msgstr "and outgoing emails"
+
+msgid "e escolha os repositórios autorizados para esta instituição."
+msgstr "and choose the repositories authorized for this institution."
+
+msgid "e informe"
+msgstr "and enter"
+
+msgid "em"
+msgstr "in"
+
+msgid "em cada espaço e marque os agentes que os membros poderão usar."
+msgstr "in each workspace and select the agents members can use."
+
+msgid "em um dos seus espaços para conectar sua primeira IA."
+msgstr "in one of your workspaces to connect your first AI."
+
+msgid "em um espaço da instituição para conectar sua caixa e escolher quais IAs poderão ler ou enviar e-mails."
+msgstr "in an institutional workspace to connect their mailbox and choose which AIs may read or send email."
+
+msgid "empresa.com.br"
+msgstr "company.com"
+
+msgid "espaço"
+msgstr "workspace"
+
+msgid "espaços selecionados"
+msgstr "workspaces selected"
+
+msgid "ou cadastre-se por e-mail"
+msgstr "or sign up by email"
+
+msgid "ou entre na sua conta."
+msgstr "or sign in to your account."
+
+msgid "ou use sua senha"
+msgstr "or use your password"
+
+msgid "para a lixeira, o HUB bloqueará o acesso dos membros e das integrações. Membros, agentes, configurações e histórico ficarão guardados para restauração."
+msgstr "to the trash, the HUB will block member and integration access. Members, agents, settings and history will be kept for restoration."
+
+msgid "selecionadas"
+msgstr "selected"
+
+msgid "selecionado"
+msgstr "selected"
+
+msgid "sem pastas liberadas"
+msgstr "no authorized folders"
+
+msgid "solicita acesso ao seu e-mail em"
+msgstr "requests access to your email in"
+
+msgid "solicita acesso em seu nome a"
+msgstr "requests access on your behalf to"
+
+msgid "somente e-mail"
+msgstr "email only"
+
+msgid "sozinho. Salvar o campo vazio revoga o acesso desse espaço."
+msgstr "on its own. Saving an empty field revokes access for this workspace."
+
+msgid "todos os espaços atuais e futuros aos quais você tiver acesso"
+msgstr "all current and future workspaces you can access"
+
+msgid "usuário"
+msgstr "user"
+
+msgid "· Alterado"
+msgstr "· Changed"
+
+msgid "· Conectores"
+msgstr "· Connectors"
+
+msgid "· Configurações do espaço"
+msgstr "· Workspace settings"
+
+msgid "· Desativado na instituição"
+msgstr "· Disabled in institution"
+
+msgid "· excluído em"
+msgstr "· deleted on"
+
+msgid "Última consulta ao catálogo MCP em"
+msgstr "Last MCP catalog query on"
+
+msgid "Última verificação em"
+msgstr "Last verified on"
+
+msgid "Últimos"
+msgstr "Last"
+
+msgid "“Liste os agentes disponíveis no meu espaço.”"
+msgstr "“List the agents available in my workspace.”"
+
+msgid "← Administração"
+msgstr "← Administration"
+
+msgid "← Agentes da instituição"
+msgstr "← Institution agents"
+
+msgid "← Contas vinculadas"
+msgstr "← Linked accounts"
+
+msgid "← Gerenciar agentes"
+msgstr "← Manage agents"
+
+msgid "← Meus espaços"
+msgstr "← My workspaces"
+
+msgid "← Usuários"
+msgstr "← Users"
+
+msgid "← Visão geral"
+msgstr "← Overview"
+
+msgid "← Voltar a"
+msgstr "← Back to"

@@ -3,6 +3,7 @@ import re
 import secrets
 import time
 
+from django.utils.translation import gettext as translate_text
 from django.contrib.auth.decorators import login_required
 from django.db import connection, transaction
 from django.http import Http404, HttpResponseBadRequest
@@ -40,7 +41,7 @@ def institution(cursor, user, tenant):
 
 def start(request, tenant, login):
     if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?",login):
-        raise ValueError("Informe o nome da organização no GitHub.")
+        raise ValueError(translate_text("Informe o nome da organização no GitHub."))
     state = secrets.token_urlsafe(32)
     request.session["github_registration"] = {"tenant":str(tenant),"state":state,"login":login,"at":int(time.time())}
     manifest = {"name":"HUB IA "+login[:15]+" "+str(tenant)[:8],
@@ -88,7 +89,7 @@ def connector(request, tenant):
                 repo = next((r for r in conn.repositories if str(r["id"]) == request.POST.get("repo")), None)
                 name = request.POST.get("name", "").strip()
                 if conn.error or not repo or not 1 <= len(name) <= 120:
-                    return HttpResponseBadRequest("Selecione um repositório verificado e informe o nome do agente.")
+                    return HttpResponseBadRequest(translate_text("Selecione um repositório verificado e informe o nome do agente."))
                 created = NoteLibrary.objects.create(connection=conn, name=name, repository_id=repo["id"])
                 register_connector(cursor, tenant, created.id, name, "library", PURPOSE)
                 return redirect("github_connector", tenant)
@@ -120,7 +121,7 @@ def connector(request, tenant):
                 conn.save(update_fields=["installation_id","repositories","checked_at","error"])
                 return redirect("github_connector",tenant)
             else:
-                return HttpResponseBadRequest("Ação indisponível.")
+                return HttpResponseBadRequest(translate_text("Ação indisponível."))
     return render(request,"github_connector.html",ctx,status=status)
 
 
@@ -135,7 +136,7 @@ def registered(request, tenant):
         if (flow.get("tenant")!=str(tenant) or time.time()-flow.get("at",0)>3600
                 or not secrets.compare_digest(flow.get("state","").encode(),request.GET.get("state","").encode())
                 or not re.fullmatch(r"[a-zA-Z0-9_-]{1,250}",code)):
-            return HttpResponseBadRequest("Cadastro expirado ou inválido. Inicie a conexão novamente no HUB.")
+            return HttpResponseBadRequest(translate_text("Cadastro expirado ou inválido. Inicie a conexão novamente no HUB."))
         cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,615))",[str(tenant)])
         if not GitHubConnection.objects.filter(tenant=tenant).exists():
             try:

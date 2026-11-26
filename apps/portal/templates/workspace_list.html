@@ -1,5 +1,5 @@
-<section id="espacos" class="panel"><div class="panel-head">{% if directory %}<h1>Meus espaços</h1>{% else %}<h2>Meus espaços</h2>{% endif %}{% if guide_available %}<a href="{% url 'personal_guide' %}">Guia dos meus espaços</a>{% endif %}</div>
+{% load i18n %}<section id="espacos" class="panel"><div class="panel-head">{% if directory %}<h1>{% translate "Meus espaços" %}</h1>{% else %}<h2>{% translate "Meus espaços" %}</h2>{% endif %}{% if guide_available %}<a href="{% url 'personal_guide' %}">{% translate "Guia dos meus espaços" %}</a>{% endif %}</div>
 {% if spaces %}<ul class="workspace-list">{% for w in spaces %}<li><a class="space-row" href="{% url 'workspace' w.tenant w.id %}">
 <span class="tile {% if w.org %}sky{% endif %}">{% if w.org %}{% include "icon.html" with name="org" %}{% else %}{% include "icon.html" with name="user" %}{% endif %}</span>
-<span class="row-name"><strong>{{ w.name }}</strong><small>{{ w.org|default:"Espaço pessoal" }}</small></span><span class="space-count">{{ w.agents }} agente{{ w.agents|pluralize:"s" }}</span><span class="arrow">{% include "icon.html" with name="arrow" %}</span></a></li>{% endfor %}</ul>
-{% else %}<p class="empty">Sua conta ainda não tem acesso a um espaço.</p>{% endif %}</section>
+<span class="row-name"><strong>{{ w.name }}</strong><small>{% if w.org %}{{ w.org }}{% else %}{% translate "Espaço pessoal" %}{% endif %}</small></span><span class="space-count">{{ w.agents }} {% translate "agente" %}{{ w.agents|pluralize:"s" }}</span><span class="arrow">{% include "icon.html" with name="arrow" %}</span></a></li>{% endfor %}</ul>
+{% else %}<p class="empty">{% translate "Sua conta ainda não tem acesso a um espaço." %}</p>{% endif %}</section>

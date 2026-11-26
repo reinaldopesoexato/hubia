@@ -1,6 +1,8 @@
 from uuid import uuid4
 
 from django import forms
+from django.utils.translation import gettext as translate_text
+from django.utils.translation import gettext_lazy as tr
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -18,7 +20,7 @@ from bridge.models import AccountProfile
 
 
 class RecoveryAddressForm(forms.ModelForm):
-    email = forms.EmailField(label="E-mail de recuperação", required=False, max_length=254)
+    email = forms.EmailField(label=tr("E-mail de recuperação"), required=False, max_length=254)
 
     class Meta:
         model = get_user_model()
@@ -31,14 +33,14 @@ class RecoveryAddressForm(forms.ModelForm):
             lock_email(email)
         others = get_user_model().objects.exclude(pk=self.instance.pk)
         if email and (others.filter(email__iexact=email).exists() or others.filter(username__iexact=email).exists()):
-            raise forms.ValidationError("Esse e-mail já está vinculado a outro usuário.")
+            raise forms.ValidationError(translate_text("Esse e-mail já está vinculado a outro usuário."))
         return email.lower()
 
 
 class PortalUserCreationForm(UserCreationForm, RecoveryAddressForm):
-    name = forms.CharField(label='Nome',max_length=150,required=False)
-    company = forms.CharField(label='Empresa',max_length=150,required=False)
-    phone = forms.CharField(label='Telefone',max_length=32,required=False)
+    name = forms.CharField(label=tr('Nome'),max_length=150,required=False)
+    company = forms.CharField(label=tr('Empresa'),max_length=150,required=False)
+    phone = forms.CharField(label=tr('Telefone'),max_length=32,required=False)
 
     def clean_username(self):
         value = super().clean_username()
@@ -46,7 +48,7 @@ class PortalUserCreationForm(UserCreationForm, RecoveryAddressForm):
             from registration import lock_email
             lock_email(value)
             if get_user_model().objects.filter(email__iexact=value).exists():
-                raise forms.ValidationError('Este endereço já está vinculado a uma conta.')
+                raise forms.ValidationError(translate_text('Este endereço já está vinculado a uma conta.'))
         return value
 
     class Meta(UserCreationForm.Meta):
@@ -80,7 +82,7 @@ def people(request):
                     except IntegrityError as exc:
                         if exc.__cause__.sqlstate != "23505":
                             raise
-                        form.add_error("username","Este usuário já está cadastrado.")
+                        form.add_error("username",translate_text("Este usuário já está cadastrado."))
             elif action in {"enable","disable","email"}:
                 ident = request.POST.get("account","")
                 if not ident.isascii() or not ident.isdecimal() or len(ident)>18:
@@ -104,11 +106,11 @@ def people(request):
                     except DataError as exc:
                         if exc.__cause__.sqlstate!="22023":
                             raise
-                        error = "A conta não pode ser alterada."
+                        error = translate_text("A conta não pode ser alterada.")
                     else:
                         return redirect("people")
             else:
-                error = "Operação inválida."
+                error = translate_text("Operação inválida.")
         search = request.GET.get('q','').strip()[:254]
         users = get_user_model().objects.select_related("accountprofile").order_by("first_name","username")
         if search:
@@ -123,9 +125,9 @@ def people(request):
 
 
 class AccountEditForm(RecoveryAddressForm):
-    name = forms.CharField(label='Nome',max_length=150,required=False)
-    phone = forms.CharField(label='Telefone',max_length=32,required=False)
-    company = forms.CharField(label='Empresa',max_length=150,required=False)
+    name = forms.CharField(label=tr('Nome'),max_length=150,required=False)
+    phone = forms.CharField(label=tr('Telefone'),max_length=32,required=False)
+    company = forms.CharField(label=tr('Empresa'),max_length=150,required=False)
 
 
 def access_options(cursor, account):
@@ -156,11 +158,11 @@ def save_access(cursor, account, post, options):
     choices = {kind:set(post.getlist(kind)) for kind in ('institution','space','agent')}
     for kind, ids in choices.items():
         if ids - {row['id'] for row in options if row['kind']==kind and not row['locked']}:
-            raise ValueError('Uma das permissões mudou. Reabra a edição.')
+            raise ValueError(translate_text('Uma das permissões mudou. Reabra a edição.'))
     institutions = choices['institution'] | {r['id'] for r in options if r['kind']=='institution' and r['locked']}
     for row in options:
         if row['kind']=='space' and row['id'] in choices['space'] and row['tenant'] not in institutions:
-            raise ValueError('Marque a instituição de cada espaço selecionado.')
+            raise ValueError(translate_text('Marque a instituição de cada espaço selecionado.'))
     for row in sorted(options,key=lambda row:row['kind']!='institution'):
         if row['locked']:
             continue
@@ -216,7 +218,7 @@ def edit_person(request, ident, deleting=False):
                     initial=dict(name=account.get_full_name(),phone=profile.phone,company=profile.company))
         ctx['form'] = form
         if request.method=='POST' and request.POST.get('revision')!=ctx['revision']:
-            ctx['error'] = 'Este cadastro mudou. Reabra a edição para carregar a versão atual.'
+            ctx['error'] = translate_text('Este cadastro mudou. Reabra a edição para carregar a versão atual.')
             return render(request,'person_edit.html',ctx,status=409)
         if request.method=='POST' and form.is_valid():
             try:
@@ -238,7 +240,10 @@ def edit_person(request, ident, deleting=False):
                     account.save(update_fields=['username','first_name','last_name','email','is_active'])
                     profile.phone,profile.company = form.cleaned_data['phone'],form.cleaned_data['company']
                     profile.guide_enabled = not request.POST.get("block_guide")
-                    profile.save()
+                    if profile._state.adding:
+                        profile.save()
+                    else:
+                        profile.save(update_fields=["phone", "company", "guide_enabled"])
                 return redirect('people')
             except ValueError as exc:
                 ctx['error'] = str(exc)

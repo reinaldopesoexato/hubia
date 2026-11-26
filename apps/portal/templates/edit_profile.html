@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Editar perfil" %}{% endblock %}
+{% block body %}
+<h1>{% translate "Editar perfil" %}</h1>
+{% if saved %}<p class="agent-saved" role="status">{% translate "Foto de perfil atualizada." %}</p>{% endif %}
+{% if error %}<p class="error" role="alert">{% translate error %}</p>{% endif %}
+<h2>{% translate "Foto de perfil" %}</h2>
+{% include "avatar.html" with large=True %}
+<p>{% translate "A foto padrão vem da conta Google vinculada ou do Gravatar associado ao seu e-mail." %}</p>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<label>{% translate "Escolher nova foto" %}<input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required aria-describedby="photo-types"></label>
+<small id="photo-types">{% translate "JPG, PNG ou WebP, até 5 MB e 25 megapixels." %}</small>
+<p><button name="action" value="upload">{% translate "Salvar foto" %}</button></p></form>
+{% if avatar_uploaded %}<form method="post">{% csrf_token %}<button name="action" value="default">{% translate "Voltar à foto padrão" %}</button></form>{% endif %}
+{% endblock %}

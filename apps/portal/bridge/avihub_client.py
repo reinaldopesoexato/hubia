@@ -70,6 +70,22 @@ class Panel:
         self.home()
         return True
 
+    def request_password_reset(self, email):
+        path = "/users/password"
+        form_path = path + "/new"
+        token = self.form(form_path, path)
+        status, location, body = self.request(path, {"authenticity_token": token, "user[email]": email},
+                                              referer=form_path)
+        if status in (302, 303) and location in (LOGIN, "/"):
+            return
+        # Devise can render the native form again for an unregistered address.
+        if status in (200, 422) and BeautifulSoup(body, "html.parser").select_one(
+                'form[action="/users/password"] input[name="user[email]"]'):
+            return
+        if status == 429:
+            raise ValueError("O AviHUB recebeu muitos pedidos. Aguarde alguns minutos antes de tentar novamente.")
+        raise ValueError("O AviHUB não confirmou o pedido de redefinição. Tente novamente mais tarde.")
+
     def send_code(self, channel):
         if channel not in ("sms", "whatsapp"):
             raise ValueError("Canal inválido.")
