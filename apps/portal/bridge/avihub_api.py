@@ -1,6 +1,6 @@
 """Read the native AviHUB frontend with the linked user's Rails session."""
 import re
-from datetime import date
+from datetime import date, datetime
 from urllib.parse import parse_qs, urlsplit
 
 EXPIRED = "Sua sessão no AviHUB expirou. Vincule sua conta novamente no agente."
@@ -41,6 +41,15 @@ HISTORY = {
     "consultar_silos": ("/weights/silo", "/weights/spsilo"),
 }
 FIXED_MODELS = {"consultar_historico_sac": "SAC", "consultar_sensores": "PE40"}
+TIMELINE_TYPES = {
+    "border-l-emerald-500": "selecao",
+    "border-l-indigo-500": "coleta_automatica",
+    "border-l-blue-500": "amostragem",
+}
+TIMELINE_IDS = {
+    "lote_id": "batch_id", "galpao_id": "sector_id", "lado_id": "side_id",
+    "box_id": "side_box_id", "equipamento_id": "equipment_id",
+}
 
 
 def select_account(accounts, selection):
@@ -236,7 +245,11 @@ def equipment_query(panel, unit, op, params, page):
         if not same_device:
             raise AccessDenied("O relatório retornou dados de outro equipamento.")
         readings.append(cells)
-    return {"equipamento": eq, "colunas": labels, "registros": readings, "proxima_pagina": next_page(doc, page)}
+    result = {"equipamento": eq, "colunas": labels, "registros": readings, "proxima_pagina": next_page(doc, page)}
+    if path == "/weights":
+        result["filtros_peso_aves"] = {"inicio": params["inicio"], "fim": params["fim"],
+                                       "nucleo_id": nucleus, "equipamento_id": eq["id"]}
+    return result
 
 
 def select_nucleus(panel, unit, params):
@@ -273,6 +286,51 @@ def catalog(panel, unit, params):
     return {"boxes": panel.options("side_box_id", {**scope, "sides": params["lado_id"]})}
 
 
+def timeline_values(args, key):
+    return args.get(key, []) + args.get(key + "[]", [])
+
+
+def timeline_report_event(event, unit_id, nucleus, period):
+    # The native card links to a report preview. Read evidenced filters without following that link.
+    try:
+        target = urlsplit(event["href"])
+        args = parse_qs(target.query, keep_blank_values=True, max_num_fields=200)
+        start, end = (datetime.strptime(args[key][0], "%d/%m/%Y").date().isoformat() for key in ("start_date", "end_date"))
+    except (KeyError, ValueError):
+        return None
+    if (target.scheme or target.netloc or target.fragment or target.path != "/reports"
+            or args.get("tab") != ["advanced"] or args.get("birds") != ["true"] or args.get("report_type") != ["pdf"]
+            or timeline_values(args, "unit_id") != [unit_id] or timeline_values(args, "nuclei_id") != [nucleus]
+            or len(args["start_date"]) != 1 or len(args["end_date"]) != 1
+            or not period["inicio"] <= start == end <= period["fim"]):
+        return None
+    event_type = next((TIMELINE_TYPES[cls] for cls in event.get("class", ()) if cls in TIMELINE_TYPES), None)
+    if not event_type:
+        return None
+    filters = {"inicio":start, "fim":end, "nucleo_id":nucleus}
+    multi = {}
+    for name, native in TIMELINE_IDS.items():
+        values = timeline_values(args, native)
+        if any(not re.fullmatch(r"[1-9][0-9]{0,17}", value) for value in values):
+            return None
+        if len(values) == 1:
+            filters[name] = values[0]
+        elif values:
+            multi[name] = values
+    balance_types = args.get("balance_type", [])
+    if len(balance_types) == 1 and re.fullmatch(r"[1-9][0-9]{0,17}|CS_RECRIA|imported_file", balance_types[0]):
+        filters["tipo_balanca"] = balance_types[0]
+    genders = args.get("gender_cd", [])
+    if len(genders) == 1 and genders[0] in ("F", "M", "Z"):
+        filters["sexo"] = genders[0]
+    if args.get("visualization_type") == ["daily"]:
+        filters["visualizacao"] = "daily"
+    result = {"tipo":event_type, "descricao":event.get_text(" ", strip=True), "filtros":filters}
+    if multi:
+        result["filtros_multiplos"] = multi
+    return result
+
+
 def period_report(panel, unit, module, params, page):
     nucleus = select_nucleus(panel, unit, params)
     if isinstance(nucleus, dict):
@@ -288,9 +346,13 @@ def period_report(panel, unit, module, params, page):
             raise ValueError("O painel não apresentou o resumo do período.")
         events = doc.select('a.group.border-l-4[href^="/reports?"]')
         start = (page - 1) * 25
+        selected = events[start:start + 25]
         return {"total_exibido": summary.get_text(" ", strip=True),
-                "eventos": [e.get_text(" ", strip=True) for e in events[start:start + 25]],
-                "proxima_pagina": page + 1 if start + 25 < len(events) else None}
+                "eventos": [event.get_text(" ", strip=True) for event in selected],
+                "eventos_peso_aves": [parsed for event in selected
+                                     if (parsed := timeline_report_event(event, unit["id"], nucleus, params))],
+                "proxima_pagina": page + 1 if start + 25 < len(events) else None,
+                "filtros_peso_aves": {"inicio": params["inicio"], "fim": params["fim"], "nucleo_id": nucleus}}
     filters["nuclei_id[]"] = filters.pop("nuclei_id")
     doc = panel.page(module, {**filters, "page": page, "status": "all"}, unit["id"], module)
     field = doc.select_one('form input[name="unit_id"]')

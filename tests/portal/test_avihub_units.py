@@ -100,8 +100,9 @@ class NativeQueries(unittest.TestCase):
                                  ("consultar_racao", "SP501S", "/weights/sp501s"),
                                  ("consultar_silos", "SPSILO", "/weights/spsilo"),
                                  ("consultar_historico_sac", "SAC", "/weights/sac"),
-                                 ("consultar_pesagens", "PS/SEL", "/weights")]:
-            with self.subTest(op=op):
+                                 ("consultar_pesagens", "PS/SEL", "/weights"),
+                                 ("consultar_pesagens", "PS/SEL", "/weights/incubation")]:
+            with self.subTest(op=op, route=route):
                 cells = [model + "/3434-2023", "valor"]
                 if model == "SAC":
                     cells = ["25/11", "3434-2023", "10", "1", "abertura", "2", "3", "1"]
@@ -110,6 +111,8 @@ class NativeQueries(unittest.TestCase):
                 panel = self.panel(layout(), layout(grid(card(model=model, route=route))), *scopes, layout(form + table(cells)))
                 result = api.unit_query(panel, op, dict(self.lookup, modelo=model, **self.period))
                 self.assertEqual(result["resultado"]["registros"], [cells])
+                scope = {**self.period, "nucleo_id":"7", "equipamento_id":"15"} if route == "/weights" else None
+                self.assertEqual(result["resultado"].get("filtros_peso_aves"), scope)
                 self.assertEqual(urlsplit(panel.request.call_args.args[0]).path, route)
                 for call in panel.request.call_args_list:
                     self.assertEqual(len(call.args), 1)
@@ -152,7 +155,9 @@ class NativeQueries(unittest.TestCase):
         choice = '<select id="nuclei_id" name="nuclei_id"><option value="7" selected>A</option></select>'
         summary = '<form action="/reports"><input name="tab" value="basic"></form><p class="text-lg font-bold text-secondary-900">126 aves</p>'
         panel = self.panel(layout(module="/reports"), turbo("nuclei_id", {"7":"A"}), layout(choice + summary, module="/reports"))
-        self.assertEqual(api.unit_query(panel, "resumir_pesagens", self.period)["resultado"]["total_exibido"], "126 aves")
+        result = api.unit_query(panel, "resumir_pesagens", self.period)["resultado"]
+        self.assertEqual(result["total_exibido"], "126 aves")
+        self.assertEqual(result["filtros_peso_aves"], {**self.period, "nucleo_id":"7"})
         cells = ['<input value="31" data-bulk-actions-target="checkbox">ontem',
                  '<div class="grid"><div><span>SAC</span></div><div><span>A</span></div></div>']
         changes = table(cells).replace('class="list-component-row-link"', 'class="list-component-row-link line-through"')

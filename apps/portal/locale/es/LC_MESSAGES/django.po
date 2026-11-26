@@ -2166,3 +2166,892 @@ msgstr "← Vista general"
 
 msgid "← Voltar a"
 msgstr "← Volver a"
+
+msgid "Adicione um conector chamado HUB IA em cada IA que você usa. O mesmo endereço reúne as ferramentas dos seus espaços autorizados."
+msgstr "Añade un conector llamado HUB IA en cada IA que uses. La misma dirección reúne las herramientas de tus espacios autorizados."
+
+msgid "No ChatGPT web, abra a área de aplicativos e crie um app MCP personalizado com modo de desenvolvedor. Cole o endereço acima e escolha OAuth."
+msgstr "En ChatGPT web, abre la sección de aplicaciones y crea una app MCP personalizada en modo de desarrollador. Pega la dirección anterior y selecciona OAuth."
+
+msgid "Em Customize → Connectors, adicione um conector personalizado remoto. Informe o nome HUB IA e o endereço acima. Escolha OAuth com cadastro automático."
+msgstr "En Customize → Connectors, añade un conector personalizado remoto. Introduce el nombre HUB IA y la dirección anterior. Elige OAuth con registro automático."
+
+msgid "Em uma edição do Gemini com suporte a MCP remoto, adicione um conector personalizado. Cole o endereço acima e use OAuth."
+msgstr "En una edición de Gemini compatible con MCP remoto, añade un conector personalizado. Pega la dirección anterior y usa OAuth."
+
+msgid "Se a IA exigir credenciais OAuth, informe a URI de retorno do cliente no cadastro manual e copie o Client ID e o segredo gerados."
+msgstr "Si la IA requiere credenciales OAuth, introduce la URI de retorno del cliente en el registro manual y copia el ID y el secreto generados."
+
+msgid "Entre no HUB IA, revise as permissões e autorize. Para testar, peça à IA para listar seus espaços e agentes disponíveis."
+msgstr "Inicia sesión en HUB IA, revisa los permisos y autoriza. Para probar la conexión, pide a la IA que enumere tus espacios y agentes disponibles."
+
+msgid "Conexões e tarefas deste espaço"
+msgstr "Conexiones y tareas de este espacio"
+
+msgid "conexão legada de e-mail"
+msgstr "conexión de correo heredada"
+
+msgid "Conecte sua IA ao HUB IA para consultar as operações que sua conta pode acessar."
+msgstr "Conecta tu IA a HUB IA para consultar las operaciones a las que tu cuenta tiene acceso."
+
+msgid "Sua caixa usa o mesmo conector MCP do HUB IA. Abra o guia para conectar uma nova IA."
+msgstr "Tu buzón usa el mismo conector MCP de HUB IA. Abre la guía para conectar una nueva IA."
+
+msgid "solicita acesso em seu nome aos recursos do HUB IA."
+msgstr "solicita acceso en tu nombre a los recursos de HUB IA."
+
+msgid "O acesso inclui os espaços pessoais e institucionais que você pode usar hoje e os que forem liberados para você no futuro."
+msgstr "El acceso incluye los espacios personales e institucionales que puedes usar ahora y los que se te concedan en el futuro."
+
+msgid "Espaços autorizados"
+msgstr "Espacios autorizados"
+
+msgid "Gerencie os espaços que cada IA pode consultar. Selecione espaços específicos, inclua todos os disponíveis ou pause o acesso."
+msgstr "Administra los espacios que puede consultar cada IA. Selecciona espacios específicos, incluye todos los disponibles o pausa el acceso."
+
+msgid "Selecione apenas suas conexões que podem usar esta caixa."
+msgstr "Selecciona solo tus conexiones que pueden usar este buzón."
+
+msgid "Conta pessoal e instituições"
+msgstr "Cuenta personal e instituciones"
+
+msgid "Abra um espaço em"
+msgstr "Abre un espacio en"
+
+msgid "e vá a Minhas integrações."
+msgstr "y ve a Mis integraciones."
+
+msgid "HUB IA (MCP com OAuth)"
+msgstr "HUB IA (MCP con OAuth)"
+
+msgid "Permitir que esta IA responda às minhas tarefas e envie avisos"
+msgstr "Permitir que esta IA responda a mis tareas y envíe avisos"
+
+msgid "Selecione apenas espaços disponíveis para esta conexão."
+msgstr "Selecciona solo espacios disponibles para esta conexión."
+
+msgid "Revisão da cópia local"
+msgstr "Revisión de la copia local"
+
+msgid "Aguardando uma cópia local válida da biblioteca."
+msgstr "Esperando una copia local válida de la biblioteca."
+
+msgid "A cópia local é atualizada automaticamente em segundo plano."
+msgstr "La copia local se actualiza automáticamente en segundo plano."
+
+msgid "Provedor"
+msgstr "Proveedor"
+
+msgid "Canal para a minha IA"
+msgstr "Canal para mi IA"
+
+msgid "Modelo"
+msgstr "Modelo"
+
+msgid "Token de API"
+msgstr "Token de API"
+
+msgid "Escolha um provedor e um modelo para usar o token."
+msgstr "Elija un proveedor y un modelo para usar el token."
+
+msgid "Informe o token para conectar este provedor."
+msgstr "Introduzca el token para conectar este proveedor."
+
+msgid "Informe filtros do AviHUB de até 200 caracteres."
+msgstr "Introduzca filtros de AviHUB de hasta 200 caracteres."
+
+msgid "Confirme a limpeza da memória ou escolha uma ação válida."
+msgstr "Confirme que desea borrar la memoria o elija una acción válida."
+
+msgid "Configurar IAves"
+msgstr "Configurar IAves"
+
+msgid "O modelo configurado responde com prioridade para a base local do IAves."
+msgstr "El modelo configurado da prioridad a la base de conocimiento local de IAves."
+
+msgid "O IAves está disponível como canal de consulta para a IA conectada pelo MCP."
+msgstr "IAves está disponible como canal de consulta para la IA conectada por MCP."
+
+#, python-format
+msgid "O modelo sugerido da OpenAI é %(model)s."
+msgstr "El modelo de OpenAI sugerido es %(model)s."
+
+msgid "Selecione o canal para a minha IA ou deixe o modelo em branco para usar somente a base local."
+msgstr "Seleccione el canal para su IA o deje el modelo en blanco para usar la base local."
+
+msgid "Deixe o token em branco para manter a credencial do provedor atual."
+msgstr "Deje el token en blanco para conservar la credencial del proveedor actual."
+
+msgid "Minha memória do IAves"
+msgstr "Mi memoria de IAves"
+
+msgid "As consultas mostram os trechos da base local. Conecte sua IA pelo MCP para conversar usando esse contexto."
+msgstr "Las consultas muestran fragmentos de la base local. Conecte su IA por MCP para conversar con este contexto."
+
+msgid "Sua pergunta ao IAves"
+msgstr "Su pregunta para IAves"
+
+msgid "Contexto do AviHUB"
+msgstr "Contexto de AviHUB"
+
+msgid "O que consultar"
+msgstr "Qué consultar"
+
+msgid "Detectar pela pergunta"
+msgstr "Detectar a partir de la pregunta"
+
+msgid "Estrutura e unidades"
+msgstr "Estructura y unidades"
+
+msgid "Listar equipamentos"
+msgstr "Listar equipos"
+
+msgid "Consultar um equipamento"
+msgstr "Consultar un equipo"
+
+msgid "Conta do AviHUB"
+msgstr "Cuenta de AviHUB"
+
+msgid "Unidade"
+msgstr "Unidad"
+
+msgid "Núcleo"
+msgstr "Núcleo"
+
+msgid "Número de série"
+msgstr "Número de serie"
+
+msgid "Modelo do equipamento"
+msgstr "Modelo del equipo"
+
+msgid "Perguntar"
+msgstr "Preguntar"
+
+msgid "Consultar base"
+msgstr "Consultar base"
+
+msgid "Notas consultadas"
+msgstr "Notas consultadas"
+
+msgid "A base local do IAves está indisponível no momento."
+msgstr "La base local de IAves no está disponible en este momento."
+
+msgid "Nenhum trecho da base local foi encontrado para esta pergunta."
+msgstr "No se encontraron fragmentos de la base local para esta pregunta."
+
+msgid "Unidade ativa"
+msgstr "Unidad activa"
+
+msgid "Vincular minha conta do AviHUB"
+msgstr "Vincular mi cuenta de AviHUB"
+
+msgid "Abrir AviHUB"
+msgstr "Abrir AviHUB"
+
+msgid "← Conversar com IAves"
+msgstr "← Conversar con IAves"
+
+msgid "Veja as informações e preferências que o IAves usa nas suas consultas. A memória pertence à sua conta e acompanha você no portal e no MCP."
+msgstr "Vea la información y las preferencias que IAves usa en sus consultas. La memoria pertenece a su cuenta y le acompaña en el portal y por MCP."
+
+msgid "Itens da memória"
+msgstr "Elementos de la memoria"
+
+msgid "Informação"
+msgstr "Información"
+
+msgid "Valor"
+msgstr "Valor"
+
+msgid "Ações"
+msgstr "Acciones"
+
+msgid "Salvar"
+msgstr "Guardar"
+
+msgid "Limpar toda a memória"
+msgstr "Borrar toda la memoria"
+
+msgid "Confirmo que desejo excluir todos os itens da memória do IAves."
+msgstr "Confirmo que deseo eliminar todos los elementos de la memoria de IAves."
+
+msgid "Limpar memória"
+msgstr "Borrar memoria"
+
+msgid "Nenhuma informação memorizada."
+msgstr "No hay información memorizada."
+
+msgid "Adicionar à memória"
+msgstr "Añadir a la memoria"
+
+msgid "Adicionar"
+msgstr "Añadir"
+
+msgid "Memória atualizada."
+msgstr "Memoria actualizada."
+
+msgid "Não foi possível atualizar a memória. Tente novamente."
+msgstr "No se pudo actualizar la memoria. Inténtelo de nuevo."
+
+msgid "Consultar e salvar informações e preferências na sua memória do IAves"
+msgstr "Consultar y guardar información y preferencias en su memoria de IAves"
+
+msgid "Assistente da cadeia de avicultura da Peso Exato."
+msgstr "Asistente de Peso Exato para la cadena avícola."
+
+msgid "Consultar IAves"
+msgstr "Consultar IAves"
+
+msgid "Memória do IAves"
+msgstr "Memoria de IAves"
+
+msgid "IAves indisponível neste espaço."
+msgstr "IAves no está disponible en este espacio."
+
+msgid "Informe um título e um conteúdo para a memória."
+msgstr "Introduzca un título y contenido para la memoria."
+
+msgid "A memória aceita títulos de até 100 e conteúdos de até 1000 caracteres."
+msgstr "Los títulos de memoria admiten hasta 100 caracteres y el contenido hasta 1000 caracteres."
+
+msgid "A memória do IAves não aceita credenciais ou códigos de acesso."
+msgstr "La memoria de IAves no admite credenciales ni códigos de acceso."
+
+msgid "Item de memória indisponível."
+msgstr "Elemento de memoria no disponible."
+
+msgid "Já existe uma memória com esse título."
+msgstr "Ya existe una memoria con este título."
+
+msgid "Tipo de consulta ao AviHUB indisponível."
+msgstr "Este tipo de consulta a AviHUB no está disponible."
+
+msgid "O AviHUB está indisponível nos espaços desta consulta."
+msgstr "AviHUB no está disponible en los espacios de esta consulta."
+
+msgid "Qual é o número de série e o modelo do equipamento no AviHUB?"
+msgstr "¿Cuáles son el número de serie y el modelo del equipo en AviHUB?"
+
+msgid "Pode confirmar a unidade ativa no AviHUB e os filtros da consulta?"
+msgstr "¿Puede confirmar la unidad activa en AviHUB y los filtros de consulta?"
+
+msgid "Qual das suas contas vinculadas do AviHUB devo consultar?"
+msgstr "¿Cuál de sus cuentas vinculadas de AviHUB debo consultar?"
+
+msgid "Qual unidade do AviHUB devo consultar? A leitura usa a unidade ativa da conta."
+msgstr "¿Qué unidad de AviHUB debo consultar? La lectura usa la unidad activa de la cuenta."
+
+msgid "Você quer vincular sua conta do AviHUB para consultar os dados da sua unidade?"
+msgstr "¿Quiere vincular su cuenta de AviHUB para consultar los datos de su unidad?"
+
+msgid "Qual núcleo ou equipamento devo consultar no AviHUB?"
+msgstr "¿Qué núcleo o equipo debo consultar en AviHUB?"
+
+msgid "Qual etapa ou problema da produção avícola você quer consultar?"
+msgstr "¿Qué etapa o problema de la producción avícola quiere consultar?"
+
+msgid "O modelo do IAves está indisponível. Os resultados da consulta local estão disponíveis."
+msgstr "El modelo de IAves no está disponible. Los resultados de la consulta local están disponibles."
+
+msgid "24 horas"
+msgstr "24 horas"
+
+msgid "A base local do IAves aguarda sincronização. Peça ao administrador para conferir a cópia da base."
+msgstr "La base local de IAves está pendiente de sincronización. Pida al administrador que revise la copia local."
+
+msgid "A conexão perdeu acesso aos espaços escolhidos. Selecione espaços disponíveis e salve."
+msgstr "La conexión perdió acceso a los espacios seleccionados. Seleccione espacios disponibles y guarde los cambios."
+
+msgid "A consulta ao AviHUB falhou. O painel tentará na próxima verificação"
+msgstr "Falló la consulta a AviHUB. El portal volverá a intentarlo en la próxima comprobación"
+
+msgid "Acompanhamentos"
+msgstr "Seguimientos"
+
+msgid "Aguardando primeira consulta"
+msgstr "Pendiente de la primera consulta"
+
+msgid "Ativar ou atualizar acompanhamento"
+msgstr "Activar o actualizar seguimiento"
+
+msgid "Atualize o catálogo do HUB IA no seu cliente de IA para consultar as ferramentas disponíveis."
+msgstr "Actualice el catálogo de HUB IA en su cliente de IA para ver las herramientas disponibles."
+
+msgid "Autorize novamente a conexão com o escopo hub.iaves.memory para usar a memória do IAves."
+msgstr "Vuelva a autorizar la conexión con el permiso hub.iaves.memory para usar la memoria de IAves."
+
+msgid "Autorize novamente a conexão com o escopo hub.mail.send para enviar e-mails."
+msgstr "Vuelva a autorizar la conexión con el permiso hub.mail.send para enviar correos."
+
+msgid "Autorize novamente a conexão com o escopo hub.notify para enviar avisos."
+msgstr "Vuelva a autorizar la conexión con el permiso hub.notify para enviar avisos."
+
+msgid "Autorize novamente a conexão com o escopo hub.reply para responder tarefas."
+msgstr "Vuelva a autorizar la conexión con el permiso hub.reply para responder a las tareas."
+
+msgid "Avaliação registrada."
+msgstr "Valoración guardada."
+
+msgid "Avisos do IAves"
+msgstr "Avisos de IAves"
+
+msgid "Busque nas notas liberadas para você."
+msgstr "Busque en las notas a las que tiene acceso."
+
+msgid "Clientes com resposta útil"
+msgstr "Clientes que recibieron una respuesta útil"
+
+msgid "Quais pesagens foram registradas na minha unidade?"
+msgstr "¿Qué pesajes se registraron en mi unidad?"
+
+msgid "Conclua o vínculo do AviHUB para consultar os dados da sua unidade."
+msgstr "Complete la vinculación de AviHUB para consultar los datos de su unidad."
+
+msgid "Configurar acompanhamento"
+msgstr "Configurar seguimiento"
+
+msgid "Confira o vínculo, a unidade ativa e as permissões no AviHUB"
+msgstr "Revise el vínculo, la unidad activa y los permisos en AviHUB"
+
+msgid "Confira os espaços, os agentes ativos e as permissões da conexão para recuperar as ferramentas ausentes."
+msgstr "Revise los espacios, los agentes activos y los permisos de la conexión para recuperar las herramientas que faltan."
+
+msgid "Considera novos clientes ativos e a primeira resposta que cada um marcou como útil no portal."
+msgstr "Incluye a los nuevos clientes activos y la primera respuesta que cada uno marcó como útil en el portal."
+
+msgid "Consultado"
+msgstr "Consultado"
+
+msgid "Consultar lotes"
+msgstr "Consultar lotes"
+
+msgid "Consultar manuais"
+msgstr "Consultar manuales"
+
+msgid "Consultar meus equipamentos"
+msgstr "Consultar mis equipos"
+
+msgid "Consultar unidades"
+msgstr "Consultar unidades"
+
+msgid "Consulte as pesagens da sua unidade por período."
+msgstr "Consulte los pesajes de su unidad por período."
+
+msgid "Conta AviHUB"
+msgstr "Cuenta de AviHUB"
+
+msgid "Conversar com IAves"
+msgstr "Conversar con IAves"
+
+msgid "Dados consultados no AviHUB"
+msgstr "Datos consultados en AviHUB"
+
+msgid "Data final das pesagens"
+msgstr "Fecha final de los pesajes"
+
+msgid "Data inicial das pesagens"
+msgstr "Fecha inicial de los pesajes"
+
+msgid "Diagnóstico MCP"
+msgstr "Diagnóstico de MCP"
+
+msgid "Diária"
+msgstr "Diaria"
+
+msgid "E-mail em fila"
+msgstr "Correo en cola"
+
+msgid "E-mail não enviado. Confira a conta e o canal"
+msgstr "Correo sin enviar. Revise la cuenta y el canal de entrega"
+
+msgid "Envio de e-mail sem confirmação"
+msgstr "Envío de correo sin confirmación"
+
+msgid "Equipamentos sem comunicação"
+msgstr "Equipos sin comunicación"
+
+msgid "Escolha se a consulta resolveu sua dúvida."
+msgstr "Indique si la consulta resolvió su duda."
+
+msgid "Escolha um tipo, uma frequência e um canal para o aviso."
+msgstr "Seleccione un tipo de aviso, una frecuencia y un canal de entrega."
+
+msgid "Escolha uma conta AviHUB vinculada."
+msgstr "Seleccione una cuenta de AviHUB vinculada."
+
+msgid "Escolha uma unidade ativa e, para um resumo, selecione o lote."
+msgstr "Seleccione una unidad activa. Para un resumen, seleccione también el lote."
+
+msgid "Espaços escolhidos indisponíveis"
+msgstr "Espacios seleccionados no disponibles"
+
+msgid "Excluir acompanhamento e avisos"
+msgstr "Eliminar seguimiento y avisos"
+
+msgid "Ferramentas disponíveis agora"
+msgstr "Herramientas disponibles ahora"
+
+msgid "Ferramentas do último catálogo"
+msgstr "Herramientas del último catálogo"
+
+msgid "Ferramentas do último catálogo indisponíveis agora"
+msgstr "Herramientas del último catálogo que ya no están disponibles"
+
+msgid "Frequência da consulta"
+msgstr "Frecuencia de consulta"
+
+msgid "Galpões"
+msgstr "Galpones"
+
+msgid "Há mais registros disponíveis no AviHUB."
+msgstr "Hay más registros disponibles en AviHUB."
+
+msgid "Inclua o espaço de origem para disponibilizar as ferramentas de tarefas."
+msgstr "Incluya el espacio de origen para habilitar las herramientas de tareas."
+
+msgid "Inclua um espaço da instituição do e-mail e salve."
+msgstr "Incluya un espacio de la institución del correo y guarde los cambios."
+
+msgid "Janela sem comunicação"
+msgstr "Tiempo mínimo sin comunicación"
+
+msgid "Lote"
+msgstr "Lote"
+
+msgid "Lotes"
+msgstr "Lotes"
+
+msgid "Marque a permissão de leitura de e-mail nesta conexão e salve."
+msgstr "Habilite el permiso de lectura de correo para esta conexión y guarde los cambios."
+
+msgid "Meus avisos"
+msgstr "Mis avisos"
+
+msgid "Nenhum aviso disponível."
+msgstr "No hay avisos disponibles."
+
+msgid "Nenhum equipamento encontrado nesta consulta."
+msgstr "No se encontraron equipos en esta consulta."
+
+msgid "Nenhum lote disponível neste núcleo."
+msgstr "No hay lotes disponibles en este núcleo."
+
+msgid "Nenhum núcleo encontrado."
+msgstr "No se encontraron núcleos."
+
+msgid "Nenhuma ferramenta disponível nesta conexão."
+msgstr "No hay herramientas disponibles para esta conexión."
+
+msgid "No painel"
+msgstr "En el panel"
+
+msgid "Notas associadas a dúvidas não resolvidas"
+msgstr "Notas asociadas a dudas no resueltas"
+
+msgid "Novos clientes ativos"
+msgstr "Nuevos clientes activos"
+
+msgid "Não"
+msgstr "No"
+
+msgid "Núcleos"
+msgstr "Núcleos"
+
+msgid "O HUB registrou essa consulta antes de guardar a lista de ferramentas."
+msgstr "HUB IA registró esta consulta antes de empezar a guardar la lista de herramientas."
+
+msgid "O agente AviHUB precisa estar disponível em um espaço ao qual você tenha acesso."
+msgstr "El agente de AviHUB debe estar disponible en un espacio al que tenga acceso."
+
+msgid "O catálogo retornou sem ferramentas."
+msgstr "El catálogo no devolvió herramientas."
+
+msgid "O e-mail avisa que há uma atualização disponível no painel e será enviado a"
+msgstr "Enviaremos un correo sobre nuevas actualizaciones del panel a"
+
+msgid "O e-mail exige o mesmo endereço nas contas HUB IA e AviHUB e um servidor de envio configurado."
+msgstr "El correo requiere la misma dirección en las cuentas de HUB IA y AviHUB, además de un servidor de envío configurado."
+
+msgid "O e-mail fica disponível quando suas contas HUB IA e AviHUB têm o mesmo endereço e o servidor de envio está configurado."
+msgstr "El correo está disponible si sus cuentas de HUB IA y AviHUB tienen la misma dirección y el servidor de envío está configurado."
+
+msgid "O que acompanhar"
+msgstr "Qué desea seguir"
+
+msgid "O que você quer fazer?"
+msgstr "¿Qué quiere hacer?"
+
+msgid "Origem dos dados do AviHUB"
+msgstr "Origen de los datos de AviHUB"
+
+msgid "Painel e e-mail"
+msgstr "Panel y correo electrónico"
+
+msgid "Parte dos espaços escolhidos perdeu acesso. Revise os espaços desta conexão."
+msgstr "La conexión perdió acceso a algunos espacios seleccionados. Revise los espacios de esta conexión."
+
+msgid "Pausado. Para reativar, salve o mesmo acompanhamento."
+msgstr "En pausa. Para reactivarlo, vuelva a guardar el mismo seguimiento."
+
+msgid "Pausar"
+msgstr "Pausar"
+
+msgid "Percentual com resposta útil"
+msgstr "Porcentaje que recibió una respuesta útil"
+
+msgid "Período consultado"
+msgstr "Período consultado"
+
+msgid "Período do IAves"
+msgstr "Período de IAves"
+
+msgid "Peça ao administrador para liberar as pastas da biblioteca neste espaço."
+msgstr "Pida al administrador que habilite las carpetas de la biblioteca en este espacio."
+
+msgid "Primeira consulta útil no IAves"
+msgstr "Primera consulta útil en IAves"
+
+msgid "Próxima consulta"
+msgstr "Próxima consulta"
+
+msgid "Quais equipamentos da minha unidade estão sem comunicação?"
+msgstr "¿Qué equipos de mi unidad están sin comunicación?"
+
+msgid "Qual núcleo você quer consultar no AviHUB?"
+msgstr "¿Qué núcleo desea consultar en AviHUB?"
+
+msgid "Qual é o período da consulta de pesagens? Informe as duas datas."
+msgstr "¿Qué período de pesajes desea consultar? Indique ambas fechas."
+
+msgid "Receba resumos de pesagens de um lote e avisos de equipamentos que o AviHUB indica como sem comunicação há 24 horas ou mais. Escolha a unidade ativa em sua conta AviHUB."
+msgstr "Reciba resúmenes de pesajes de un lote y avisos sobre equipos que AviHUB indica como desconectados durante 24 horas o más. Seleccione la unidad activa en su cuenta de AviHUB."
+
+msgid "Reconecte o HUB IA no seu cliente de IA para renovar a autorização OAuth."
+msgstr "Vuelva a conectar HUB IA en su cliente de IA para renovar la autorización OAuth."
+
+msgid "Resolveu sua dúvida?"
+msgstr "¿Esto resolvió su duda?"
+
+msgid "Resumo de pesagens do lote"
+msgstr "Resumen de pesajes del lote"
+
+msgid "Resumos e alertas"
+msgstr "Resúmenes y alertas"
+
+msgid "Revise as permissões de leitura e envio de e-mail desta conexão."
+msgstr "Revise los permisos de lectura y envío de correo de esta conexión."
+
+msgid "Revisão"
+msgstr "Revisión"
+
+msgid "Selecione a unidade ativa"
+msgstr "Seleccione la unidad activa"
+
+msgid "Selecione espaços e salve para retomar o acesso desta conexão."
+msgstr "Seleccione espacios y guarde los cambios para restablecer el acceso de esta conexión."
+
+msgid "Sem espaços disponíveis"
+msgstr "No hay espacios disponibles"
+
+msgid "Semanal"
+msgstr "Semanal"
+
+msgid "Sim"
+msgstr "Sí"
+
+msgid "Solicite acesso a um espaço para voltar a usar esta conexão."
+msgstr "Solicite acceso a un espacio para volver a usar esta conexión."
+
+msgid "Tempo mediano desde o cadastro"
+msgstr "Tiempo mediano desde el registro"
+
+msgid "Usar unidade"
+msgstr "Usar esta unidad"
+
+msgid "Use sua conta para consultar equipamentos e pesagens."
+msgstr "Use su cuenta para consultar equipos y pesajes."
+
+msgid "Veja quais equipamentos ficaram sem comunicação."
+msgstr "Vea qué equipos quedaron sin comunicación."
+
+msgid "Ver pesagens de aves"
+msgstr "Ver pesajes de aves"
+
+msgid "Vincular conta AviHUB"
+msgstr "Vincular cuenta de AviHUB"
+
+msgid "Vincule ou renove sua conta AviHUB para consultar seus dados."
+msgstr "Vincule o renueve su cuenta de AviHUB para consultar sus datos."
+
+msgid "Vincule sua caixa institucional para usar as ferramentas de e-mail."
+msgstr "Vincule su buzón institucional para usar las herramientas de correo."
+
+msgid "Você ainda não ativou acompanhamentos."
+msgstr "Todavía no ha activado ningún seguimiento."
+
+msgid "Detalhar fontes"
+msgstr "Ver detalles de las fuentes"
+
+msgid "A consulta anterior não tem fontes da base de conhecimento."
+msgstr "La consulta anterior no tiene fuentes de la base de conocimiento."
+
+msgid "Galpão"
+msgstr "Galpón"
+
+msgid "Lado"
+msgstr "Lado"
+
+msgid "Box"
+msgstr "Corral"
+
+msgid "Equipamento"
+msgstr "Equipo"
+
+msgid "Sexo"
+msgstr "Sexo"
+
+msgid "Tipo de balança"
+msgstr "Tipo de báscula"
+
+msgid "Período de pesagem"
+msgstr "Período de pesaje"
+
+msgid "Visualização"
+msgstr "Visualización"
+
+msgid "E-mail com link"
+msgstr "Correo electrónico con enlace"
+
+msgid "E-mail com anexo"
+msgstr "Correo electrónico con archivo adjunto"
+
+msgid "WhatsApp com link"
+msgstr "WhatsApp con enlace"
+
+msgid "Aguardando geração"
+msgstr "En espera de generación"
+
+msgid "Gerando"
+msgstr "Generando"
+
+msgid "Pronto"
+msgstr "Listo"
+
+msgid "Aguardando confirmação do AviHUB"
+msgstr "En espera de confirmación de AviHUB"
+
+msgid "Atualize a página antes de solicitar o relatório."
+msgstr "Actualice la página antes de solicitar el informe."
+
+msgid "Confira as opções da conta e da unidade do relatório."
+msgstr "Revise las opciones de cuenta y unidad del informe."
+
+msgid "Relatórios de Peso Aves"
+msgstr "Informes de peso de aves"
+
+msgid "Gerar relatório"
+msgstr "Generar informe"
+
+msgid "O relatório usa a unidade ativa no AviHUB."
+msgstr "El informe usa la unidad activa en AviHUB."
+
+msgid "Data inicial"
+msgstr "Fecha inicial"
+
+msgid "Data final"
+msgstr "Fecha final"
+
+msgid "Formato do relatório"
+msgstr "Formato del informe"
+
+msgid "Visualização no AviHUB"
+msgstr "Vista previa en AviHUB"
+
+msgid "Filtros do AviHUB"
+msgstr "Filtros de AviHUB"
+
+msgid "Usar padrão do AviHUB"
+msgstr "Usar el valor predeterminado de AviHUB"
+
+msgid "Horário inicial"
+msgstr "Hora inicial"
+
+msgid "Horário final"
+msgstr "Hora final"
+
+msgid "Como receber"
+msgstr "Modo de entrega"
+
+msgid "Destino do WhatsApp"
+msgstr "Destino de WhatsApp"
+
+msgid "Atualizar opções"
+msgstr "Actualizar opciones"
+
+msgid "Relatório"
+msgstr "Informe"
+
+msgid "Meus relatórios"
+msgstr "Mis informes"
+
+msgid "Ver todos os relatórios"
+msgstr "Ver todos los informes"
+
+msgid "Entrega"
+msgstr "Entrega"
+
+msgid "Abrir prévia no AviHUB"
+msgstr "Abrir vista previa en AviHUB"
+
+msgid "Baixar relatório"
+msgstr "Descargar informe"
+
+msgid "Notificações do AviHUB"
+msgstr "Notificaciones de AviHUB"
+
+msgid "Atualizar estado"
+msgstr "Actualizar estado"
+
+msgid "Ver detalhes"
+msgstr "Ver detalles"
+
+msgid "Nenhum relatório solicitado."
+msgstr "No se han solicitado informes."
+
+msgid "Painel do HUB IA"
+msgstr "Panel de HUB IA"
+
+msgid "E-mail com arquivo anexo"
+msgstr "Correo electrónico con archivo adjunto"
+
+msgid "Selecione um destino de WhatsApp disponível para o relatório."
+msgstr "Seleccione un destino de WhatsApp disponible para el informe."
+
+msgid "O destino de WhatsApp está indisponível neste espaço."
+msgstr "El destino de WhatsApp no está disponible en este espacio."
+
+msgid "O formato selecionado só pode ser enviado por e-mail com link."
+msgstr "El formato seleccionado solo puede enviarse por correo electrónico con un enlace."
+
+msgid "O e-mail precisa ser o mesmo nas contas HUB IA e AviHUB e ter envio configurado."
+msgstr "Las cuentas de HUB IA y AviHUB deben usar el mismo correo electrónico y el envío debe estar configurado."
+
+msgid "Selecione um canal de entrega disponível para o relatório."
+msgstr "Seleccione un canal de entrega disponible para el informe."
+
+msgid "Abra o relatório e use a impressão do AviHUB para salvar em PDF."
+msgstr "Abra el informe y use la opción de impresión de AviHUB para guardarlo como PDF."
+
+msgid "Abra o link para consultar o relatório no HUB IA."
+msgstr "Abra el enlace para consultar el informe en HUB IA."
+
+msgid "Seu relatório de Peso Aves do AviHUB está pronto."
+msgstr "Su informe de peso de aves de AviHUB está listo."
+
+msgid "Relatório Peso Aves disponível"
+msgstr "Informe de peso de aves disponible"
+
+msgid "Confira os filtros do relatório de Peso Aves."
+msgstr "Revise los filtros del informe de peso de aves."
+
+msgid "Abra a prévia no AviHUB e use a impressão para salvar em PDF."
+msgstr "Abra la vista previa en AviHUB y use la opción de impresión para guardarla como PDF."
+
+msgid "Identificador de solicitação do relatório inválido."
+msgstr "Identificador de solicitud de informe no válido."
+
+msgid "Este identificador já foi usado para outro relatório."
+msgstr "Este identificador ya se usó para otro informe."
+
+msgid "Relatório de Peso Aves indisponível."
+msgstr "Informe de peso de aves no disponible."
+
+msgid "Vincule a conta AviHUB que solicitou o relatório."
+msgstr "Vincule la cuenta de AviHUB que solicitó el informe."
+
+msgid "O acesso ao agente ou à conexão foi revogado."
+msgstr "Se revocó el acceso al agente o a la conexión."
+
+msgid "Aviso na fila"
+msgstr "Aviso en cola"
+
+msgid "Aviso aceito pelo canal"
+msgstr "Aviso aceptado por el canal"
+
+msgid "Aviso recusado pelo canal"
+msgstr "Aviso rechazado por el canal"
+
+msgid "Aviso não enviado"
+msgstr "Aviso no enviado"
+
+msgid "Aviso sem confirmação"
+msgstr "Aviso sin confirmación"
+
+msgid "Aguardando a notificação do AviHUB"
+msgstr "Esperando la notificación de AviHUB"
+
+msgid "Prévia disponível no AviHUB"
+msgstr "Vista previa disponible en AviHUB"
+
+msgid "A prévia está disponível no AviHUB. O Hub IA não conseguiu salvar o PDF."
+msgstr "La vista previa está disponible en AviHUB. Hub IA no pudo guardar el PDF."
+
+msgid "O AviHUB recebeu a solicitação, mas o arquivo e a notificação correspondente ainda não foram confirmados."
+msgstr "AviHUB recibió la solicitud. El archivo y su notificación siguen pendientes de confirmación."
+
+msgid "O AviHUB não oferece este formato para envio em anexo."
+msgstr "AviHUB no ofrece este formato como archivo adjunto."
+
+msgid "Voltar às notificações"
+msgstr "Volver a las notificaciones"
+
+msgid "Abrir no AviHUB"
+msgstr "Abrir en AviHUB"
+
+msgid "A notificação não foi encontrada nesta conta ou página."
+msgstr "No se encontró la notificación en esta cuenta o página."
+
+msgid "Buscar notificações"
+msgstr "Buscar notificaciones"
+
+msgid "Filtrar notificações"
+msgstr "Filtrar notificaciones"
+
+msgid "Todas"
+msgstr "Todas"
+
+msgid "Não lidas"
+msgstr "No leídas"
+
+msgid "Lidas"
+msgstr "Leídas"
+
+msgid "Favoritas"
+msgstr "Favoritas"
+
+msgid "Nenhuma notificação encontrada."
+msgstr "No se encontraron notificaciones."
+
+msgid "Páginas de notificações"
+msgstr "Páginas de notificaciones"
+
+msgid "Crítica"
+msgstr "Crítica"
+
+msgid "Alerta"
+msgstr "Advertencia"
+
+msgid "Informativa"
+msgstr "Informativa"
+
+msgid "Automática"
+msgstr "Automática"
+
+msgid "Lida"
+msgstr "Leída"
+
+msgid "Não lida"
+msgstr "No leída"
+
+msgid "Favorita"
+msgstr "Favorita"

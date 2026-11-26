@@ -2,7 +2,7 @@
 import json
 import re
 from http.cookies import SimpleCookie, CookieError
-from urllib.parse import urlencode, urljoin, urlsplit
+from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 
 from bs4 import BeautifulSoup
 from .avihub_api import EXPIRED, AccessDenied, SessionExpired
@@ -19,6 +19,10 @@ class Panel:
         self.cookies = dict(cookies or {})
 
     def request(self, path, fields=None, *, accept="text/html", referer=None):
+        status, location, _, body = self.exchange(path, fields, accept=accept, referer=referer)
+        return status, urlsplit(location).path if location else None, body
+
+    def exchange(self, path, fields=None, *, accept="text/html", referer=None, read_timeout=4, limit=8 * 1024 * 1024):
         headers = {"Accept": accept, "Accept-Encoding": "identity",
                    "Cookie": "; ".join(f"{k}={v}" for k, v in self.cookies.items())}
         if referer is not None:
@@ -26,9 +30,10 @@ class Panel:
         payload = None
         if fields is not None:
             headers.update({"Content-Type": "application/x-www-form-urlencoded", "Origin": self.origin})
-            payload = urlencode(fields).encode()
+            payload = urlencode(fields, doseq=True).encode()
         try:
-            status, response, body = public_response(self.origin + path, payload, headers, limit=8 * 1024 * 1024)
+            status, response, body = public_response(self.origin + path, payload, headers,
+                                                     limit=limit, read_timeout=read_timeout)
             for line in response.getlist("Set-Cookie"):
                 jar = SimpleCookie()
                 jar.load(line)
@@ -41,9 +46,14 @@ class Panel:
                         self.cookies.pop(key, None)
         except (RemoteError, CookieError):
             raise ValueError("O AviHUB não respondeu com uma página válida. Tente novamente.") from None
-        destination = urlsplit(urljoin(self.origin + path, response.get("Location", "")))
-        location = destination.path if (destination.scheme + "://" + destination.netloc == self.origin) else None
-        return status, location, body
+        try:
+            destination = urlsplit(urljoin(self.origin + path, response.get("Location", "")))
+        except ValueError:
+            raise ValueError("O AviHUB retornou um redirecionamento inválido.") from None
+        location = urlunsplit(("", "", destination.path, destination.query, "")) if (
+            destination.scheme + "://" + destination.netloc == self.origin and not destination.fragment
+        ) else None
+        return status, location, response, body
 
     def form(self, path, target=None):
         status, _, body = self.request(path)

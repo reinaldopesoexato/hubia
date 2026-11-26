@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load i18n %}
+{% extends "base.html" %}{% load i18n iaves_mark %}
 {% block title %}{% translate "Agentes de" %} {{ workspace }}{% endblock %}
 {% block body %}
 <nav><a href="/conta/">{% translate "Meus espaços" %}</a>{% if is_owner %} · <a href="{% url 'administration' %}">{% translate "Administração" %}</a>{% endif %}{% if can_open %} · <a href="{% url 'workspace' tenant space %}">{% translate "Abrir espaço" %}</a>{% endif %}</nav>
@@ -8,7 +8,7 @@
 {% if error %}<p role="alert" class="error">{% translate error %}</p>{% endif %}
 <form method="post">{% csrf_token %}
 {% for a in choices %}{% if a.assigned %}<input type="hidden" name="previous" value="{{ a.id }}">{% endif %}
-<label><input type="checkbox" name="agents" value="{{ a.id }}"{% if a.assigned %} checked{% endif %}> {{ a.name }}{% if not a.active %} {% translate "· Desativado na instituição" %}{% endif %}</label>
+<label><input type="checkbox" name="agents" value="{{ a.id }}"{% if a.assigned %} checked{% endif %}> {% iaves_brand a.name %}{% if not a.active %} {% translate "· Desativado na instituição" %}{% endif %}</label>
 {% if a.same_name %}<small>{{ a.id }}</small>{% endif %}{% if a.description %}<small>{{ a.description }}</small>{% endif %}
 {% if a.assigned and a.active and a.kind == "notifications" %}<a href="{% url 'notification_config' tenant space a.id %}">{% translate "Configurar canais e destinos" %}</a>{% endif %}
 {% if a.assigned and can_open and a.active and a.kind == "avihub" %}<a href="{% url 'use_agent' tenant space a.id %}">{% translate "Gerenciar contas AviHUB" %}</a>{% endif %}
@@ -19,7 +19,7 @@
 {% if agents|length > 1 %}<div id="agent-filter" hidden><label for="agent-search">{% translate "Buscar agente" %}</label>
 <input type="search" id="agent-search" placeholder="{% translate "Nome ou tipo" %}" autocomplete="off"></div>{% endif %}
 <ul class="agent-directory">{% for a in agents %}
-<li><div class="agent-summary"><span class="tile">{% include "icon.html" with name="agent" %}</span><div><strong>{{ a.name }}</strong><small>{{ a.kind_label }}</small></div></div>
+<li><div class="agent-summary"><span class="tile">{% include "icon.html" with name="agent" %}</span><div><strong>{% iaves_brand a.name %}</strong><small>{% iaves_brand a.kind_label %}</small></div></div>
 <span class="status{% if a.active %} done{% endif %}">{% if a.active %}{% translate "Ativo" %}{% else %}{% translate "Desativado" %}{% endif %}</span>
 <div class="agent-links">{% if a.kind == "avihub" %}<a href="{% url 'use_agent' tenant space a.id %}">{% translate "Gerenciar contas" %}</a>
 {% elif a.kind == "library" %}<a href="{% url 'github_connector' tenant %}">{% translate "Configurar biblioteca" %}</a>

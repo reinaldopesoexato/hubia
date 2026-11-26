@@ -23,12 +23,26 @@ def allowed(cursor, tenant):
     return cursor.fetchone()[0]
 
 
-def for_link(link):
-    if str(link.tenant) != str(INSTITUTION) or not link.user.is_active:
+def tenant_for(link):
+    return INSTITUTION if link.all_tenants or str(link.tenant) == str(INSTITUTION) else link.tenant
+
+
+def for_link(link, *, writing=False):
+    if tenant_for(link) != INSTITUTION or not link.user.is_active:
         return False
     with transaction.atomic(), connection.cursor() as cursor:
         principal, _ = bind_account(cursor, link.user)
-        return bool(principal and allowed(cursor, INSTITUTION))
+        if not principal or not allowed(cursor, INSTITUTION):
+            return False
+        if link.all_tenants:
+            from .workspaces import effective, visible
+            if not effective(link, visible(cursor, INSTITUTION)):
+                return False
+        if writing:
+            cursor.execute("""SELECT EXISTS(SELECT FROM hub_tenancy.memberships
+                WHERE tenant_id=%s AND user_id=%s AND active AND role<>'viewer')""", [INSTITUTION, principal])
+            return cursor.fetchone()[0]
+        return True
 
 
 def visible_links(links, eligible):

@@ -1,7 +1,11 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+
+PESO_EXATO_TENANT_ID = UUID("e7eb1e21-00c7-4abd-8ada-641ce20a91b3")
+IAVES_AGENT_ID = UUID("2bf224be-5d7a-4c30-9a89-19d76e28cbb8")
 
 
 class Link(models.Model):
@@ -16,6 +20,7 @@ class Link(models.Model):
     peer_config = models.BinaryField(null=True)
     writable = models.BooleanField(default=False)
     email_only = models.BooleanField(default=False)
+    all_tenants = models.BooleanField(default=False, db_default=False)
     offer_mail_access = models.BooleanField(default=True)
 
 
@@ -124,6 +129,92 @@ class LibraryAccess(models.Model):
         constraints = [models.UniqueConstraint(fields=["library", "space"], name="library_space_once")]
 
 
+class IAvesSettings(models.Model):
+    agent = models.UUIDField(primary_key=True, editable=False)
+    provider = models.CharField(max_length=30, blank=True, default="")
+    model = models.CharField(max_length=100, blank=True, default="")
+    encrypted_key = models.BinaryField(blank=True, default=bytes)
+
+
+class IAvesMemory(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    agent = models.UUIDField()
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    key = models.CharField(max_length=100)
+    value = models.TextField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["agent", "user", "key"], name="iaves_memory_key_per_user")]
+
+
+class IAvesFeedback(models.Model):
+    run = models.UUIDField(primary_key=True, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    helpful = models.BooleanField()
+    consulted_at = models.DateTimeField(db_index=True)
+    source_paths = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class IAvesSubscription(models.Model):
+    class Kind(models.TextChoices):
+        SUMMARY = "summary", "Resumo de pesagens do lote"
+        OFFLINE = "offline", "Equipamentos sem comunicação"
+
+    class Frequency(models.TextChoices):
+        DAILY = "daily", "Diária"
+        WEEKLY = "weekly", "Semanal"
+
+    class Status(models.TextChoices):
+        WAITING = "waiting", "Aguardando primeira consulta"
+        READY = "ready", "Consultado"
+        BLOCKED = "blocked", "Confira o vínculo, a unidade ativa e as permissões no AviHUB"
+        UNAVAILABLE = "unavailable", "A consulta ao AviHUB falhou. O painel tentará na próxima verificação"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    space = models.UUIDField()
+    session = models.ForeignKey("AviHubSession", null=True, on_delete=models.SET_NULL)
+    kind = models.CharField(max_length=8, choices=Kind.choices)
+    frequency = models.CharField(max_length=6, choices=Frequency.choices, default=Frequency.WEEKLY)
+    delivery_email = models.EmailField(blank=True, default="")
+    unit = models.CharField(max_length=18)
+    unit_label = models.CharField(max_length=160)
+    nucleus = models.CharField(max_length=18, blank=True)
+    batch = models.CharField(max_length=18, blank=True)
+    batch_label = models.CharField(max_length=160, blank=True)
+    active = models.BooleanField(default=True)
+    next_due = models.DateTimeField()
+    status = models.CharField(max_length=11, choices=Status.choices, default=Status.WAITING)
+    offline_ids = models.JSONField(default=list)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=["user", "space", "session", "unit", "kind", "nucleus", "batch"], name="iaves_subscription_target_once")]
+        indexes = [models.Index(fields=["active", "next_due"], name="iaves_subscription_due")]
+
+
+class IAvesNotice(models.Model):
+    class MailStatus(models.TextChoices):
+        PORTAL = "portal", "No painel"
+        PENDING = "pending", "E-mail em fila"
+        ACCEPTED = "accepted", "Aceito pelo servidor de e-mail"
+        UNCERTAIN = "uncertain", "Envio de e-mail sem confirmação"
+        SKIPPED = "skipped", "E-mail não enviado. Confira a conta e o canal"
+
+    subscription = models.ForeignKey(IAvesSubscription, on_delete=models.CASCADE)
+    scheduled_for = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=120)
+    body = models.TextField()
+    mail_status = models.CharField(db_index=True, max_length=9, choices=MailStatus.choices, default=MailStatus.PORTAL)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["subscription", "scheduled_for"], name="iaves_notice_window_once")]
+
+
 class CatalogAlerts(models.Model):
     tenant = models.UUIDField()
     space = models.UUIDField()
@@ -178,6 +269,12 @@ class CatalogObservation(models.Model):
     announced_at = models.DateTimeField(null=True)
 
 
+class CatalogListing(models.Model):
+    link = models.OneToOneField(Link, on_delete=models.CASCADE, primary_key=True, related_name="catalog_listing")
+    listed_at = models.DateTimeField()
+    tools = models.JSONField(default=list)
+
+
 class AviHubAgent(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     tenant = models.UUIDField(unique=True)
@@ -203,6 +300,58 @@ class AviHubSession(models.Model):
 
     def account_info(self):
         return {"id": self.account_ref, "nome": self.account_name, "email": self.email}
+
+
+class AviHubReport(models.Model):
+    class State(models.TextChoices):
+        PENDING = "pending", "Relatório na fila"
+        RUNNING = "running", "Gerando no AviHUB"
+        WAITING = "waiting", "Aguardando a notificação do AviHUB"
+        READY = "ready", "Relatório pronto"
+        PREVIEW = "preview", "Prévia disponível no AviHUB"
+        FAILED = "failed", "Relatório não gerado"
+        UNCERTAIN = "uncertain", "Geração sem confirmação"
+
+    class Delivery(models.TextChoices):
+        NONE = "none", "Disponível no painel"
+        PENDING = "pending", "Aviso na fila"
+        ACCEPTED = "accepted", "Aviso aceito pelo canal"
+        FAILED = "failed", "Aviso recusado pelo canal"
+        SKIPPED = "skipped", "Aviso não enviado"
+        UNCERTAIN = "uncertain", "Aviso sem confirmação"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    tenant = models.UUIDField()
+    space = models.UUIDField()
+    agent = models.ForeignKey(AviHubAgent, on_delete=models.CASCADE)
+    session = models.ForeignKey(AviHubSession, on_delete=models.SET_NULL, null=True)
+    link = models.ForeignKey(Link, on_delete=models.SET_NULL, null=True)
+    from_mcp = models.BooleanField(default=False)
+    request_id = models.UUIDField()
+    fingerprint = models.CharField(max_length=64)
+    parameters = models.JSONField(default=dict)
+    native_id = models.CharField(max_length=20, blank=True)
+    native_notification_id = models.CharField(max_length=20, blank=True, default="")
+    file_name = models.CharField(max_length=255, blank=True, default="")
+    file_type = models.CharField(max_length=150, blank=True, default="")
+    file_size = models.PositiveIntegerField(null=True)
+    file_from_preview = models.BooleanField(default=False)
+    printed_pdf = models.BinaryField(null=True, editable=False)
+    channel = models.CharField(max_length=16, default="painel")
+    destination = models.CharField(max_length=254, blank=True)
+    state = models.CharField(max_length=9, choices=State.choices, default=State.PENDING)
+    delivery = models.CharField(max_length=9, choices=Delivery.choices, default=Delivery.NONE)
+    error = models.CharField(max_length=300, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True)
+    next_check_at = models.DateTimeField(null=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "request_id"], name="avihub_report_request_once")]
+        indexes = [models.Index(fields=["state", "created"], name="avihub_report_queue"),
+                   models.Index(fields=["delivery", "created"], name="avihub_report_delivery"),
+                   models.Index(fields=["state", "next_check_at"], name="avihub_report_notification")]
 
 
 class PlatformMailSettings(models.Model):

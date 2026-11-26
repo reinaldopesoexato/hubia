@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load i18n %}
+{% extends "base.html" %}{% load i18n iaves_mark %}
 {% block title %}{% translate "Administração" %}{% endblock %}
 {% block body %}
 <p><a href="/conta/">{% translate "← Meus espaços" %}</a></p><h1>{% translate "Administração" %}</h1><p><a href="{% url 'people' %}">{% translate "Usuários e auditoria" %}</a> · <a href="{% url 'platform_email' %}">{% translate "E-mail da plataforma" %}</a></p>
@@ -7,6 +7,28 @@
 {% include "metric.html" with label="Ativas" value=active_orgs symbol="shield" tone="mint" %}
 {% include "metric.html" with label="Espaços" value=space_count symbol="layers" tone="" %}
 </dl>
+<section class="panel setup-card" aria-labelledby="iaves-metrics">
+<div class="panel-head"><h2 id="iaves-metrics">{% iaves_brand _("Primeira consulta útil no IAves") %}</h2>
+<nav class="period" aria-label="{% translate 'Período do IAves' %}">
+  <a href="?dias_iaves=7#iaves-metrics"{% if iaves_metrics.days == 7 %} aria-current="true"{% endif %}>{% translate "7 dias" %}</a>
+  <a href="?dias_iaves=30#iaves-metrics"{% if iaves_metrics.days == 30 %} aria-current="true"{% endif %}>{% translate "30 dias" %}</a>
+</nav></div>
+<dl class="stats">
+{% include "metric.html" with label="Novos clientes ativos" value=iaves_metrics.signups symbol="user" tone="sky" %}
+{% include "metric.html" with label="Clientes com resposta útil" value=iaves_metrics.got_help symbol="agent" tone="mint" %}
+{% if iaves_metrics.percentage is not None %}
+  <div class="stat"><dt>{% translate "Percentual com resposta útil" %}</dt><dd>{{ iaves_metrics.percentage }}%</dd></div>
+{% endif %}
+{% if iaves_metrics.median_minutes is not None %}
+  <div class="stat"><dt>{% translate "Tempo mediano desde o cadastro" %}</dt><dd>{{ iaves_metrics.median_minutes }} min</dd></div>
+{% endif %}
+</dl>
+<p><small>{% translate "Considera novos clientes ativos e a primeira resposta que cada um marcou como útil no portal." %}</small></p>
+{% if iaves_metrics.notes %}
+<h3>{% translate "Notas associadas a dúvidas não resolvidas" %}</h3>
+<ul>{% for path, count in iaves_metrics.notes %}<li>{{ path }} · {{ count }}</li>{% endfor %}</ul>
+{% endif %}
+</section>
 {% if error %}<p role="alert" class="error">{% translate error %}</p>{% endif %}
 <details><summary>{% translate "Criar instituição" %}</summary><form method="post">{% csrf_token %}
 <label>{% translate "Nome da instituição" %}<input name="name" maxlength="120" required></label>

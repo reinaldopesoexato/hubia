@@ -1,0 +1,80 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Notificações do AviHUB" %}{% endblock %}
+{% block body %}
+<nav aria-label="{% translate 'Contas AviHUB' %}"><a href="{% url 'use_agent' tenant space agent.id %}">{% translate "← Contas vinculadas" %}</a></nav>
+<header class="agent-heading"><div><small>{{ organization }} · {{ agent.name }}</small>
+<h1>{% translate "Notificações do AviHUB" %}</h1></div></header>
+
+{% if error %}
+  <p class="error agent-feedback" role="alert">{% translate error %}</p>
+  <p><a href="{{ reset_url }}">{% translate "Voltar às notificações" %}</a></p>
+{% endif %}
+
+{% if detail and not error and result.estado != 'escolher_conta' %}
+  {% translate "Voltar às notificações" as back_label %}
+  <div>{% include "avihub_notification_nav.html" with url=list_url label=back_label selection=args csrf_token=csrf_token only %}</div>
+  {% if notification %}
+    {% if result.conta %}<p>{% translate "Conta AviHUB" %} · <strong>{{ result.conta.nome }}</strong></p>{% endif %}
+    <article class="agent-card">
+      <h2>{{ notification.titulo }}</h2>
+      {% include "avihub_notification_info.html" with item=notification only %}
+      {% if notification.mensagem %}<p>{{ notification.mensagem|linebreaksbr }}</p>{% endif %}
+      {% if notification.url %}<p><a href="{{ notification.url }}" rel="noreferrer">{% translate "Abrir no AviHUB" %}</a></p>{% endif %}
+    </article>
+  {% elif result.estado == "nao_encontrada" %}
+    <p class="empty">{% translate "A notificação não foi encontrada nesta conta ou página." %}</p>
+  {% endif %}
+{% endif %}
+
+{% if result.url_vinculo %}
+  <p>{{ result.mensagem }}</p>
+  <p><a class="agent-primary" href="{{ result.url_vinculo }}">{% translate "Gerenciar contas AviHUB" %}</a></p>
+{% elif not detail or result.estado == 'escolher_conta' %}
+  {% if result.contas %}
+    <form method="post" action="{% url 'avihub_notifications' tenant space agent.id %}">
+      {% csrf_token %}
+      {% if detail %}<input type="hidden" name="notificacao_id" value="{{ detail }}">{% endif %}
+      <label for="avihub-notification-account">{% translate "Conta AviHUB" %}</label>
+      <select id="avihub-notification-account" name="conta" required>
+        <option value="">{% translate "Escolha uma conta AviHUB vinculada." %}</option>
+        {% for account in result.contas %}<option value="{{ account.id }}"{% if account.id == selected_account %} selected{% endif %}>{{ account.nome }}</option>{% endfor %}
+      </select>
+      <label for="avihub-notification-search">{% translate "Buscar notificações" %}</label>
+      <input type="search" id="avihub-notification-search" name="busca" maxlength="120" value="{{ args.busca }}">
+      <label for="avihub-notification-filter">{% translate "Filtrar notificações" %}</label>
+      <select id="avihub-notification-filter" name="filtro">
+        <option value="">{% translate "Todas" %}</option>
+        <option value="nao_lidas"{% if args.filtro == 'nao_lidas' %} selected{% endif %}>{% translate "Não lidas" %}</option>
+        <option value="lidas"{% if args.filtro == 'lidas' %} selected{% endif %}>{% translate "Lidas" %}</option>
+        <option value="favoritas"{% if args.filtro == 'favoritas' %} selected{% endif %}>{% translate "Favoritas" %}</option>
+      </select>
+      <button>{% translate "Buscar" %}</button>
+    </form>
+  {% endif %}
+  {% if result.estado == "ok" %}
+    <ul class="cards">
+      {% for item in notifications %}
+        <li>
+          {% include "avihub_notification_nav.html" with url=item.url_detalhe label=item.titulo selection=args csrf_token=csrf_token only %}
+          {% include "avihub_notification_info.html" with item=item only %}
+          {% if item.mensagem %}<p>{{ item.mensagem|truncatechars:200 }}</p>{% endif %}
+        </li>
+      {% empty %}
+        <li class="empty">{% translate "Nenhuma notificação encontrada." %}</li>
+      {% endfor %}
+    </ul>
+    {% if previous_url or next_url %}
+      <nav aria-label="{% translate 'Páginas de notificações' %}" class="agent-actions">
+        {% if previous_url %}
+          {% translate "Anterior" as previous_label %}
+          {% include "avihub_notification_nav.html" with url=previous_url label=previous_label selection=args relation="prev" csrf_token=csrf_token only %}
+        {% endif %}
+        {% if next_url %}
+          {% translate "Próxima" as next_label %}
+          {% include "avihub_notification_nav.html" with url=next_url label=next_label selection=args relation="next" csrf_token=csrf_token only %}
+        {% endif %}
+      </nav>
+    {% endif %}
+  {% endif %}
+{% endif %}
+{% endblock %}

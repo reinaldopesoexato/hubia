@@ -3,14 +3,16 @@ from uuid import UUID
 from django.utils.translation import gettext as translate_text
 from django.contrib.auth.decorators import login_required
 from django.db import connection, transaction
+from django.db.models import OuterRef, Subquery
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
+from dashboard import accessible_tenants
 from portal_identity import bind_account
 from . import mail_access
-from .models import CatalogObservation, Link, MailProvider, Mailbox, WorkspaceSelection
+from .models import AccountProfile, CatalogObservation, Link, MailProvider, Mailbox, WorkspaceSelection
 
 
 def visible(cursor, tenant):
@@ -30,6 +32,8 @@ def mail_write_access(cursor, tenant):
 
 
 def selection(link):
+    if link._state.adding:
+        return None
     try:
         return link.workspaceselection.spaces
     except WorkspaceSelection.DoesNotExist:
@@ -40,6 +44,18 @@ def effective(link, rows):
     ids = selection(link)
     allowed = set(ids) if ids is not None else None
     return {space:name for space,name,_ in rows if allowed is None or str(space) in allowed}
+
+
+def visible_groups(cursor, link):
+    """Resolve workspace ACLs for the principal bound to the transaction."""
+    tenants = list(accessible_tenants(cursor)) if link.all_tenants else [link.tenant]
+    return {tenant: rows for tenant in tenants if (rows := visible(cursor, tenant))}
+
+
+def effective_spaces(cursor, link):
+    """Return effective space IDs grouped by tenant, intersecting the selection with ACLs."""
+    return {tenant: spaces for tenant, rows in visible_groups(cursor, link).items()
+            if (spaces := effective(link, rows))}
 
 
 def state_key(spaces):
@@ -59,12 +75,13 @@ def save_permissions(request, cursor, links):
     requested = links.filter(pk__in=keys)
     if any(key.startswith("mailbox-") for key in form):
         # The mailbox connection and OAuth consent views also lock providers first.
-        list(MailProvider.objects.filter(pk__in=requested.values("tenant")).order_by("pk").select_for_update())
+        provider_ids = {mail_access.tenant_for(link) for link in requested}
+        list(MailProvider.objects.filter(pk__in=provider_ids).order_by("pk").select_for_update())
     owned = list(requested.order_by("pk").select_for_update())
     if len(owned) != len(keys):
         raise Http404
 
-    groups = {}
+    scopes = {}
     changes = []
     mail_changes = []
     for link in owned:
@@ -78,9 +95,10 @@ def save_permissions(request, cursor, links):
         if not legacy and initial is None:
             return HttpResponseBadRequest(translate_text("Recarregue as permissões antes de salvar."))
         mail_id = form.get("mailbox" + suffix) if not legacy else None
+        mail_tenant = mail_access.tenant_for(link)
         mail_edits = []
         if mail_id:
-            if not mail_access.allowed(cursor, link.tenant):
+            if not mail_access.allowed(cursor, mail_tenant):
                 raise Http404
             for field, relation in (("read", "links"), ("send", "send_links")):
                 original = form.get("initial-" + field + suffix)
@@ -91,16 +109,20 @@ def save_permissions(request, cursor, links):
                     mail_edits.append((relation, checked))
         if not mail_edits and not legacy and initial == state_key(desired):
             continue
-        if link.tenant not in groups:
-            groups[link.tenant] = visible(cursor, link.tenant)
-        rows = groups[link.tenant]
+        scope = None if link.all_tenants else link.tenant
+        if scope not in scopes:
+            scopes[scope] = visible_groups(cursor, link)
+        groups = scopes[scope]
+        rows = [row for workspaces in groups.values() for row in workspaces]
         if not rows:
             raise Http404
         if mail_edits:
-            box = Mailbox.objects.filter(provider_id=link.tenant, user=request.user, provider__enabled=True).first()
+            if mail_tenant not in groups:
+                raise Http404
+            box = Mailbox.objects.filter(provider_id=mail_tenant, user=request.user, provider__enabled=True).first()
             if box is None or mail_id != str(box.pk):
                 return HttpResponse(translate_text("Sua caixa mudou. Recarregue a página antes de salvar."), status=409)
-            if ("send_links", True) in mail_edits and not mail_write_access(cursor, link.tenant):
+            if ("send_links", True) in mail_edits and not mail_write_access(cursor, mail_tenant):
                 return HttpResponse(translate_text("Seu papel permite apenas leitura."), status=403)
             mail_changes.extend((box, link, relation, checked) for relation, checked in mail_edits)
         if not legacy and initial == state_key(desired):
@@ -129,6 +151,8 @@ def save_permissions(request, cursor, links):
 @login_required
 @require_http_methods(["GET", "POST"])
 def manage(request):
+    from .catalog_diagnostics import active_scopes, diagnose
+
     with transaction.atomic(), connection.cursor() as cursor:
         principal, owner = bind_account(cursor, request.user)
         if not principal:
@@ -137,30 +161,49 @@ def manage(request):
         links = mail_access.visible_links(Link.objects.filter(user=request.user, protocol="mcp"), internal_mail)
         if request.method == "POST":
             return save_permissions(request, cursor, links)
-        groups = {}
+        scopes = {}
         internal_box = (Mailbox.objects.filter(user=request.user, provider_id=mail_access.INSTITUTION, provider__enabled=True)
                .prefetch_related("links", "send_links").first()) if internal_mail else None
-        recent = CatalogObservation.objects.filter(link__user=request.user, listed_at__isnull=False).order_by(
-            "link_id", "-listed_at").distinct("link_id").values_list("link_id", "listed_at", "token__scope")
-        observations = {key:(stamp, "hub.mail.send" in scope.split()) for key, stamp, scope in recent}
+        recent = CatalogObservation.objects.filter(link_id=OuterRef("pk"), listed_at__isnull=False).order_by("-listed_at")
+        own_links = list(links.select_related("user", "workspaceselection", "catalog_listing").annotate(
+            previous_listing_at=Subquery(recent.values("listed_at")[:1])).order_by("name", "pk"))
+        grants = active_scopes(request.user, own_links)
+        guide_available = AccountProfile.may_open_guide(request.user)
+        cursor.execute("""SELECT tenant_id, role FROM hub_tenancy.memberships
+            WHERE active AND user_id=%s""", [principal])
+        roles = dict(cursor.fetchall())
         send_access = {}
         entries = []
-        for link in links.select_related("workspaceselection").order_by("name","pk"):
-            if link.tenant not in groups:
-                groups[link.tenant] = visible(cursor, link.tenant)
-            rows = groups[link.tenant]
-            if not rows:
-                continue
+        for link in own_links:
+            scope = None if link.all_tenants else link.tenant
+            if scope not in scopes:
+                scopes[scope] = visible_groups(cursor, link)
+            groups = scopes[scope]
+            rows = [row for workspaces in groups.values() for row in workspaces]
             ids = effective(link, rows)
-            all_spaces = selection(link) is None
-            box = internal_box if link.tenant == mail_access.INSTITUTION else None
-            if box and link.tenant not in send_access:
-                send_access[link.tenant] = mail_write_access(cursor, link.tenant)
-            entries.append({"link":link, "observed":observations.get(link.pk), "box":box, "can_enable_send":send_access.get(link.tenant),
-                            "read_mail":bool(box and link in box.links.all()),
-                            "send_mail":bool(box and link in box.send_links.all()), "organization":rows[0][2], "tenant":link.tenant,
-                            "mode":"all" if all_spaces else "selected" if ids else "paused",
-                            "count":len(ids), "initial":state_key(None if all_spaces else map(str, ids)),
-                            "choices":[(space,name,space in ids) for space,name,_ in rows]})
+            chosen = selection(link)
+            space_tenants = {space:tenant for tenant, available in groups.items()
+                             for space, _, _ in available if space in ids and tenant in roles}
+            mail_tenant = mail_access.tenant_for(link)
+            box = internal_box if mail_tenant == mail_access.INSTITUTION and mail_tenant in groups else None
+            if box and mail_tenant not in send_access:
+                send_access[mail_tenant] = mail_write_access(cursor, mail_tenant)
+            if link.all_tenants:
+                organization = translate_text("Conta pessoal e instituições")
+            else:
+                organization = rows[0][2] if rows else translate_text("Sem espaços disponíveis")
+            choices = [(space, f"{org} · {name}" if link.all_tenants else name, space in ids)
+                       for space, name, org in rows]
+            item = {"link":link, "box":box, "can_enable_send":send_access.get(mail_tenant),
+                    "read_mail":bool(box and link in box.links.all()), "send_mail":bool(box and link in box.send_links.all()),
+                    "organization":organization, "tenant":str(scope) if scope else "all",
+                    "mail_space":internal_mail and mail_tenant in space_tenants.values(),
+                    "mode":"all" if chosen is None else "selected" if ids else "paused",
+                    "count":len(ids), "revoked":bool(chosen and not ids),
+                    "initial":state_key(None if chosen is None else map(str, ids)), "choices":choices}
+            item["diagnostics"] = diagnose(cursor, link, item, chosen, ids, space_tenants, roles,
+                                           grants.get(link.client_id), guide_available)
+            entries.append(item)
         entries.sort(key=lambda item: (item["organization"].casefold(), item["tenant"], item["link"].name.casefold()))
-    return render(request, "ai_workspaces.html", {"entries":entries, "internal_mail":internal_mail, "saved":request.GET.get("salvo")=="1", "is_owner":owner})
+    return render(request, "ai_workspaces.html", {"entries":entries, "editable":any(item["choices"] for item in entries),
+                  "internal_mail":internal_mail, "saved":request.GET.get("salvo")=="1", "is_owner":owner})

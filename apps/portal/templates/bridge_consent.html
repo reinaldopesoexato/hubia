@@ -1,6 +1,11 @@
 {% extends "base.html" %}{% load i18n %}{% block title %}{% translate "Autorizar conexão" %}{% endblock %}{% block body %}
 <h1>{% translate "Autorizar conexão" %}</h1>{% if error %}<p role="alert">{% translate "Solicitação inválida." %} {{ error.description }}</p>{% else %}
-<p><strong>{{ application.name }}</strong> {% if email_only %}{% translate "solicita acesso ao seu e-mail em" %} {{ organization }}.{% else %}{% translate "solicita acesso em seu nome a" %} {{ organization }} · {% if all_spaces %}{% translate "todos os espaços atuais e futuros aos quais você tiver acesso" %}{% elif spaces %}{{ spaces.values|join:", " }}{% else %}{{ workspace }}{% endif %}.{% endif %}</p>
+<p><strong>{{ application.name }}</strong>
+{% if email_only %}{% translate "solicita acesso ao seu e-mail em" %} {{ organization }}.
+{% elif unified_mcp %}{% translate "solicita acesso em seu nome aos recursos do HUB IA." %}
+  {% if all_spaces %}{% translate "O acesso inclui os espaços pessoais e institucionais que você pode usar hoje e os que forem liberados para você no futuro." %}
+  {% elif spaces %}{% translate "Espaços autorizados" %} · {{ spaces.values|join:", " }}.{% endif %}
+{% else %}{% translate "solicita acesso em seu nome a" %} {{ organization }} · {% if all_spaces %}{% translate "todos os espaços atuais e futuros aos quais você tiver acesso" %}{% elif spaces %}{{ spaces.values|join:", " }}{% else %}{{ workspace }}{% endif %}.{% endif %}</p>
 {% if email_only %}<p>{% translate "Escolha as permissões desta IA para sua caixa institucional." %}</p>{% else %}<ul>{% for permission in scopes_descriptions %}<li>{% translate permission %}</li>{% endfor %}</ul>{% endif %}
 <form method="post">{% csrf_token %}{% for field in form.hidden_fields %}{{ field }}{% endfor %}
 {% if hub_workspace %}<input type="hidden" name="hub_workspace" value="{{ hub_workspace }}">{% endif %}

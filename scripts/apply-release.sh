@@ -43,7 +43,7 @@ compose=(docker compose -p hubia-prod --env-file "$envfile" -f compose.yaml -f d
 "${compose[@]}" config --quiet
 "${compose[@]}" pull postgres
 "${compose[@]}" up -d --wait postgres
-"${compose[@]}" build portal
+"${compose[@]}" build portal avihub-pdf
 db_image=$(docker inspect --format '{{.Image}}' "$("${compose[@]}" ps -q postgres)")
 bash scripts/test-portal.sh "$db_image" hubia-prod-portal
 "${compose[@]}" exec -T postgres mkdir -p /tmp/hubia-migrations
@@ -65,7 +65,7 @@ SQL
 # Ativação específica desta instalação. O conector aceita qualquer instituição.
 PGPASSWORD="$POSTGRES_PASSWORD" "${compose[@]}" run --rm --no-deps -T -e PGUSER=hub_migrator -e PGPASSWORD portal python -m django provision_avihub --if-present --tenant e7eb1e21-00c7-4abd-8ada-641ce20a91b3 --origin https://avihub.pesoexato.com
 "${compose[@]}" exec -T postgres psql -X -v ON_ERROR_STOP=1 -U hub_migrator -d hubia -f /tmp/hubia-migrations/provision-client-workspace.sql
-"${compose[@]}" up -d --wait portal events
+"${compose[@]}" up -d --wait portal events library-sync iaves-alerts avihub-reports
 if command -v systemctl >/dev/null && systemctl is-active --quiet nginx; then
   echo 'Configurando hubia.psxt.io no Nginx existente.'
   admin=()

@@ -10,6 +10,10 @@
 
 {% if mode == "list" %}
 {% if accounts %}
+<div class="agent-links">
+  <a href="{% url 'avihub_notifications' tenant space agent.id %}">{% translate "Notificações do AviHUB" %}</a>
+  <a href="{% url 'avihub_reports' tenant space agent.id %}">{% translate "Relatórios de Peso Aves" %}</a>
+</div>
 <p><a href="{% url 'dashboard' %}#configured-ai">{% translate "Ir para o guia de conexão das IAs" %}</a></p>
 <form method="post" id="account-list">{% csrf_token %}
 <div class="account-toolbar">

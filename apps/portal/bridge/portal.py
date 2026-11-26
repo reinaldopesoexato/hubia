@@ -19,7 +19,7 @@ from agent_runtime import https_url
 from model_provider import cipher
 from space_views import space_context
 from . import mail_access
-from .access import MCP, MAIL_MCP, email_title, context
+from .access import MCP, context
 from .a2a import CARD, query_peer
 from .models import Link, Ticket, Subscription, Delivery
 from .network import RemoteError
@@ -28,22 +28,16 @@ from .network import RemoteError
 class ConnectionForm(forms.Form):
     name = forms.CharField(label=tr("Nome da conexão"),max_length=100)
     protocol = forms.ChoiceField(label=tr("Tipo"),choices=[
-        ("mcp",tr("Dot ou outro cliente MCP (OAuth)")), ("mail",tr("MCP exclusivo de e-mail (OAuth)")),("a2a",tr("Outro agente consulta o HUB (A2A)")),
+        ("mcp",tr("HUB IA (MCP com OAuth)")), ("a2a",tr("Outro agente consulta o HUB (A2A)")),
         ("peer",tr("HUB consulta um agente remoto (A2A)"))])
     callback = forms.URLField(label=tr("URI de retorno OAuth do cliente MCP"),required=False,assume_scheme="https")
     card = forms.URLField(label=tr("URL do Agent Card remoto"),required=False,assume_scheme="https")
     token = forms.CharField(label=tr("Bearer do agente remoto, se exigido"),required=False,max_length=2048,widget=forms.PasswordInput)
-    writable = forms.BooleanField(label=tr("Permitir que o cliente MCP responda às minhas tarefas"),required=False)
-
-    def __init__(self, *args, internal_mail=False, **kwargs):
-        super().__init__(*args, **kwargs)
-        field = self.fields["protocol"]
-        if not internal_mail:
-            field.choices = [(key, label) for key, label in field.choices if key != "mail"]
+    writable = forms.BooleanField(label=tr("Permitir que esta IA responda às minhas tarefas e envie avisos"),required=False)
 
     def clean(self):
         data = super().clean()
-        field = {"mcp":"callback","mail":"callback","peer":"card"}.get(data.get("protocol"))
+        field = {"mcp":"callback","peer":"card"}.get(data.get("protocol"))
         if field:
             try:
                 https_url(data.get(field,""))
@@ -54,11 +48,10 @@ class ConnectionForm(forms.Form):
 
 def create_connection(user,tenant,space,data):
     app_cls = get_application_model()
-    email_only = data["protocol"] == "mail"
-    protocol = "mcp" if email_only else data["protocol"]
+    protocol = data["protocol"]
     secret = secrets.token_urlsafe(48)
     link = Link(user=user,tenant=tenant,space=space,name=data["name"],protocol=protocol,
-                client_id=str(uuid4()),email_only=email_only,writable=protocol=="mcp" and not email_only and data["writable"])
+                client_id=str(uuid4()),all_tenants=protocol=="mcp",writable=protocol=="mcp" and data["writable"])
     if protocol=="mcp":
         app = app_cls.objects.create(user=user,name=data["name"],client_type="confidential",
                     authorization_grant_type="authorization-code",redirect_uris=data["callback"],client_secret=secret)
@@ -97,12 +90,12 @@ def integrations(request, tenant, space):
         viewer = cursor.fetchone()[0]=="viewer"
         internal_mail = mail_access.allowed(cursor, tenant)
         ctx["internal_mail"] = internal_mail
-        form = ConnectionForm(internal_mail=internal_mail)
+        form = ConnectionForm()
         links = mail_access.visible_links(Link.objects.filter(tenant=tenant, space=space, user=request.user), internal_mail)
         if request.method=="POST":
             action = request.POST.get("action")
             if action=="create":
-                form = ConnectionForm(request.POST, internal_mail=internal_mail)
+                form = ConnectionForm(request.POST)
                 if form.is_valid():
                     if viewer and (form.cleaned_data["writable"] or form.cleaned_data["protocol"]=="peer"):
                         form.add_error(None,translate_text("Seu papel permite somente consultas."))
@@ -110,7 +103,7 @@ def integrations(request, tenant, space):
                         created_link,secret=create_connection(request.user,tenant,space,form.cleaned_data)
                         if not secret:
                             return redirect("integrations",tenant,space)
-                        form=ConnectionForm(internal_mail=internal_mail)
+                        form=ConnectionForm()
             else:
                 try:
                     link = links.select_for_update().get(pk=UUID(request.POST.get("link","")))
@@ -147,7 +140,7 @@ def integrations(request, tenant, space):
                 else:
                     raise Http404
         ctx.update(form=form,links=list(links.order_by("name")),secret=secret,created_link=created_link,
-                   mcp_url=MCP,mail_mcp=MAIL_MCP,mail_title=email_title(ctx["organization"]),card_url=CARD,viewer=viewer,error=error)
+                   mcp_url=MCP,card_url=CARD,viewer=viewer,error=error)
         for link in ctx["links"]:
             link.jobs = list(Ticket.objects.filter(link=link).order_by("-created")[:20])
             link.subscribed = Subscription.objects.filter(link=link,expires__gt=timezone.now()).exists()

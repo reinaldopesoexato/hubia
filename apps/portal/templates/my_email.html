@@ -6,11 +6,10 @@
 {% if error %}<p class="error" role="alert">{% translate error %}</p>{% endif %}
 {% if box %}<p>{% translate "Caixa vinculada ·" %} <strong>{{ box.address }}</strong></p>{% endif %}
 {% if provider.enabled %}
-<p>{% translate "Ao ativar uma nova conexão de IA via MCP nesta instituição, a opção de leitura da sua caixa virá marcada. Você pode desmarcá-la ao autorizar a conexão." %}</p>
 {% if box %}
 <h2>{% translate "Permissões MCP" %}</h2><p>{% translate "Escolha quais IAs podem ler sua caixa e quais podem enviar mensagens em seu nome." %}</p>
+<p>{% translate "Sua caixa usa o mesmo conector MCP do HUB IA. Abra o guia para conectar uma nova IA." %} <a href="{% url 'dashboard' %}#configured-ai">{% translate "Como conectar minha IA" %}</a></p>
 <p><a href="{% url 'ai_workspaces' %}">{% translate "Gerenciar permissões das minhas IAs" %}</a></p>
-{% include "mail_mcp_setup.html" %}
 {% include "mail_signature.html" %}
 <h2>{% translate "Reconectar caixa" %}</h2><p>{% translate "Ao reconectar, você escolherá novamente as IAs autorizadas." %}</p>
 {% endif %}

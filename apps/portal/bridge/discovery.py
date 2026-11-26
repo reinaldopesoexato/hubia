@@ -9,7 +9,7 @@ from django.db import close_old_connections, connection, transaction
 from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.utils import timezone
 
-from .models import CatalogObservation
+from .models import CatalogListing, CatalogObservation, Link
 from .oauth import authenticate_mcp, unauthorized
 
 
@@ -29,7 +29,7 @@ def snapshot(auth):
     tools = []
     for spec in available_tools(link, ctx, can_reply):
         if spec["name"] == "list_agents":
-            agents = sorted(agent_entries(link, ctx["spaces"]), key=lambda row: (row["space_id"], row["id"]))
+            agents = sorted(agent_entries(link, ctx), key=lambda row: (row["space_id"], row["id"]))
             spec = {**spec, "_meta":{"io.psxt.hubia/agents":agents},
                     "description":spec["description"] + f" Catálogo com {len(agents)} entradas. "
                     f"Consulte list_agents quando a revisão mudar ({digest(agents)[:16]})."}
@@ -45,6 +45,10 @@ def observation(auth):
 
 
 def list_tools(auth):
+    link = auth[0]
+    # Keep the write order aligned with revocation of links and their OAuth tokens.
+    if not Link.objects.select_for_update().filter(pk=link.pk).exists():
+        raise Http404
     row = observation(auth)
     tools, revision = snapshot(auth)
     row.listed_at = timezone.now()
@@ -52,6 +56,9 @@ def list_tools(auth):
     row.announced = ""
     row.announced_at = None
     row.save(update_fields=["listed_at", "revision", "announced", "announced_at"])
+    CatalogListing.objects.update_or_create(link=link, defaults={
+        "listed_at":row.listed_at, "tools":[spec["name"] for spec in tools],
+    })
     return {"tools":tools, "_meta":{"io.psxt.hubia/revision":revision}}
 
 

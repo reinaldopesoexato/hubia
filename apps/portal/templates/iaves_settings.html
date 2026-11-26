@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load i18n iaves_mark %}
+{% block title %}{% translate "Configurar IAves" %}{% endblock %}
+{% block body %}
+<nav><a href="{% url 'institution_agents' tenant %}">{% translate "← Agentes da instituição" %}</a></nav>
+<small>{{ organization }}</small>
+<h1>{% iaves_brand _("Configurar IAves") %}</h1>
+<p>{{ agent.description }}</p>
+{% if configured %}<p>{% iaves_brand _("O modelo configurado responde com prioridade para a base local do IAves.") %}</p>
+{% else %}<p>{% iaves_brand _("O IAves está disponível como canal de consulta para a IA conectada pelo MCP.") %}</p>{% endif %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <p><small>{% blocktranslate with model=suggested_model %}O modelo sugerido da OpenAI é {{ model }}.{% endblocktranslate %}
+    {% translate "Selecione o canal para a minha IA ou deixe o modelo em branco para usar somente a base local." %}
+    {% if configured %}{% translate "Deixe o token em branco para manter a credencial do provedor atual." %}{% endif %}</small></p>
+  <button>{% translate "Salvar configuração" %}</button>
+</form>
+{% endblock %}

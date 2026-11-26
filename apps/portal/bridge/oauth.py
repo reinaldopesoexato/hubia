@@ -20,9 +20,13 @@ from portal_identity import bind_account
 from oauth2_provider.views import AuthorizationView, TokenView
 
 from . import mail_access
-from .access import ORIGIN, MCP, META, MAIL_MCP, MAIL_ISSUER, MAIL_SCOPES, email_title, context, with_icon_link
+from .access import HUB_NAME, HUB_SITE, ORIGIN, MCP, META, MAIL_MCP, MAIL_ISSUER, MAIL_SCOPES, email_title, context, with_icon_link
 from .models import Link, Mailbox, MailProvider, WorkspaceSelection
 from .workspaces import selection
+
+
+IAVES_MEMORY_SCOPE = "hub.iaves.memory"
+MCP_SCOPES = ["hub.read", "hub.reply", "hub.notify", "hub.mail.send", IAVES_MEMORY_SCOPE, "offline_access"]
 
 
 @require_GET
@@ -31,8 +35,8 @@ def protected_metadata(request, email_only=False):
     if email_only:
         return JsonResponse({"resource":MAIL_MCP, "resource_name":"Meu Email", "authorization_servers":[MAIL_ISSUER],
                              "scopes_supported":MAIL_SCOPES, "bearer_methods_supported":["header"]})
-    return JsonResponse({"resource":MCP,"resource_name":"HUB IA","authorization_servers":[ORIGIN],
-        "scopes_supported":["hub.read","hub.reply","hub.notify","hub.mail.send","offline_access"],"bearer_methods_supported":["header"]})
+    return JsonResponse({"resource":MCP,"resource_name":HUB_NAME,"resource_documentation":HUB_SITE,
+        "authorization_servers":[ORIGIN],"scopes_supported":MCP_SCOPES,"bearer_methods_supported":["header"]})
 
 
 @require_GET
@@ -44,13 +48,14 @@ def server_metadata(request, email_only=False):
         "registration_endpoint":base+"/oauth/register/",
         "token_endpoint":base+"/oauth/token/","response_types_supported":["code"],
         "grant_types_supported":["authorization_code","refresh_token"],
-        "scopes_supported":MAIL_SCOPES if email_only else ["hub.read","hub.reply","hub.notify","hub.mail.send","offline_access"],
+        "scopes_supported":MAIL_SCOPES if email_only else MCP_SCOPES,
         "token_endpoint_auth_methods_supported":["client_secret_basic","client_secret_post","none"],
         "code_challenge_methods_supported":["S256"]})
 
 
 DYNAMIC_CLIENTS = {
     "ChatGPT · HUB IA": re.compile(r"https://chatgpt\.com/(?:connector_platform_oauth_redirect|connector/oauth/[A-Za-z0-9_-]{1,160})"),
+    "Claude · HUB IA": re.compile(r"https://claude\.ai/api/mcp/auth_callback"),
     "Gemini · HUB IA": re.compile(r"https://oauth-redirect(?:-sandbox|-test)?\.googleusercontent\.com/[ar]/[A-Za-z0-9_-][A-Za-z0-9_.~-]{0,511}"),
 }
 
@@ -100,10 +105,7 @@ def register(request, email_only=False):
     return JsonResponse(info,status=201,headers={"Cache-Control":"no-store"})
 
 
-def default_link(user, client_id):
-    app=get_application_model().objects.filter(client_id=client_id,user__isnull=True,name="ChatGPT · HUB IA").first()
-    if not app:
-        raise Http404
+def unified_link(user, app):
     with connection.cursor() as cursor:
         principal,_=bind_account(cursor,user)
         if not principal:
@@ -118,7 +120,9 @@ def default_link(user, client_id):
         row=cursor.fetchone()
         if not row:
             raise Http404
-    return Link(user=user,tenant=tenant,space=row[0],name="Dot · ChatGPT",protocol="mcp",client_id=client_id,writable=True)
+    name = app.name.partition(" · ")[0]
+    return Link(user=user,tenant=tenant,space=row[0],name=name,protocol="mcp",client_id=app.client_id,
+                writable=True,all_tenants=True)
 
 
 def pick_workspace(request, client_id, selected, *, email_only=False):
@@ -182,19 +186,21 @@ class Consent(AuthorizationView):
             links = Link.objects.filter(client_id=client_id, user=request.user, protocol="mcp")
             link = links.first()
             if link is None:
-                names = MAIL_CLIENTS if self.email_only else {"Gemini · HUB IA"}
+                names = MAIL_CLIENTS if self.email_only else set(DYNAMIC_CLIENTS)
                 apps = get_application_model().objects.filter(client_id=client_id, user__isnull=True, name__in=names)
                 app = (apps.select_for_update() if request.method == "POST" else apps).first()
-                if app:
-                    link = links.first() or pick_workspace(request, client_id, selected, email_only=self.email_only)
-                    if not isinstance(link, Link):
-                        return link
-                    if link._state.adding and not selected:
-                        selected = f"{link.tenant}:all"
-                elif self.email_only:
+                if not app:
                     raise Http404
-                else:
-                    link = default_link(request.user, client_id)
+                link = links.first()
+                if link is None:
+                    if self.email_only or (selected and app.name == "Gemini · HUB IA"):
+                        # Keep consent forms already opened under the former Gemini flow valid.
+                        link = pick_workspace(request, client_id, selected, email_only=self.email_only)
+                        if not isinstance(link, Link):
+                            return link
+                        selected = selected or f"{link.tenant}:all"
+                    else:
+                        link = unified_link(request.user, app)
             if link.email_only != self.email_only:
                 return JsonResponse({"error":"invalid_target"}, status=400)
             picked_all = selected == f"{link.tenant}:all"
@@ -206,7 +212,9 @@ class Consent(AuthorizationView):
             internal_mail = mail_access.for_link(link)
             if self.email_only and not internal_mail:
                 raise Http404
-            allowed = {"hub.read", "offline_access"}
+            allowed = set(MCP_SCOPES) if link.all_tenants else {"hub.read", "offline_access"}
+            if not self.email_only:
+                allowed.add(IAVES_MEMORY_SCOPE)
             if internal_mail:
                 allowed.add("hub.mail.send")
             if link.writable:
@@ -215,10 +223,11 @@ class Consent(AuthorizationView):
                 return JsonResponse({"error":"invalid_scope"},status=400)
             self.space_info = context(link, multi_space=True)
             self.space_info["email_only"] = self.email_only
+            self.space_info["unified_mcp"] = link.all_tenants
             self.space_info["hub_workspace"] = selected
             self.space_info["all_spaces"] = already_all or (link._state.adding and (picked_all or not selected))
             # Serialize consent with changes to the user's mailbox and its permissions.
-            provider = MailProvider.objects.filter(pk=link.tenant, enabled=True)
+            provider = MailProvider.objects.filter(pk=mail_access.tenant_for(link), enabled=True)
             if request.method == "POST":
                 provider = provider.select_for_update()
             profile = provider.first() if internal_mail else None
@@ -228,7 +237,8 @@ class Consent(AuthorizationView):
                     raise Http404
             scopes = set(data.get("scope", "hub.read").split())
             offer_read = link.offer_mail_access and "hub.read" in scopes
-            offer_send = "hub.mail.send" in scopes and not self.space_info["viewer"]
+            mail_role = self.space_info["tenant_roles"].get(mail_access.tenant_for(link))
+            offer_send = "hub.mail.send" in scopes and mail_role not in (None, "viewer")
             box = None
             if profile and (offer_read or offer_send):
                 box = Mailbox.objects.only("id", "address").filter(provider=profile, user=request.user).first()
@@ -260,7 +270,8 @@ class Consent(AuthorizationView):
                     if link._state.adding:
                         link, created = Link.objects.select_for_update().get_or_create(
                             client_id=link.client_id, user=request.user, defaults={"tenant":link.tenant,
-                            "space":link.space, "name":link.name, "protocol":"mcp", "writable":link.writable, "email_only":self.email_only})
+                            "space":link.space, "name":link.name, "protocol":"mcp", "writable":link.writable,
+                            "email_only":self.email_only, "all_tenants":link.all_tenants})
                         if created and selected:
                             WorkspaceSelection.objects.create(link=link, spaces=None if picked_all else [str(link.space)])
                     if send_choice is not None and send_choice != send_enabled:
@@ -311,13 +322,25 @@ def token(request, email_only=False):
 
 def unauthorized(email_only=False):
     meta = META + "/email" if email_only else META
+    challenge = f'Bearer resource_metadata="{meta}"'
+    if email_only:
+        challenge += ', scope="hub.read"'
     return JsonResponse({"error":"invalid_token"},status=401,headers={
-        "WWW-Authenticate":f'Bearer resource_metadata="{meta}", scope="hub.read"',"Cache-Control":"no-store"})
+        "WWW-Authenticate":challenge,"Cache-Control":"no-store"})
 
 
 def bearer(request):
     scheme,_,value = request.headers.get("Authorization","").partition(" ")
     return value if scheme.lower()=="bearer" and 0<len(value)<=512 else ""
+
+
+def apply_mcp_scopes(link, ctx, scopes):
+    roles = ctx["tenant_roles"]
+    can_reply = link.writable and roles.get(link.tenant) not in (None, "viewer") and "hub.reply" in scopes
+    ctx["iaves_memory"] = not link.email_only and IAVES_MEMORY_SCOPE in scopes
+    ctx["can_notify"] = link.writable and "hub.notify" in scopes
+    ctx["can_send_mail"] = roles.get(mail_access.tenant_for(link)) not in (None, "viewer") and "hub.mail.send" in scopes
+    return can_reply
 
 
 def authenticate_mcp(request, email_only=False):
@@ -333,8 +356,6 @@ def authenticate_mcp(request, email_only=False):
     if not link or (email_only and not mail_access.for_link(link)):
         return None
     ctx = context(link, multi_space=True)
-    can_reply = link.writable and not ctx["viewer"] and grant.allow_scopes(["hub.reply"])
     ctx["token_id"] = grant.pk
-    ctx["can_notify"] = link.writable and not ctx["viewer"] and grant.allow_scopes(["hub.notify"])
-    ctx["can_send_mail"] = not ctx["viewer"] and grant.allow_scopes(["hub.mail.send"])
+    can_reply = apply_mcp_scopes(link, ctx, set(grant.scope.split()))
     return link,ctx,can_reply

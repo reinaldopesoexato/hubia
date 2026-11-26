@@ -1,0 +1,109 @@
+{% extends "base.html" %}{% load i18n iaves_mark %}
+{% block title %}{% translate "Minha memória do IAves" %}{% endblock %}
+{% block head %}<style>
+.iaves-memory-scroll { overflow:auto; }
+.iaves-memory-table { border-collapse:collapse; width:100%; min-width:34rem; text-align:left; }
+.iaves-memory-table th,.iaves-memory-table td { padding:8px; vertical-align:top; border-bottom:1px solid var(--line); }
+.iaves-memory-table td:first-child { width:29%; }
+.iaves-memory-table td:last-child { width:10rem; }
+.iaves-memory-table textarea { resize:vertical; }
+.iaves-memory-table .agent-unlink { background:#fff; color:#942f30; border:1px solid var(--line); }
+.iaves-memory-table .agent-unlink:hover { background:#fce5e5; }
+</style>{% endblock %}
+{% block body %}
+<nav><a href="{% url 'use_agent' tenant space agent.id %}">{% iaves_brand _("← Conversar com IAves") %}</a></nav>
+<h1>{% iaves_brand _("Minha memória do IAves") %}</h1>
+<p>{% iaves_brand _("Veja as informações e preferências que o IAves usa nas suas consultas. A memória pertence à sua conta e acompanha você no portal e no MCP.") %}</p>
+
+<p id="iaves-memory-status" role="status" tabindex="-1" hidden></p>
+<section id="iaves-memory-panel" aria-label="{% translate 'Itens da memória' %}">
+  {% if error %}<p class="error" role="alert">{% translate error %}</p>{% endif %}
+  {% if items %}
+  <div class="iaves-memory-scroll">
+    <table class="iaves-memory-table">
+      <thead><tr><th scope="col">{% translate "Informação" %}</th><th scope="col">{% translate "Valor" %}</th><th scope="col">{% translate "Ações" %}</th></tr></thead>
+      <tbody>
+      {% for item in items %}
+      <tr>
+        <td>
+          <form id="memory-{{ item.pk }}" method="post">{% csrf_token %}<input type="hidden" name="item" value="{{ item.pk }}"></form>
+          <input form="memory-{{ item.pk }}" name="key" maxlength="100" value="{{ item.key }}" required aria-label="{% translate 'Informação' %}">
+          <small><time datetime="{{ item.updated_at|date:'c' }}">{{ item.updated_at|date:"d/m/Y H:i" }}</time></small>
+        </td>
+        <td><textarea form="memory-{{ item.pk }}" name="value" maxlength="1000" rows="2" required aria-label="{% translate 'Valor' %}">{{ item.value }}</textarea></td>
+        <td><button form="memory-{{ item.pk }}" name="action" value="edit">{% translate "Salvar" %}</button>
+          <button form="memory-{{ item.pk }}" formnovalidate class="agent-unlink" name="action" value="delete">{% translate "Excluir" %}</button></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <details>
+    <summary>{% translate "Limpar toda a memória" %}</summary>
+    <form method="post">{% csrf_token %}
+      <label><input type="checkbox" name="confirm" required> {% iaves_brand _("Confirmo que desejo excluir todos os itens da memória do IAves.") %}</label>
+      <button name="action" value="clear">{% translate "Limpar memória" %}</button>
+    </form>
+  </details>
+  {% else %}<p>{% translate "Nenhuma informação memorizada." %}</p>{% endif %}
+  <details>
+    <summary>{% translate "Adicionar à memória" %}</summary>
+    <form method="post">
+      {% csrf_token %}
+      <label for="memory-new-key">{% translate "Informação" %}</label><input id="memory-new-key" name="key" maxlength="100" required>
+      <label for="memory-new-value">{% translate "Valor" %}</label><textarea id="memory-new-value" name="value" maxlength="1000" rows="2" required></textarea>
+      <button name="action" value="add">{% translate "Adicionar" %}</button>
+    </form>
+  </details>
+</section>
+<script>
+  (() => {
+    const panel = document.getElementById('iaves-memory-panel');
+    const status = document.getElementById('iaves-memory-status');
+    if (!window.fetch) return;
+    let saving = false;
+    panel.addEventListener('submit', async (event) => {
+      const button = event.submitter;
+      if (!button) return;
+      event.preventDefault();
+      if (saving) return;
+      saving = true;
+      button.disabled = true;
+      panel.setAttribute('aria-busy', 'true');
+      status.hidden = true;
+      try {
+        const data = new FormData(event.target);
+        data.set(button.name, button.value);
+        const response = await fetch(event.target.action, {method: 'POST', body: data, credentials: 'same-origin'});
+        const documentBody = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const updatedPanel = documentBody.getElementById('iaves-memory-panel');
+        if (!updatedPanel) {
+          window.location.assign(response.url);
+          return;
+        }
+        if (response.ok) {
+          panel.replaceChildren(...updatedPanel.childNodes);
+          status.textContent = '{% translate "Memória atualizada." as updated_message %}{{ updated_message|escapejs }}';
+          status.hidden = false;
+          status.focus();
+        } else {
+          const error = updatedPanel.querySelector('[role="alert"]');
+          if (error) {
+            panel.querySelector('[role="alert"]')?.remove();
+            error.tabIndex = -1;
+            panel.prepend(error);
+            error.focus();
+          }
+        }
+      } catch {
+        status.textContent = '{% translate "Não foi possível atualizar a memória. Tente novamente." as retry_message %}{{ retry_message|escapejs }}';
+        status.hidden = false;
+      } finally {
+        button.disabled = false;
+        panel.removeAttribute('aria-busy');
+        saving = false;
+      }
+    });
+  })();
+</script>
+{% endblock %}

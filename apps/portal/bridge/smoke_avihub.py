@@ -88,6 +88,11 @@ def verify_avihub(manager, viewer, user, tenant, workspace, other, second_space)
             params["arguments"]["unidade"] = "Recria"
             assert mcp.call_tool(link, {}, False, params)["serie"] == "3434-2023"
             assert lookup.call_args.args[1:3] == (units[1], "consultar_equipamento")
+    from .smoke_avihub_reports import verify_reports
+    from .smoke_avihub_notifications import verify_notices
+
+    verify_reports(manager, viewer, user, other, tenant, workspace, agent, pending)
+    verify_notices(manager, viewer, user, other, tenant, workspace, agent, pending)
     with patch.object(avihub.Panel, "authenticate", return_value=False):
         response = viewer.post(url, {"action":"login", "apelido":"Filial", "email":"filial@example.org",
                                     "password":"fixture"}, secure=True)

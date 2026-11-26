@@ -44,7 +44,7 @@ with transaction.atomic():
     assert ordinary.post(admin_url, {"action": "create_org", "name": "Teste"}, **http).status_code == 403
     from smoke_registration import verify_registration, verify_user_editor
     public_user = verify_registration()
-    from bridge.smoke import verify_bridge
+    from bridge.smoke import verify_bridge, verify_unified_connector
     verify_bridge(user,other)
     from bridge.smoke_avihub import verify_avihub_session_storage
     verify_avihub_session_storage(user)
@@ -143,11 +143,14 @@ with transaction.atomic():
             verify_mail(ordinary,viewer,tenant,workspace,created)
         from bridge.smoke_workspaces import verify_workspace_selection
         verify_workspace_selection(viewer, ordinary, created, tenant, workspace, operations, manage)
+        verify_unified_connector(viewer, created, tenant, workspace, operations, shared_agent, manage)
         from smoke_spaces import verify_space_lifecycle
         verify_space_lifecycle(client, ordinary, other, tenant, workspace, csrf, http)
         assert viewer.post(agent_url,{"question":"teste","request_id":str(uuid4())},**http).status_code==403
         assert ordinary.post(grant_url,{"action":"revoke","username":login},**http).status_code==302
         assert viewer.get(space_url,secure=True).status_code==404
+        from bridge.smoke_iaves import verify_iaves
+        verify_iaves(user, other)
         print("Concessão, papel de leitor e revogação pelo responsável institucional verificados.")
         print("Cadastro, desativação, reativação, auditoria e limites do administrador verificados.")
         print("Administração de instituições, espaços e permissões verificada.")

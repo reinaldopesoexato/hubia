@@ -21,6 +21,7 @@ from . import avihub_api as api
 from .models import AviHubAgent, AviHubSession
 
 logger = logging.getLogger(__name__)
+PESO_EXATO_ORIGIN = "https://avihub.pesoexato.com"
 
 
 def personal(tenant, user):
@@ -42,7 +43,7 @@ def dashboard_setup(cursor, user, spaces):
     if target is None:
         return None
     space, agent = target
-    if not AviHubAgent.objects.filter(pk=agent, tenant=tenant, origin="https://avihub.pesoexato.com").exists():
+    if not AviHubAgent.objects.filter(pk=agent, tenant=tenant, origin=PESO_EXATO_ORIGIN).exists():
         return None
     sessions = personal(tenant, user)
     session = sessions.order_by("-ready", "-pk").only("id", "ready").first()
@@ -115,6 +116,24 @@ def linking_help(url, *, pending=False, expired=False):
     return {"estado": "vinculo_necessario", "url_vinculo": url,
             "mensagem": f"{reason} {step} Depois, repita a consulta.",
             "instrucao_para_ia": "Mostre ao cliente a mensagem e o link de vínculo."}
+
+
+def linked_account(tenant, user, agent_id, selection, *, link_url):
+    sessions = personal(tenant, user).filter(agent_id=agent_id)
+    ready = sessions.filter(ready=True)
+    accounts = [session.account_info() for session in accounts_for(ready)]
+    if not accounts:
+        pending = sessions.filter(ready=False).exists()
+        return None, linking_help(link_url if pending else link_url + "?nova=1", pending=pending)
+    selected = api.select_account(accounts, selection)
+    if selected.get("estado") == "escolher_conta":
+        return None, {**selected, "contas":[account_choice(item) for item in selected["contas"]]}
+    session = locked_session(ready, selected["id"])
+    return session, {"conta":account_choice(selected), "contas":[account_choice(item) for item in accounts]}
+
+
+def account_choice(account):
+    return {"id":account["id"], "nome":account["nome"]}
 
 
 def query(tenant, user, args, operation, *, link_url):

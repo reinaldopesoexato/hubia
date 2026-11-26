@@ -5,6 +5,7 @@ from django.db import connection, transaction
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
+from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods
 
 from agent_runtime import ConnectorError, connectors_for
@@ -53,6 +54,7 @@ def save_selection(cursor, tenant, space, post):
     return None
 
 
+@sensitive_post_parameters("token")
 @never_cache
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -105,6 +107,10 @@ def manage(request, tenant, agent=None):
             for (space,) in cursor.fetchall():
                 catalog_alerts.cancel_pending(tenant, space, agent)
             return redirect("institution_agents", tenant)
+        if initial.get("kind") == "iaves":
+            from iaves_portal import configure as configure_iaves
+
+            return configure_iaves(request, ctx, agent, initial)
         connectors = {MODEL_REF}
         try:
             for space in library_spaces(cursor, tenant, ctx["is_owner"]):

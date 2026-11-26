@@ -11,7 +11,7 @@ from uuid import uuid4
 from django.db import connection
 from django.test import Client
 from django.utils import timezone
-from .access import MCP
+from .access import HUB_NAME, HUB_SITE, MCP, MCP_ICONS, MCP_SERVER_INFO, META
 from .events import EVENT
 from .models import Link, Ticket, Delivery
 from .portal import create_connection
@@ -30,22 +30,15 @@ class Hidden(HTMLParser):
             self.fields[data["name"]] = data.get("value","")
 
 
-def verify_bridge(user,other):
-    client=Client(HTTP_HOST="hubia.psxt.io")
-    client.force_login(user)
-    anonymous=Client(HTTP_HOST="hubia.psxt.io")
-    def post(url,payload,**headers):
-        return anonymous.post(url,payload,content_type="application/json",secure=True,**headers)
-    fresh={"jsonrpc":"2.0","method":"initialize","id":1,"params":{"protocolVersion":"2025-11-25"}}
-    assert post("/conta/mcp",fresh).status_code==401
-    callback="https://chatgpt.com/connector/oauth/test-setup"
-    reg=post("/conta/oauth/register/",{"redirect_uris":[callback],"token_endpoint_auth_method":"client_secret_basic"})
+def authorize_remote_mcp(client, anonymous, callback, scope):
+    reg=anonymous.post("/conta/oauth/register/", {"redirect_uris":[callback],"token_endpoint_auth_method":"client_secret_basic"},
+                       content_type="application/json",secure=True)
     assert reg.status_code==201,reg.content
     app=reg.json()
     verifier=secrets.token_urlsafe(48)
     challenge=base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
     auth={"client_id":app["client_id"],"redirect_uri":callback,"response_type":"code","state":"test",
-          "code_challenge":challenge,"code_challenge_method":"S256","scope":"hub.read hub.reply offline_access","resource":MCP}
+          "code_challenge":challenge,"code_challenge_method":"S256","scope":scope,"resource":MCP}
     response=client.get("/conta/oauth/authorize/",auth,secure=True)
     assert response.status_code==200,response.status_code
     parser=Hidden()
@@ -57,18 +50,33 @@ def verify_bridge(user,other):
     token=anonymous.post("/conta/oauth/token/",{"grant_type":"authorization_code","code":code,"redirect_uri":callback,
                          "code_verifier":verifier,"resource":MCP},secure=True,HTTP_AUTHORIZATION="Basic "+basic)
     assert token.status_code==200,token.content
-    key={"HTTP_AUTHORIZATION":"Bearer "+token.json()["access_token"]}
+    return app["client_id"], {"HTTP_AUTHORIZATION":"Bearer "+token.json()["access_token"]}
+
+
+def verify_bridge(user,other):
+    client=Client(HTTP_HOST="hubia.psxt.io")
+    client.force_login(user)
+    anonymous=Client(HTTP_HOST="hubia.psxt.io")
+    def post(url,payload,**headers):
+        return anonymous.post(url,payload,content_type="application/json",secure=True,**headers)
+    fresh={"jsonrpc":"2.0","method":"initialize","id":1,"params":{"protocolVersion":"2025-11-25"}}
+    unauthenticated=post("/conta/mcp",fresh)
+    assert unauthenticated.status_code==401 and META in unauthenticated["WWW-Authenticate"]
+    callback="https://chatgpt.com/connector/oauth/test-setup"
+    client_id,key=authorize_remote_mcp(client,anonymous,callback,"hub.read hub.reply offline_access")
     def rpc(method,params):
         ans=post("/conta/mcp",{"jsonrpc":"2.0","id":11,"method":method,"params":params},**key)
         assert ans.status_code==200,ans.status_code
         return ans.json()
-    from .access import MCP_ICONS
     for version in ("2025-03-26", "2025-06-18", "2025-11-25"):
         info = rpc("initialize", {"protocolVersion":version})["result"]["serverInfo"]
-        assert info["icons"] == MCP_ICONS
+        assert info == MCP_SERVER_INFO
     for path in ("/.well-known/oauth-protected-resource/conta/mcp", "/.well-known/oauth-authorization-server"):
         metadata = anonymous.get(path, secure=True)
-        assert metadata.status_code == 200 and MCP_ICONS[0]["src"] in metadata["Link"]
+        assert metadata.status_code == 200 and all(icon["src"] in metadata["Link"] for icon in MCP_ICONS)
+    resource = anonymous.get(urlsplit(META).path, secure=True).json()
+    assert resource["resource"] == MCP and resource["resource_name"] == HUB_NAME
+    assert resource["resource_documentation"] == HUB_SITE
     assert all(spec["icons"] == MCP_ICONS for spec in rpc("tools/list", {})["result"]["tools"])
     print("Ícone do HUB IA verificado no servidor MCP, nas ferramentas e na descoberta OAuth.")
     capabilities = rpc("initialize",fresh["params"])["result"]["capabilities"]
@@ -76,7 +84,7 @@ def verify_bridge(user,other):
     assert anonymous.get("/conta/mcp", secure=True, HTTP_ACCEPT="text/event-stream").status_code == 401
     assert anonymous.get("/conta/mcp", secure=True, HTTP_ACCEPT="application/json", **key).status_code == 406
     assert "result" in rpc("tools/call",{"name":"list_agents","arguments":{}})
-    link=Link.objects.get(client_id=app["client_id"],user=user)
+    link=Link.objects.get(client_id=client_id,user=user)
     url=f"/conta/espacos/{link.tenant}/{link.space}/integracoes/"
     outsider=Client(HTTP_HOST="hubia.psxt.io")
     outsider.force_login(other)
@@ -120,6 +128,71 @@ def verify_bridge(user,other):
     assert client.post(url,{"link":link.pk,"action":"revoke"},secure=True).status_code==302
     assert post("/conta/mcp",fresh,**key).status_code==401
     print("OAuth PKCE, MCP, evento assinado, fila, resposta, A2A, isolamento e revogação verificados.")
+
+
+def verify_unified_connector(client, user, tenant, workspace, second, institutional_agent, manage):
+    from django.urls import reverse
+
+    anonymous = Client(HTTP_HOST="hubia.psxt.io")
+    callback = "https://claude.ai/api/mcp/auth_callback"
+    client_id, key = authorize_remote_mcp(client, anonymous, callback,
+                                         "hub.read hub.reply hub.notify hub.mail.send offline_access")
+    link = Link.objects.get(client_id=client_id, user=user)
+    assert link.all_tenants and not link.email_only
+
+    def rpc(name, **arguments):
+        res = anonymous.post("/conta/mcp", {"jsonrpc":"2.0", "id":1, "method":"tools/call",
+                             "params":{"name":name,"arguments":arguments}},
+                             content_type="application/json", secure=True, **key)
+        assert res.status_code == 200, res.status_code
+        return res.json()
+
+    def call(name, **arguments):
+        return json.loads(rpc(name, **arguments)["result"]["content"][0]["text"])
+
+    def spaces():
+        return {(row["tenant_id"], row["space_id"]) for row in call("listar_espacos")}
+
+    personal = (str(link.tenant), str(link.space))
+    assert personal[0] != tenant
+    assert {personal, (tenant, workspace)} <= spaces()
+    assert (tenant, second) not in spaces()
+    personal_agent = "Base pessoal integração QA"
+    form = {"kind":"knowledge", "knowledge_text":"Conteúdo QA", "name":personal_agent, "active":"on"}
+    assert client.post(reverse("manage_agents", args=personal), form, secure=True).status_code == 302
+    agents = call("list_agents")
+    entry = next(item for item in agents if (item["tenant_id"], item["space_id"]) == personal and item["name"] == personal_agent)
+    assert entry["tipo"] == "knowledge" and entry["url"].startswith(HUB_SITE)
+    query = {"pergunta":"Conteúdo", "request_id":str(uuid4())}
+    assert call("consultar_agente", space_id=personal[1], agent_id=entry["id"], **query) == {"resposta":"Conteúdo QA"}
+    assert "error" in rpc("consultar_agente", space_id=workspace, agent_id=str(institutional_agent), **query)
+    assert "error" in rpc("consultar_agente", space_id=personal[1], agent_id=str(institutional_agent), **query)
+    connector_name = "Consulta de API QA"
+    connector = {"fixture": {"url":"https://example.invalid/qa"}}
+    connector_form = {"kind":"connector", "connector_id":"fixture", "name":connector_name, "active":"on"}
+    with patch("space_views.available_connectors", return_value=connector):
+        assert client.post(reverse("manage_agents", args=personal), connector_form, secure=True).status_code == 302
+    entry = next(item for item in call("list_agents") if item["name"] == connector_name)
+    with patch("bridge.mcp.available_connectors", return_value=connector), patch(
+            "bridge.mcp.query_connector", return_value="Resposta de teste") as query_api:
+        assert call("consultar_agente", space_id=personal[1], agent_id=entry["id"], **query) == {"resposta":"Resposta de teste"}
+    assert query_api.call_args.args[1]["tenant_id"] == personal[0]
+    assert query_api.call_args.args[1]["workspace_id"] == personal[1]
+    assert any(item["tenant_id"] == tenant and item["space_id"] == workspace and
+               item["id"] == str(institutional_agent) for item in agents)
+
+    manage("grant_space", tenant=tenant, workspace=second, username=user.username)
+    assert (tenant, second) in spaces()
+    manage("revoke_space", tenant=tenant, workspace=second, username=user.username)
+    assert (tenant, second) not in spaces()
+    selection_url = reverse("ai_workspaces")
+    selection = {"link":link.pk, f"initial-{link.pk}":"all", f"mode-{link.pk}":"selected"}
+    assert client.post(selection_url, {**selection, f"spaces-{link.pk}":[second]}, secure=True).status_code == 400
+    assert client.post(selection_url, {**selection, f"spaces-{link.pk}":[workspace]}, secure=True).status_code == 302
+    assert spaces() == {(tenant, workspace)}
+    assert {item["tenant_id"] for item in call("list_agents")} == {tenant}
+    print("MCP unificado: OAuth do Claude, catálogo pessoal e institucional, seleção, concessão e revogação verificadas.")
+
 
 def verify_discovery(client, remote, link, key, rpc, post):
     from asgiref.sync import async_to_sync

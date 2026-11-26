@@ -49,6 +49,11 @@ main{width:min(100%,1550px);margin:0 auto;padding:clamp(22px,3.2vw,48px)}h1,h2,h
 .agent-availability { margin-top: 20px; }
 .agent-actions { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 8px; }
 .form-page .agent-actions button { margin-block: 4px; }
+.iaves-brand { font-weight: 400; white-space: nowrap; }
+.iaves-brand b { font-weight: 700; }
+.iaves-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-block: 16px; }
+.form-page .iaves-feedback button { width: auto; margin: 0; }
+.iaves-feedback button[aria-pressed="true"] { outline: 2px solid var(--blue); outline-offset: 2px; }
 @media (max-width: 620px) {
   .agent-directory li { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
   .agent-links { grid-column: 1 / -1; justify-content: flex-start; }
@@ -64,6 +69,9 @@ main{width:min(100%,1550px);margin:0 auto;padding:clamp(22px,3.2vw,48px)}h1,h2,h
 .linked-accounts small { display: block; font-weight: normal; }
 .linked-accounts a { padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; font-weight: 600; text-decoration: none; }
 .linked-accounts a:hover { background: #f6f4ff; border-color: var(--blue); }
+.form-page .avihub-notification-link button {
+  margin: 0; padding: 0; background: transparent; color: var(--blue); font: inherit; text-decoration: underline;
+}
 .form-page .account-toolbar [hidden] { display: none; }
 @media (max-width: 580px) {
   .linked-accounts li { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; }

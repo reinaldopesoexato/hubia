@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load i18n %}
+{% extends "base.html" %}{% load i18n iaves_mark %}
 {% block title %}{% translate "Espaços das minhas IAs" %}{% endblock %}
 {% block layout %}access-page{% endblock %}
 {% block head %}<style>
@@ -17,6 +17,12 @@
 .space-list label{display:inline-flex;gap:.5rem;align-items:center;cursor:pointer;border:1px solid var(--line);border-radius:7px;padding:.45rem .75rem;overflow-wrap:anywhere;max-width:100%}
 .space-list label:has(:checked){background:#f1eefc;border-color:#bbafe7;color:#453490}
 .space-list input{margin:0;width:1rem;height:1rem;accent-color:var(--blue);flex:none}
+.catalog-diagnostics{border-top:1px solid var(--line);margin-top:.85rem;padding-top:.7rem}
+.catalog-diagnostics summary{cursor:pointer;font-size:.9rem}
+.catalog-diagnostics p{margin:.7rem 0 .4rem}
+.catalog-tools{display:flex;flex-wrap:wrap;gap:.35rem;list-style:none;padding:0;margin:.35rem 0 .7rem}
+.catalog-tools code{display:block;background:#f1eefc;border-radius:4px;padding:.15rem .35rem;overflow-wrap:anywhere}
+.catalog-actions{margin:.7rem 0 .1rem;padding-left:1.2rem}
 .ai-save{position:sticky;bottom:0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:.85rem 1.2rem;box-shadow:0 -3px 12px #23203a0b;z-index:1}
 .ai-save button{border:0;background:var(--blue);color:white;border-radius:8px;padding:.65rem 1rem;font-weight:650}
 .ai-save button:disabled{background:#e8e6ef;color:#656071;cursor:default}
@@ -26,23 +32,28 @@
 </style>{% endblock %}
 {% block body %}
 <h1>{% translate "Espaços das minhas IAs" %}</h1>
-<p>{% translate "Por padrão, cada conexão inclui os espaços atuais e futuros aos quais você tem acesso na instituição ou conta pessoal conectada. Você pode limitar os espaços ou pausar uma conexão." %}{% if internal_mail %} {% translate "Também pode ajustar as permissões de e-mail." %}{% endif %}</p>
+<p>{% translate "Gerencie os espaços que cada IA pode consultar. Selecione espaços específicos, inclua todos os disponíveis ou pause o acesso." %}{% if internal_mail %} {% translate "Também pode ajustar as permissões de e-mail." %}{% endif %}</p>
 {% if entries %}
 <form method="post" id="access-form">{% csrf_token %}
 {% regroup entries by tenant as groups %}
 {% for group in groups %}<section class="access-group">
 <h2>{{ group.list.0.organization }}</h2>
-{% for item in group.list %}<div class="ai-row">
+{% for item in group.list %}<div class="ai-row"{% if item.choices %} data-editable{% endif %}{% if item.revoked %} data-revoked{% endif %}>
+{% if item.choices %}
 <input type="hidden" name="link" value="{{ item.link.pk }}">
 <input type="hidden" name="initial-{{ item.link.pk }}" value="{{ item.initial }}">
+{% endif %}
 <div class="ai-row-head"><div class="ai-name"><h3>{{ item.link.name }}</h3>
-<small class="scope-summary">{% if item.mode == 'all' %}{% translate "Inclui os espaços atuais e futuros" %}{% elif item.count %}{% if item.count == 1 %}{% translate "1 espaço selecionado" %}{% else %}{{ item.count }} {% translate "espaços selecionados" %}{% endif %}{% else %}{% translate "Acesso pausado" %}{% endif %}</small></div>
+{% if item.link.email_only %}<small>{% translate "conexão legada de e-mail" %}</small>{% endif %}
+<small class="scope-summary">{% if not item.choices %}{% translate "Sem espaços disponíveis" %}{% elif item.revoked %}{% translate "Espaços escolhidos indisponíveis" %}{% elif item.mode == 'all' %}{% translate "Inclui os espaços atuais e futuros" %}{% elif item.count %}{% if item.count == 1 %}{% translate "1 espaço selecionado" %}{% else %}{{ item.count }} {% translate "espaços selecionados" %}{% endif %}{% else %}{% translate "Acesso pausado" %}{% endif %}</small></div>
+{% if item.choices %}
 <label><span class="access-sr">{% translate "Acesso de" %} {{ item.link.name }}</span>
 <select name="mode-{{ item.link.pk }}">
 <option value="selected" {% if item.mode == 'selected' %}selected{% endif %}>{% translate "Escolher espaços" %}</option>
 <option value="all" {% if item.mode == 'all' %}selected{% endif %}>{% translate "Todos, inclusive futuros" %}</option>
 <option value="paused" {% if item.mode == 'paused' %}selected{% endif %}>{% translate "Pausar acesso" %}</option>
-</select></label></div>
+</select></label>{% endif %}</div>
+{% if item.choices %}
 <fieldset><legend>{% translate "Espaços disponíveis para" %} {{ item.link.name }}</legend><div class="space-list">
 {% for id,name,checked in item.choices %}<label><input type="checkbox" name="spaces-{{ item.link.pk }}" value="{{ id }}" {% if checked %}checked{% endif %}>{{ name }}</label>{% endfor %}
 </div></fieldset>
@@ -54,17 +65,38 @@
 <label><input type="checkbox" data-mail name="send-{{ item.link.pk }}" {% if not item.can_enable_send and not item.send_mail %}disabled{% endif %} {% if item.send_mail %}checked{% endif %}>{% translate "Enviar e-mails em meu nome e editar a assinatura de IA" %}</label></div>
 <small>{% if not item.can_enable_send %}{% translate "Seu papel nesta instituição permite apenas leitura." %}{% else %}{% translate "Para enviar, a IA precisa do escopo OAuth" %} <code>hub.mail.send</code>{% translate ". Se a conexão for anterior, autorize-a novamente com esse escopo." %}{% endif %}</small>
 </fieldset>{% endif %}
-<small>{% if item.observed %}{% translate "Última consulta ao catálogo MCP em" %} {{ item.observed.0|date:"d/m/Y H:i" }}.{% if item.send_mail and item.can_enable_send and not item.observed.1 %} {% translate "O token usado nessa consulta precisa de nova autorização para enviar e-mails." %}{% endif %}{% else %}{% translate "Aguardando a primeira consulta ao catálogo MCP." %}{% endif %}</small>
+{% endif %}
+{% with diagnosis=item.diagnostics %}
+<details class="catalog-diagnostics">
+<summary>{% translate "Diagnóstico MCP" %} · {% if diagnosis.listed_at %}{% translate "Última consulta ao catálogo MCP em" %} <time datetime="{{ diagnosis.listed_at|date:'c' }}">{{ diagnosis.listed_at|date:"d/m/Y H:i" }}</time>{% else %}{% translate "Aguardando a primeira consulta ao catálogo MCP." %}{% endif %}</summary>
+{% if diagnosis.recorded %}
+<p><strong>{% translate "Ferramentas do último catálogo" %}</strong></p>
+{% if diagnosis.previous %}<ul class="catalog-tools">{% for tool in diagnosis.previous %}<li><code>{{ tool }}</code></li>{% endfor %}</ul>
+{% else %}<p>{% translate "O catálogo retornou sem ferramentas." %}</p>{% endif %}
+{% elif diagnosis.listed_at %}<p>{% translate "O HUB registrou essa consulta antes de guardar a lista de ferramentas." %}</p>{% endif %}
+<p><strong>{% translate "Ferramentas disponíveis agora" %}</strong></p>
+{% if diagnosis.current %}<ul class="catalog-tools">{% for tool in diagnosis.current %}<li><code>{{ tool }}</code></li>{% endfor %}</ul>
+{% else %}<p>{% translate "Nenhuma ferramenta disponível nesta conexão." %}</p>{% endif %}
+{% if diagnosis.removed %}<p><strong>{% translate "Ferramentas do último catálogo indisponíveis agora" %}</strong></p>
+<ul class="catalog-tools">{% for tool in diagnosis.removed %}<li><code>{{ tool }}</code></li>{% endfor %}</ul>{% endif %}
+{% if diagnosis.actions %}<ul class="catalog-actions">{% for message, url in diagnosis.actions %}
+<li>{% if url %}<a href="{{ url }}">{% iaves_brand message %}</a>{% else %}{% iaves_brand message %}{% endif %}</li>
+{% endfor %}</ul>{% endif %}
+</details>
+{% endwith %}
 </div>{% endfor %}
 </section>{% endfor %}
+{% if editable %}
 <div class="ai-save"><span role="status" aria-live="polite" data-saved="{{ saved|yesno:'yes,no' }}">{% if saved %}{% translate "Permissões salvas." %}{% endif %}</span><button type="submit">{% translate "Salvar permissões" %}</button></div>
+{% endif %}
 </form>
+{% if editable %}
 <script>
 const accessForm = document.querySelector('#access-form');
 const accessStatus = accessForm.querySelector('[role=status]');
 function updatePermissions() {
   let changes = 0;
-  for (const row of accessForm.querySelectorAll('.ai-row')) {
+  for (const row of accessForm.querySelectorAll('.ai-row[data-editable]')) {
     const mode = row.querySelector('select').value;
     const ids = [...row.querySelectorAll('input[name^="spaces-"]:checked')].map(input => input.value).sort();
     const value = mode === 'all' ? 'all' : mode === 'paused' ? '' : ids.join(',');
@@ -76,6 +108,7 @@ function updatePermissions() {
     let summary = ids.length === 1 ? '{% translate "1 espaço selecionado" as js_label %}{{ js_label|escapejs }}' : ids.length + ' {% translate "espaços selecionados" as js_label %}{{ js_label|escapejs }}';
     if (mode === 'all') summary = '{% translate "Inclui os espaços atuais e futuros" as js_label %}{{ js_label|escapejs }}';
     else if (mode === 'paused' || !ids.length) summary = '{% translate "Acesso pausado" as js_label %}{{ js_label|escapejs }}';
+    if (row.hasAttribute('data-revoked') && !dirty) summary = '{% translate "Espaços escolhidos indisponíveis" as js_label %}{{ js_label|escapejs }}';
     row.querySelector('.scope-summary').textContent = dirty ? summary + ' {% translate "· Alterado" as js_label %}{{ js_label|escapejs }}' : summary;
   }
   accessForm.querySelector('button[type=submit]').disabled = changes === 0;
@@ -86,5 +119,6 @@ accessForm.addEventListener('change', updatePermissions);
 window.addEventListener('pageshow', updatePermissions);
 updatePermissions();
 </script>
-{% else %}<p>{% translate "Abra" %} <strong>{% translate "Minhas integrações" %}</strong> {% translate "em um dos seus espaços para conectar sua primeira IA." %}</p>{% endif %}
+{% endif %}
+{% else %}<p>{% translate "Você ainda não configurou uma conexão de IA." %} <a href="{% url 'dashboard' %}#configured-ai">{% translate "Como conectar minha IA" %}</a></p>{% endif %}
 {% endblock %}

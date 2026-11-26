@@ -1,0 +1,115 @@
+{% extends "base.html" %}{% load i18n iaves_mark %}
+{% block title %}{% translate "Avisos do IAves" %}{% endblock %}
+{% block body %}
+<nav><a href="{% url 'use_agent' tenant space agent.id %}">{% iaves_brand _("← Conversar com IAves") %}</a></nav>
+<h1>{% iaves_brand _("Avisos do IAves") %}</h1>
+<p>{% translate "Receba resumos de pesagens de um lote e avisos de equipamentos que o AviHUB indica como sem comunicação há 24 horas ou mais. Escolha a unidade ativa em sua conta AviHUB." %}</p>
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+<section>
+  <h2>{% translate "Meus avisos" %}</h2>
+  {% for notice in notices %}
+  <article class="card">
+    <h3>{{ notice.title }}</h3>
+    <p><time datetime="{{ notice.created_at|date:'c' }}">{{ notice.created_at|date:"d/m/Y H:i" }}</time> · {% translate notice.get_mail_status_display %}</p>
+    <p>{{ notice.body|linebreaksbr }}</p>
+  </article>
+  {% empty %}<p>{% translate "Nenhum aviso disponível." %}</p>{% endfor %}
+</section>
+
+<section>
+  <h2>{% translate "Acompanhamentos" %}</h2>
+  {% for entry in entries %}
+  <article class="card">
+    <h3>{% translate entry.get_kind_display %} · {{ entry.unit_label }}{% if entry.batch_label %} · {{ entry.batch_label }}{% endif %}</h3>
+    <p>{% translate entry.get_frequency_display %} · {% if entry.delivery_email %}{% translate "Painel e e-mail" %}{% else %}{% translate "Painel" %}{% endif %}</p>
+    {% if entry.active %}
+    <p>{% translate entry.get_status_display %} · {% translate "Próxima consulta" %} <time datetime="{{ entry.next_due|date:'c' }}">{{ entry.next_due|date:"d/m/Y H:i" }}</time></p>
+    {% else %}<p>{% translate "Pausado. Para reativar, salve o mesmo acompanhamento." %}</p>{% endif %}
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="subscription" value="{{ entry.id }}">
+      {% if entry.active %}<button name="action" value="pause">{% translate "Pausar" %}</button>{% endif %}
+      <button name="action" value="delete">{% translate "Excluir acompanhamento e avisos" %}</button>
+    </form>
+  </article>
+  {% empty %}<p>{% translate "Você ainda não ativou acompanhamentos." %}</p>{% endfor %}
+</section>
+
+<section>
+  <h2>{% translate "Configurar acompanhamento" %}</h2>
+  {% if available %}
+  <form method="get">
+    <label for="alert-account">{% translate "Conta AviHUB" %}</label>
+    <select id="alert-account" name="account" required>
+      <option value="">{% translate "Selecione" %}</option>
+      {% for account in available %}<option value="{{ account.account_ref }}"{% if account == linked %} selected{% endif %}>{{ account.account_name }}</option>{% endfor %}
+    </select>
+    <label for="alert-kind">{% translate "O que acompanhar" %}</label>
+    <select id="alert-kind" name="kind">
+      <option value="summary"{% if selected_kind == "summary" %} selected{% endif %}>{% translate "Resumo de pesagens do lote" %}</option>
+      <option value="offline"{% if selected_kind == "offline" %} selected{% endif %}>{% translate "Equipamentos sem comunicação" %}</option>
+    </select>
+    <button>{% translate "Consultar unidades" %}</button>
+  </form>
+  {% elif link_avihub %}<p><a href="{{ link_avihub }}">{% translate "Vincular conta AviHUB" %}</a></p>
+  {% else %}<p>{% translate "O agente AviHUB precisa estar disponível em um espaço ao qual você tenha acesso." %}</p>{% endif %}
+
+  {% if choices.units %}
+  <form method="get">
+    <input type="hidden" name="account" value="{{ linked.account_ref }}">
+    <input type="hidden" name="kind" value="{{ selected_kind }}">
+    <label for="alert-unit">{% translate "Unidade" %}</label>
+    <select id="alert-unit" name="unit" required>
+      <option value="">{% translate "Selecione a unidade ativa" %}</option>
+      {% for unit in choices.units %}<option value="{{ unit.id }}"{% if unit.id == selected_unit %} selected{% endif %}{% if not unit.ativa %} disabled{% endif %}>{{ unit.nome }}{% if unit.ativa %} · {% translate "Ativa" %}{% endif %}</option>{% endfor %}
+    </select>
+    <button>{% translate "Usar unidade" %}</button>
+  </form>
+  {% endif %}
+
+  {% if selected_unit and choices.nuclei %}
+  <form method="get">
+    <input type="hidden" name="account" value="{{ linked.account_ref }}">
+    <input type="hidden" name="kind" value="{{ selected_kind }}">
+    <input type="hidden" name="unit" value="{{ selected_unit }}">
+    <label for="alert-nucleus">{% translate "Núcleo" %}</label>
+    <select id="alert-nucleus" name="nucleus" required>
+      <option value="">{% translate "Selecione" %}</option>
+      {% for id, name in choices.nuclei.items %}<option value="{{ id }}"{% if id == selected_nucleus %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+    <button>{% translate "Consultar lotes" %}</button>
+    {% if selected_nucleus and not choices.batches %}<p>{% translate "Nenhum lote disponível neste núcleo." %}</p>{% endif %}
+  </form>
+  {% endif %}
+
+  {% if selected_unit and choices.units and selected_kind == "offline" or choices.batches %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="account" value="{{ linked.account_ref }}">
+    <input type="hidden" name="kind" value="{{ selected_kind }}">
+    <input type="hidden" name="unit" value="{{ selected_unit }}">
+    {% if choices.batches %}
+    <input type="hidden" name="nucleus" value="{{ selected_nucleus }}">
+    <label for="alert-batch">{% translate "Lote" %}</label>
+    <select id="alert-batch" name="batch" required>
+      <option value="">{% translate "Selecione" %}</option>
+      {% for id, name in choices.batches.items %}<option value="{{ id }}">{{ name }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <label for="alert-frequency">{% translate "Frequência da consulta" %}</label>
+    <select id="alert-frequency" name="frequency">
+      <option value="weekly"{% if selected_kind == "summary" %} selected{% endif %}>{% translate "Semanal" %}</option>
+      <option value="daily"{% if selected_kind == "offline" %} selected{% endif %}>{% translate "Diária" %}</option>
+    </select>
+    <label for="alert-channel">{% translate "Canal" %}</label>
+    <select id="alert-channel" name="channel">
+      <option value="portal">{% translate "Painel" %}</option>
+      {% if eligible %}<option value="email">{% translate "Painel e e-mail" %}</option>{% endif %}
+    </select>
+    {% if eligible %}<p>{% translate "O e-mail avisa que há uma atualização disponível no painel e será enviado a" %} {{ eligible }}.</p>
+    {% else %}<p>{% translate "O e-mail fica disponível quando suas contas HUB IA e AviHUB têm o mesmo endereço e o servidor de envio está configurado." %}</p>{% endif %}
+    <button name="action" value="save">{% translate "Ativar ou atualizar acompanhamento" %}</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

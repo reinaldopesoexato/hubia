@@ -1,6 +1,19 @@
 # HUB IA
 
-Base do Agent HUB para várias instituições. A primeira entrega implementa o núcleo de provisionamento e isolamento em PostgreSQL. Cada identidade global tem um espaço pessoal próprio e pode assumir papéis distintos em várias instituições.
+Portal da Peso Exato para publicar agentes e disponibilizar integrações a usuários de múltiplas instituições. Cada conta possui um espaço pessoal e pode acessar espaços institucionais conforme seus vínculos e permissões. O projeto inclui o portal Django, o isolamento PostgreSQL e as interfaces MCP e A2A.
+
+- [Guia de contexto para IAs](docs/AI_CONTEXT_GUIDE.md)
+- [Central de documentação](docs/00-HubIA-Home.md)
+- [Arquitetura e execução](docs/Web/Arquitetura_e_Execucao.md)
+- [Identidade e permissões](docs/Regras%20de%20Negocio/Identidade_e_Permissoes.md)
+- [Integrações e MCP](docs/API_Middleware/Integracoes_e_MCP.md)
+- [Operação e testes](docs/Infra/Operacao_e_Testes.md)
+
+## Conectar uma IA ao HUB IA
+
+Adicione **HUB IA** como conector MCP remoto na sua IA. Use `https://hubia.psxt.io/conta/mcp` e autenticação OAuth. O mesmo endereço serve para ChatGPT, Claude, ambientes Gemini que oferecem MCP remoto e outros clientes compatíveis. O catálogo reúne os agentes e ferramentas disponíveis nos espaços autorizados para aquela conexão. Em **Espaços das minhas IAs**, ajuste o acesso a espaços e à caixa de e-mail institucional, se elegível.
+
+No portal, **Visão geral → Minhas IAs configuradas → Como conectar minha IA** reúne a orientação para os clientes. Se o cliente exigir um Client ID e um segredo, use **Minhas integrações → Cadastro manual de conexão** em um espaço ao qual você tem acesso. Cadastre a URI de retorno informada pelo cliente e use as credenciais no mesmo endereço MCP. [Instruções e fontes de compatibilidade](docs/API_Middleware/Integracoes_e_MCP.md#conexões-e-autorização).
 
 ## Deploy em hubia.psxt.io
 
@@ -76,13 +89,13 @@ Rode a suíte em um banco de desenvolvimento recém-migrado. Os dados fictícios
 
 Quando o PostgreSQL estiver disponível diretamente, os mesmos arquivos podem ser executados com `psql -X -f packages/database/migrate.psql` e `psql -X -f tests/integration/tenancy.psql`, usando os parâmetros de conexão `PGHOST`, `PGPORT`, `PGDATABASE` e `PGUSER`.
 
-## Estado da arquitetura
+## Referências da primeira entrega
 
 - [ADR de identidade e tenancy](docs/adr/0001-identidade-e-tenancy.md)
 - [Limites de confiança e isolamento](docs/security/tenancy.md)
 - [Inventário inicial de integrações](docs/integracoes.md)
 
-O acesso pelo portal usa conta local cadastrada e uma sessão Django. Federação OIDC, convites e administração de instituições pelo navegador seguem como evoluções. Políticas, orçamento, orquestrador, agentes e execução durável entram nas etapas posteriores da especificação.
+As notas acima registram a arquitetura inicial e os primeiros contratos de integração. Consulte a [central de documentação](docs/00-HubIA-Home.md) para o comportamento observado no código atual.
 
 ### Administrador geral do portal
 
@@ -92,7 +105,7 @@ Entre em <https://hubia.psxt.io/conta/administracao/> com essa conta para criar,
 
 ### Espaços, agentes e usuários no portal
 
-Em **Visão geral → Guia dos meus espaços**, cada usuário consulta seus espaços, seu papel em cada um e os agentes disponíveis. O guia pertence à conta e fica fora da contagem de agentes dos espaços. No MCP, a ferramenta `consultar_guia` mostra os espaços autorizados à conexão. No A2A, envie “consultar guia” para consultar o espaço da conexão. O histórico das últimas 50 execuções dos agentes de espaço é individual por agente.
+Quando habilitado para a conta, **Visão geral → Guia dos meus espaços** mostra os espaços do usuário, seu papel e os agentes disponíveis. O guia pertence à conta e fica fora da contagem de agentes dos espaços. No MCP, `consultar_guia` mostra os espaços autorizados à conexão. No A2A, envie “consultar guia” para consultar o espaço da conexão. A página de um agente de consulta mostra até 50 execuções daquele usuário no espaço.
 
 O titular do espaço pessoal gerencia seus próprios agentes. Em **Agentes da instituição**, o administrador cadastra os agentes e, em **Agentes do espaço**, marca os disponíveis aos membros. O administrador geral também gerencia esses catálogos pela Administração. O portal oferece consulta à base de conhecimento por trechos, link para portal HTTPS com login próprio e consulta a conector. Usuários comuns podem alterar a própria senha. O administrador geral cadastra, desativa e reativa contas em **Administração → Usuários e auditoria**.
 
@@ -106,7 +119,7 @@ O agente do tipo **Consulta a uma API conectada** referencia o identificador loc
 
 A mesma referência de conector aceita um provedor de conversa com contrato Chat Completions. No registro do espaço, use `{"type":"chat_completions","url":"https://api.openai.com/v1/chat/completions","token":"CHAVE-DO-ESPACO","model":"MODELO-HABILITADO","instructions":"Responda em português."}`. Cada mensagem inclui no máximo os quatro últimos pares de pergunta e resposta do usuário naquele agente. Preencha a credencial e o modelo contratado para habilitar consultas reais ao provedor.
 
-No navegador, **Gerenciar agentes → Configurar modelo de IA** permite cadastrar a chave OpenAI, o identificador do modelo e as instruções do espaço. Ao deixar a opção de cadastro marcada, **Assistente de IA** aparece no catálogo. A chave é criptografada com Fernet e nunca é devolvida nos formulários. Preserve `PORTAL_SESSION_SECRET` nos backups e recadastre as chaves se o segredo for rotacionado. Desconectar o modelo remove a credencial do espaço. As execuções utilizam a cota da conta do provedor configurada pelo responsável.
+No navegador, **Gerenciar agentes → Configurar modelo de IA** permite cadastrar a chave OpenAI, o identificador do modelo e as instruções do espaço. No espaço pessoal, a opção de cadastro adiciona **Assistente de IA** ao catálogo. Nos espaços institucionais, o agente é gerenciado no catálogo da instituição. A chave é criptografada com Fernet e nunca é devolvida nos formulários. Preserve `PORTAL_SESSION_SECRET` nos backups e recadastre as chaves se o segredo for rotacionado. Desconectar o modelo remove a credencial do espaço. As execuções utilizam a cota da conta do provedor configurada pelo responsável.
 
 Durante o deploy, `scripts/test-portal.sh` inicia um PostgreSQL temporário sem portas publicadas para exercitar também os fluxos de administrador, mesmo quando já existe um titular em produção. O provedor de IA nesses testes é uma fixture. Depois de passar no ambiente isolado, o instalador verifica a migração e o login no banco de destino.
 

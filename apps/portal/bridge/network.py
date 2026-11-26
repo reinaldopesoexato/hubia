@@ -12,7 +12,7 @@ class RemoteError(Exception):
     pass
 
 
-def public_response(url, payload=None, headers=None, *, limit=65536, success_only=False):
+def public_response(url, payload=None, headers=None, *, limit=65536, success_only=False, read_timeout=4):
     try:
         parts = urlsplit(url)
         if (parts.scheme != "https" or not parts.hostname or parts.port not in (443, None)
@@ -28,7 +28,7 @@ def public_response(url, payload=None, headers=None, *, limit=65536, success_onl
             raise ValueError("endereço")
         pool = urllib3.HTTPSConnectionPool(str(addresses[0]), 443, server_hostname=host,
             assert_hostname=host, ssl_context=ssl.create_default_context(),
-            timeout=urllib3.Timeout(connect=3,read=4),retries=False)
+            timeout=urllib3.Timeout(connect=3,read=read_timeout),retries=False)
         try:
             path = urlunsplit(("", "", parts.path or "/", parts.query, ""))
             with pool.urlopen("GET" if payload is None else "POST", path, body=payload,

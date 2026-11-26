@@ -7,9 +7,9 @@
 
 ## Dot e clientes MCP
 
-Em **Espaços → [nome do espaço] → Minhas integrações**, cada conexão pertence a um usuário e a um único espaço. Use o cadastro automático no ChatGPT para o espaço pessoal. Para trabalhar em **Peso Exato → Desenvolvimento**, abra esse espaço no HUB, crie um cliente separado em **Cadastro manual de conexão**, informe a URI de retorno exibida pelo cliente e copie as credenciais para a configuração OAuth do segundo conector. O catálogo e as tarefas dependem da conexão usada. Os demais membros do setor não recebem acesso ao Dot pessoal.
+O conector **HUB IA** em `https://hubia.psxt.io/conta/mcp` reúne as ferramentas permitidas nos espaços pessoais e institucionais. O guia **Como conectar minha IA** no painel cobre ChatGPT, Claude e clientes Gemini com MCP remoto. Ajuste a seleção em **Espaços das minhas IAs**. Veja a [configuração do MCP unificado](API_Middleware/Integracoes_e_MCP.md#conexões-e-autorização).
 
-O servidor MCP atende em `https://hubia.psxt.io/conta/mcp`. A autorização requer login no HUB, consentimento e código OAuth com PKCE S256. A permissão `hub.read` permite consultar o catálogo e as tarefas do vínculo. A permissão `hub.reply` permite devolver uma resposta quando o cliente oferece escrita e o papel no espaço permite. A página de consentimento identifica o espaço autorizado.
+A autorização requer login no HUB, consentimento e código OAuth com PKCE S256. A permissão `hub.read` permite consultar o catálogo e as tarefas do vínculo. A permissão `hub.reply` permite devolver uma resposta quando o cliente oferece escrita e o papel no espaço permite.
 
 O Dot pode chamar `list_agents`, `list_tasks` e `fetch_task`. Clientes autorizados a escrever também recebem `reply_task`. Para notificações, peça ao Dot que assine o evento `hub.task.created` na conversa desejada. O HUB verifica o endereço de entrega, assina o aviso e agenda novas tentativas em caso de falha. O aviso contém a identificação da tarefa. O texto é consultado pela conexão autenticada. Confira no portal se há assinatura ativa, notificação aceita ou resposta registrada. Clientes sem suporte a eventos podem consultar as tarefas pendentes.
 
@@ -37,7 +37,7 @@ De volta ao HUB, clique em **Testar conexão**. O HUB consulta a instalação na
 
 Depois de verificar o conector, escolha o repositório e o nome do agente em **Biblioteca de notas**. A criação disponibiliza um agente no catálogo da instituição e começa com zero pastas liberadas. Cada administrador pode conceder pastas nos espaços que administra e revogar o acesso salvando o campo vazio. Informe caminhos relativos, um por linha, com a mesma grafia do GitHub. Cada pasta inclui suas subpastas. Para todas as pastas atuais e futuras e as notas na raiz, salve apenas `/` no espaço desejado. Arquivos ocultos, links simbólicos e arquivos fora das pastas liberadas ficam fora da consulta.
 
-No portal, abra o agente pelo espaço. No MCP, a conexão desse espaço passa a oferecer `buscar_notas` e `ler_nota` quando recebe sua primeira pasta. A busca percorre nomes e texto em páginas; para avançar, envie a próxima página e a revisão devolvidas pelo HUB. A leitura usa o caminho exato retornado na busca e traz o texto Markdown, a revisão e o link da fonte. O conteúdo é lido da branch padrão no momento da consulta.
+No portal, abra o agente pelo espaço. No MCP, a conexão desse espaço passa a oferecer `buscar_notas` e `ler_nota` quando recebe sua primeira pasta. A busca percorre nomes e texto em páginas. Para avançar, envie a próxima página e a revisão devolvidas pelo HUB. A leitura usa o caminho exato retornado na busca e traz o texto Markdown, a revisão e o link da fonte. O conteúdo vem da cópia local sincronizada com a branch padrão pelo serviço `library-sync`.
 
 ### Avisos de disponibilidade do catálogo
 

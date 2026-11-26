@@ -11,14 +11,14 @@ from django.http import Http404
 from django.utils import timezone
 from model_provider import cipher
 from . import mail_access, mail_protocol
-from .models import Mailbox, OutboundEmail
+from .models import Link, Mailbox, OutboundEmail
 from .signature import signature_parts
 
 
 def authorized(link):
     if not mail_access.for_link(link):
         return Mailbox.objects.none()
-    return Mailbox.objects.filter(provider_id=link.tenant, provider__enabled=True,
+    return Mailbox.objects.filter(provider_id=mail_access.tenant_for(link), provider__enabled=True,
                                   user_id=link.user_id, links=link.pk)
 
 
@@ -69,9 +69,9 @@ def query(link, action, args):
 
 
 def sendable(link):
-    if not mail_access.for_link(link):
+    if not mail_access.for_link(link, writing=True):
         return Mailbox.objects.none()
-    return Mailbox.objects.filter(provider_id=link.tenant, provider__enabled=True,
+    return Mailbox.objects.filter(provider_id=mail_access.tenant_for(link), provider__enabled=True,
                                   user_id=link.user_id, send_links=link.pk)
 
 
@@ -117,10 +117,11 @@ def send(link, args):
             from .access import context
             with transaction.atomic():
                 try:
-                    context(link, writing=True, multi_space=True)
-                    current = sendable(link).get(pk=box.pk)
+                    current_link = Link.objects.select_related("user").get(pk=link.pk)
+                    context(current_link, multi_space=True)
+                    current = sendable(current_link).get(pk=box.pk)
                     password = cipher().decrypt(bytes(current.password_cipher)).decode()
-                except (Http404, Mailbox.DoesNotExist, InvalidToken):
+                except (Http404, Link.DoesNotExist, Mailbox.DoesNotExist, InvalidToken):
                     state = "bloqueado"
                 else:
                     state = mail_protocol.submit(current.address, password, recipient, subject, body, current.signature_html)

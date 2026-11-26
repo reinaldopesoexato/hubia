@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load i18n %}
+{% extends "base.html" %}{% load i18n iaves_mark %}
 {% block title %}{% if deleting %}{% translate "Excluir" %}{% else %}{% translate "Editar" %}{% endif %} {% translate "usuário" %}{% endblock %}
 {% block body %}
 <nav><a href="{% url 'people' %}">{% translate "← Usuários" %}</a></nav>
@@ -19,7 +19,7 @@
 {% if g.institution %}<label><input type="checkbox" name="institution" value="{{ g.institution.id }}" {% if g.institution.selected %}checked{% endif %} {% if g.institution.locked %}disabled{% endif %}> {% translate "Vinculado à instituição" %}{% if g.institution.locked %} {% translate "(responsável)" %}{% endif %}</label>{% endif %}
 {% if g.institution.id == mail_institution %}<label><input type="checkbox" name="internal_mail" {% if internal_mail %}checked{% endif %}> {% translate "Permitir Meu e-mail (equipe interna da Peso Exato)" %}</label>{% endif %}
 {% if g.spaces %}<h3>{% translate "Espaços" %}</h3>{% for s in g.spaces %}<label><input type="checkbox" name="space" value="{{ s.id }}" {% if s.selected %}checked{% endif %} {% if s.locked %}disabled{% endif %}> {{ s.name }}</label>{% endfor %}{% endif %}
-{% if g.agents %}<h3>{% translate "Bloqueios individuais" %}</h3>{% for a in g.agents %}<label><input type="checkbox" name="agent" value="{{ a.id }}" {% if not a.selected %}checked{% endif %}> {% translate "Bloquear" %} {{ a.name }}</label>{% endfor %}{% endif %}
+{% if g.agents %}<h3>{% translate "Bloqueios individuais" %}</h3>{% for a in g.agents %}<label><input type="checkbox" name="agent" value="{{ a.id }}" {% if not a.selected %}checked{% endif %}> {% translate "Bloquear" %} {% iaves_brand a.name %}</label>{% endfor %}{% endif %}
 </fieldset>{% empty %}<p>{% translate "Nenhuma instituição ou agente disponível. A conta mantém o espaço pessoal." %}</p>{% endfor %}
 <button>{% translate "Salvar alterações" %}</button> <a href="{% url 'people' %}">{% translate "Cancelar" %}</a></form>
 <script>

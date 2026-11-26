@@ -55,6 +55,7 @@ OAUTH2_PROVIDER = {
     "ROTATE_REFRESH_TOKEN": True,
     "REFRESH_TOKEN_REUSE_PROTECTION": True,
     "SCOPES": {"hub.read": "Consultar catálogo, tarefas e notas do espaço.",
+               "hub.iaves.memory": "Consultar e salvar informações e preferências na sua memória do IAves",
                "hub.mail.send": "Enviar e-mails pela sua caixa e editar a assinatura dos envios por IA quando você autorizar",
                "hub.notify": "Enviar avisos externos nos canais e destinos autorizados do espaço",
                "hub.reply": "Responder às tarefas da conexão", "offline_access": "Renovar a conexão"},

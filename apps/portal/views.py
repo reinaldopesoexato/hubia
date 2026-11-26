@@ -70,6 +70,8 @@ class PortalReset(PasswordResetView):
 @login_required
 @require_http_methods(["GET", "HEAD", "POST"])
 def account(request):
+    from iaves_portal import dashboard_access, dashboard_library
+
     period = 30 if request.GET.get("dias") == "30" else 7
     with transaction.atomic(), connection.cursor() as cursor:
         principal, is_owner = bind_account(cursor, request.user)
@@ -82,6 +84,8 @@ def account(request):
             AccountProfile.objects.update_or_create(user=request.user, defaults={"avihub_setup_deferred": True})
             return redirect("dashboard")
         context = overview(cursor, principal, period, request.user.pk)
+        context["iaves"] = dashboard_access(cursor, context["spaces"])
+        context["library_access"] = dashboard_library(cursor, context["spaces"])
         context["mcp_url"] = MCP
         context["avihub_setup"] = avihub.dashboard_setup(cursor, request.user, context["spaces"])
         context["setup_deferred"] = AccountProfile.objects.filter(user=request.user, avihub_setup_deferred=True).exists()
@@ -149,6 +153,7 @@ def apply_admin_form(cursor, form):
 @require_http_methods(["GET", "POST"])
 def administration(request):
     from bridge import mail_access
+    from bridge.iaves_metrics import report as iaves_report
     error = None
     groups = {}
     with transaction.atomic(), connection.cursor() as cursor:
@@ -178,7 +183,9 @@ def administration(request):
         cursor.execute("SELECT tenant_id, workspace_id, workspace, deleted_at FROM hub_admin.workspace_inventory() WHERE deleted_at IS NOT NULL")
         for tenant, space, name, deleted_at in cursor.fetchall():
             groups[tenant].setdefault("trash", []).append({"id": space, "name": name, "deleted_at": deleted_at})
+        iaves_metrics = iaves_report(7 if request.GET.get("dias_iaves") == "7" else 30)
     return render(request, "administration.html", {"organizations": groups.values(), "error": error, "is_owner": True,
+                  "iaves_metrics":iaves_metrics,
                   "active_orgs": sum(org["status"] == "ACTIVE" for org in groups.values()),
                   "space_count": sum(len(org["spaces"]) for org in groups.values())},
                   status=400 if error else 200)
@@ -234,7 +241,11 @@ def workspace_settings(request, tenant, space):
     return render(request, "workspace_settings.html", ctx, status=400 if "error" in ctx else 200)
 
 
+import avihub_notifications_portal
+import avihub_reports_portal
 from institution_agents import manage as institution_agents
+from iaves_portal import memory as iaves_memory
+from iaves_subscriptions_portal import subscriptions as iaves_subscriptions
 
 
 space_path = "conta/espacos/<uuid:tenant>/<uuid:space>/"
@@ -288,6 +299,13 @@ urlpatterns = [
     path(space_path + "gestao/modelo/", configure_model, name="configure_model"),
     path(space_path, workspace, name="workspace"),
     path(space_path + "agentes/<uuid:agent>/", use_agent, name="use_agent"),
+    path(space_path + "agentes/<uuid:agent>/notificacoes/", avihub_notifications_portal.notifications,
+         name="avihub_notifications"),
+    path(space_path + "agentes/<uuid:agent>/relatorios/", avihub_reports_portal.reports, name="avihub_reports"),
+    path(space_path + "agentes/<uuid:agent>/relatorios/<uuid:report_id>/arquivo/", avihub_reports_portal.download,
+         name="avihub_report_download"),
+    path(space_path + "agentes/<uuid:agent>/memoria/", iaves_memory, name="iaves_memory"),
+    path(space_path + "agentes/<uuid:agent>/avisos/", iaves_subscriptions, name="iaves_subscriptions"),
     path(space_path + "gestao/", manage_agents, name="manage_agents"),
     path(space_path + "gestao/<uuid:agent>/", manage_agents, name="edit_agent"),
     path("conta/administracao/", administration, name="administration"),

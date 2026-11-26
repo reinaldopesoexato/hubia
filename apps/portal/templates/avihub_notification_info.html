@@ -1,0 +1,7 @@
+{% load i18n %}
+<p><small>
+  {% if item.data %}<time datetime="{{ item.criada_em }}">{{ item.data|date:"SHORT_DATETIME_FORMAT" }}</time> · {% endif %}
+  {% if item.tipo_label %}{{ item.tipo_label }} · {% endif %}
+  {% if item.lida %}{% translate "Lida" %}{% else %}{% translate "Não lida" %}{% endif %}
+  {% if item.favorita %} · {% translate "Favorita" %}{% endif %}
+</small></p>

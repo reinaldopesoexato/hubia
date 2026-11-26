@@ -1,0 +1,163 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Relatórios de Peso Aves" %}{% endblock %}
+{% block body %}
+<nav><a href="{% url 'use_agent' tenant space agent.id %}">{% translate "← Contas vinculadas" %}</a></nav>
+<header class="agent-heading"><div><small>{{ organization }} · {{ agent.name }}</small>
+<h1>{% translate "Relatórios de Peso Aves" %}</h1></div></header>
+{% if error %}<p class="error agent-feedback" role="alert">{{ error }}</p>{% endif %}
+
+{% if not selected_report %}
+<section aria-labelledby="report-request-title">
+  <h2 id="report-request-title">{% translate "Gerar relatório" %}</h2>
+  {% if options.mensagem and not error %}<p>{{ options.mensagem }}</p>{% endif %}
+  {% if accounts %}
+  <form method="post" id="weight-report-form">{% csrf_token %}
+    <input type="hidden" name="request_id" value="{{ request_id }}">
+    <label for="report-account">{% translate "Conta AviHUB" %}</label>
+    <select id="report-account" name="conta" required>
+      <option value="">{% translate "Selecione" %}</option>
+      {% for account in accounts %}<option value="{{ account.id }}"{% if account.id == account_id %} selected{% endif %}>{{ account.nome }}</option>{% endfor %}
+    </select>
+
+    {% if units %}
+    <label for="report-unit">{% translate "Unidade" %}</label>
+    <select id="report-unit" name="unidade" required>
+      <option value="">{% translate "Selecione a unidade ativa" %}</option>
+      {% for unit in units %}<option value="{{ unit.id }}"{% if unit.id == unit_id %} selected{% endif %}{% if not unit.ativa %} disabled{% endif %}>{{ unit.nome }}{% if unit.ativa %} · {% translate "Ativa" %}{% endif %}</option>{% endfor %}
+    </select>
+    <small>{% translate "O relatório usa a unidade ativa no AviHUB." %}</small>
+    {% endif %}
+
+    {% if formats %}
+    <label for="report-start">{% translate "Data inicial" %}</label>
+    <input id="report-start" name="inicio" type="date" required value="{{ args.inicio }}">
+    <label for="report-end">{% translate "Data final" %}</label>
+    <input id="report-end" name="fim" type="date" required value="{{ args.fim }}">
+    <label for="report-format">{% translate "Formato do relatório" %}</label>
+    <select id="report-format" name="formato" required>
+      <option value="">{% translate "Selecione" %}</option>
+      {% for format in formats %}<option value="{{ format.id }}" data-mode="{{ format.modo }}"{% if format.id == args.formato %} selected{% endif %}>{{ format.nome }}{% if format.modo == 'visualizacao' %} · {% translate "Visualização no AviHUB" %}{% endif %}</option>{% endfor %}
+    </select>
+    {% endif %}
+
+    {% if filters %}
+    <fieldset><legend>{% translate "Filtros do AviHUB" %}</legend>
+      {% for filter in filters %}
+      <label for="report-{{ filter.field }}">{{ filter.label }}</label>
+      <select id="report-{{ filter.field }}" name="{{ filter.field }}"{% if filter.multiple %} multiple size="4"{% endif %}>
+        {% if not filter.multiple %}<option value="">{% translate "Usar padrão do AviHUB" %}</option>{% endif %}
+        {% for option in filter.options %}<option value="{{ option.id }}"{% if option.id in filter.selected %} selected{% endif %}>{{ option.nome }}</option>{% endfor %}
+      </select>
+      {% endfor %}
+      {% if weighing_schedule %}
+      <div id="report-hours">
+        <label for="report-start-time">{% translate "Horário inicial" %}</label>
+        <input id="report-start-time" name="hora_inicio" type="time" value="{{ args.hora_inicio }}">
+        <label for="report-end-time">{% translate "Horário final" %}</label>
+        <input id="report-end-time" name="hora_fim" type="time" value="{{ args.hora_fim }}">
+      </div>
+      {% endif %}
+    </fieldset>
+    {% endif %}
+
+    {% if channels %}
+    <label for="report-channel">{% translate "Como receber" %}</label>
+    <select id="report-channel" name="canal" required>
+      <option value="">{% translate "Selecione" %}</option>
+      {% for channel in channels %}<option value="{{ channel.canal }}"{% if channel.canal == args.canal or not args.canal and channel.canal == 'painel' %} selected{% endif %}>{{ channel.label }}</option>{% endfor %}
+    </select>
+    {% for channel in channels %}{% if channel.destinatario and channel.canal == args.canal %}<small>{{ channel.destinatario }}</small>{% endif %}{% endfor %}
+    {% endif %}
+    {% if destinations %}
+    <div id="report-destination-options">
+      <label for="report-destination">{% translate "Destino do WhatsApp" %}</label>
+      <select id="report-destination" name="destino">
+        <option value="">{% translate "Selecione" %}</option>
+        {% for destination in destinations %}<option value="{{ destination.id }}"{% if destination.id == args.destino %} selected{% endif %}>{{ destination.nome }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <div class="agent-actions">
+      <button name="action" value="opcoes" formnovalidate>{% translate "Atualizar opções" %}</button>
+      {% if formats %}<button name="action" value="gerar">{% translate "Gerar relatório" %}</button>{% endif %}
+    </div>
+  </form>
+  <script>
+  (() => {
+    const form = document.getElementById('weight-report-form');
+    const format = form.elements.formato;
+    const channel = form.elements.canal;
+    const attachment = channel?.querySelector('option[value="email_anexo"]');
+    const destination = form.elements.destino;
+    const schedule = form.elements.periodo_pesagem;
+    const hours = document.getElementById('report-hours');
+    const fields = {
+      conta: ['unidade', 'formato', 'nucleo_id', 'lote_id', 'galpao_id', 'lado_id', 'box_id', 'equipamento_id'],
+      unidade: ['formato', 'nucleo_id', 'lote_id', 'galpao_id', 'lado_id', 'box_id', 'equipamento_id'],
+      nucleo_id: ['lote_id', 'galpao_id', 'lado_id', 'box_id', 'equipamento_id'],
+      galpao_id: ['lado_id', 'box_id'], lado_id: ['box_id'], tipo_balanca: ['equipamento_id'],
+    };
+    for (const [field, children] of Object.entries(fields)) {
+      form.elements[field]?.addEventListener('change', () => {
+        for (const child of children) {
+          const element = form.elements[child];
+          if (element) element.value = '';
+        }
+      });
+    }
+    function updateDelivery() {
+      if (attachment) {
+        const available = format?.selectedOptions[0]?.dataset.mode === 'arquivo';
+        attachment.disabled = !available;
+        attachment.hidden = !available;
+        if (!available && channel.value === 'email_anexo') channel.value = '';
+      }
+      if (!destination) return;
+      const selected = channel.value === 'whatsapp';
+      destination.disabled = !selected;
+      destination.required = selected;
+      document.getElementById('report-destination-options').hidden = !selected;
+    }
+    function updateSchedule() {
+      if (!hours) return;
+      const selected = schedule.value === 'interval';
+      hours.hidden = !selected;
+      for (const input of hours.querySelectorAll('input')) {
+        input.disabled = !selected;
+        input.required = selected;
+      }
+    }
+    channel?.addEventListener('change', updateDelivery);
+    schedule?.addEventListener('change', updateSchedule);
+    format?.addEventListener('change', updateDelivery);
+    updateDelivery();
+    updateSchedule();
+  })();
+  </script>
+  {% else %}
+  {% url 'use_agent' tenant space agent.id as account_link %}
+  <p><a href="{{ options.url_vinculo|default:account_link }}">{% translate "Vincular conta AviHUB" %}</a></p>
+  {% endif %}
+</section>
+{% endif %}
+
+<section id="relatorios" aria-labelledby="report-list-title">
+  <h2 id="report-list-title">{% if selected_report %}{% translate "Relatório" %}{% else %}{% translate "Meus relatórios" %}{% endif %}</h2>
+  {% if selected_report %}<p><a href="{% url 'avihub_reports' tenant space agent.id %}#relatorios">{% translate "Ver todos os relatórios" %}</a></p>{% endif %}
+  {% for report in reports %}<article class="card">
+    <h3>{{ report.formato_nome|default:report.formato }} · {{ report.estado_label }}</h3>
+    <p>{{ report.inicio }} – {{ report.fim }} · {% translate "Unidade" %} {{ report.unidade_nome|default:report.unidade }}</p>
+    {% if report.mensagem %}<p>{{ report.mensagem }}</p>{% endif %}
+    {% if report.entrega_label %}<p>{% translate "Entrega" %} · {{ report.entrega_label }}</p>{% endif %}
+    <div class="agent-actions">
+      {% if report.url_download %}<a class="agent-primary" href="{{ report.url_download }}">{% if report.modo == 'visualizacao' %}{% translate "Abrir prévia no AviHUB" %}{% else %}{% translate "Baixar relatório" %}{% endif %}</a>{% endif %}
+      {% if report.url_previa %}<a class="agent-primary" href="{{ report.url_previa }}">{% translate "Abrir prévia no AviHUB" %}</a>{% endif %}
+      {% if report.url_notificacoes_avihub %}<a href="{{ report.url_notificacoes_avihub }}">{% translate "Notificações do AviHUB" %}</a>{% endif %}
+      {% if report.estado == 'pendente' or report.estado == 'gerando' or report.estado == 'aguardando_notificacao' or report.estado == 'incerto' %}
+      <a href="{{ report.url_relatorio }}">{% translate "Atualizar estado" %}</a>
+      {% elif not selected_report %}<a href="{{ report.url_relatorio }}">{% translate "Ver detalhes" %}</a>{% endif %}
+    </div>
+  </article>{% empty %}<p>{% translate "Nenhum relatório solicitado." %}</p>{% endfor %}
+</section>
+{% endblock %}

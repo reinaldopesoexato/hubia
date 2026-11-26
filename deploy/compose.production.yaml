@@ -7,6 +7,7 @@ services:
     build: ./apps/portal
     volumes:
       - ${HUBIA_CONNECTORS_DIR:-./connectors}:/run/hubia:ro
+      - library-data:/var/lib/hubia/knowledge:ro
     restart: unless-stopped
     environment:
       PGPASSWORD: ${PORTAL_DB_PASSWORD:?configure PORTAL_DB_PASSWORD}
@@ -29,6 +30,58 @@ services:
       PGPASSWORD: ${PORTAL_DB_PASSWORD:?configure PORTAL_DB_PASSWORD}
       PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:?configure PORTAL_SESSION_SECRET}
 
+  iaves-alerts:
+    image: hubia-prod-portal
+    restart: unless-stopped
+    command: ["python", "-m", "bridge.iaves_subscription_worker"]
+    environment:
+      PGPASSWORD: ${PORTAL_DB_PASSWORD:?configure PORTAL_DB_PASSWORD}
+      PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:?configure PORTAL_SESSION_SECRET}
+
+  avihub-reports:
+    image: hubia-prod-portal
+    restart: unless-stopped
+    command: ["python", "-m", "bridge.avihub_report_worker"]
+    depends_on:
+      avihub-pdf:
+        condition: service_healthy
+    networks: [default, avihub-print]
+    environment:
+      PGPASSWORD: ${PORTAL_DB_PASSWORD:?configure PORTAL_DB_PASSWORD}
+      PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:?configure PORTAL_SESSION_SECRET}
+      HUBIA_PDF_RENDERER: http://avihub-pdf:8080
+
+  avihub-pdf:
+    build:
+      context: ./apps/portal
+      dockerfile: Dockerfile.avihub-pdf
+    restart: unless-stopped
+    networks: [avihub-print]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=256m
+    mem_limit: 768m
+    pids_limit: 128
+    init: true
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8080/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  library-sync:
+    image: hubia-prod-portal
+    restart: unless-stopped
+    command: ["python", "-m", "bridge.library_sync"]
+    volumes:
+      - library-data:/var/lib/hubia/knowledge
+    environment:
+      PGPASSWORD: ${PORTAL_DB_PASSWORD:?configure PORTAL_DB_PASSWORD}
+      PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:?configure PORTAL_SESSION_SECRET}
+      HUBIA_KNOWLEDGE_SYNC_INTERVAL: ${HUBIA_KNOWLEDGE_SYNC_INTERVAL:-300}
+
   caddy:
     image: caddy:2.11.9-alpine
     restart: unless-stopped
@@ -41,5 +94,10 @@ services:
       - caddy-config:/config
 
 volumes:
+  library-data:
   caddy-data:
   caddy-config:
+
+networks:
+  avihub-print:
+    internal: true

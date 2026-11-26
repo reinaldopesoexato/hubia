@@ -17,7 +17,7 @@ from portal_identity import bind_account
 from . import catalog_alerts, github_api
 from .access import ORIGIN
 from .agent_catalog import assigned, register_connector
-from .library import PURPOSE, parse_folders
+from .library import PURPOSE, parse_folders, snapshot_status
 from .models import GitHubConnection, LibraryAccess, NoteLibrary
 
 
@@ -116,12 +116,15 @@ def connector(request, tenant):
                     conn.error = ""
                 except github_api.GitHubError as exc:
                     conn.error = str(exc)
-                    conn.repositories = []
+                    if exc.revoked:
+                        conn.repositories = []
                 conn.checked_at = timezone.now()
                 conn.save(update_fields=["installation_id","repositories","checked_at","error"])
                 return redirect("github_connector",tenant)
             else:
                 return HttpResponseBadRequest(translate_text("Ação indisponível."))
+    if library:
+        ctx["snapshot"] = snapshot_status(library)
     return render(request,"github_connector.html",ctx,status=status)
 
 

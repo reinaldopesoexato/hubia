@@ -1,0 +1,117 @@
+{% extends "base.html" %}{% load i18n iaves_mark %}
+{% block title %}{{ agent.name }}{% endblock %}
+{% block body %}
+<nav><a href="{% url 'workspace' tenant space %}">← {{ workspace }}</a></nav>
+<header class="agent-heading">
+  <div><small>{{ organization }}</small><h1>{% iaves_brand agent.name %}</h1></div>
+  <nav class="agent-links" aria-label="IAves">
+    <a href="{% url 'iaves_memory' tenant space agent.id %}">{% iaves_brand _("Minha memória do IAves") %}</a>
+    {% url 'iaves_subscriptions' tenant space agent.id as iaves_subscriptions_url %}
+    {% if iaves_subscriptions_url and show_avihub %}<a href="{{ iaves_subscriptions_url }}">{% translate "Resumos e alertas" %}</a>{% endif %}
+  </nav>
+</header>
+<p>{{ agent.description }}</p>
+{% if not configured %}<p>{% translate "As consultas mostram os trechos da base local. Conecte sua IA pelo MCP para conversar usando esse contexto." %}
+  <a href="{% url 'integrations' tenant space %}">{% translate "Minhas integrações" %}</a></p>{% endif %}
+{% with options=latest.result.avihub %}<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="request_id" value="{{ request_id }}">
+  <label for="iaves-question">{% iaves_brand _("Sua pergunta ao IAves") %}</label>
+  <textarea id="iaves-question" name="pergunta" maxlength="2000" rows="4" required>{% if quick_question %}{{ quick_question }}{% elif resume %}{{ latest.question }}{% endif %}</textarea>
+  {% if show_avihub %}
+  <details{% if resume or quick_question %} open{% endif %}>
+    <summary>{% translate "Contexto do AviHUB" %}</summary>
+    <label for="iaves-avihub">{% translate "O que consultar" %}</label>
+    <select id="iaves-avihub" name="avihub">
+      <option value="">{% translate "Detectar pela pergunta" %}</option>
+      <option value="estrutura"{% if operation == 'estrutura' %} selected{% endif %}>{% translate "Estrutura e unidades" %}</option>
+      <option value="equipamentos"{% if operation == 'equipamentos' %} selected{% endif %}>{% translate "Listar equipamentos" %}</option>
+      <option value="equipamento"{% if operation == 'equipamento' %} selected{% endif %}>{% translate "Consultar um equipamento" %}</option>
+      <option value="sem_comunicacao"{% if operation == 'sem_comunicacao' %} selected{% endif %}>{% translate "Equipamentos sem comunicação" %}</option>
+      <option value="pesagens"{% if operation == 'pesagens' %} selected{% endif %}>{% translate "Ver pesagens de aves" %}</option>
+    </select>
+    <label for="iaves-account">{% translate "Conta do AviHUB" %}</label><input id="iaves-account" name="conta" maxlength="200" value="{{ resume.conta }}" list="iaves-account-options">
+    <datalist id="iaves-account-options">{% for option in options.contas %}<option value="{{ option.id }}" label="{{ option.nome }}"></option>{% endfor %}</datalist>
+    <label for="iaves-unit">{% translate "Unidade" %}</label><input id="iaves-unit" name="unidade" maxlength="200" value="{{ resume.unidade }}" list="iaves-unit-options">
+    <datalist id="iaves-unit-options">{% for option in options.unidades %}<option value="{{ option.id }}" label="{{ option.nome }}"></option>{% endfor %}</datalist>
+    <label for="iaves-core">{% translate "Núcleo" %}</label><input id="iaves-core" name="nucleo_id" maxlength="100" value="{{ resume.nucleo_id }}" list="iaves-core-options">
+    <datalist id="iaves-core-options">{% for option in options.nucleos %}<option value="{{ option.id }}" label="{{ option.nome }}"></option>{% endfor %}</datalist>
+    <label for="iaves-serial">{% translate "Número de série" %}</label><input id="iaves-serial" name="serie" maxlength="100" value="{{ resume.serie }}">
+    <label for="iaves-model">{% translate "Modelo do equipamento" %}</label><input id="iaves-model" name="modelo" maxlength="100" value="{{ resume.modelo }}">
+    <label for="iaves-start">{% translate "Data inicial das pesagens" %}</label><input id="iaves-start" name="inicio" type="date" value="{{ resume.inicio }}">
+    <label for="iaves-end">{% translate "Data final das pesagens" %}</label><input id="iaves-end" name="fim" type="date" value="{{ resume.fim }}">
+    <label for="iaves-window">{% translate "Janela sem comunicação" %}</label>
+    <select id="iaves-window" name="horas">
+      <option value="24"{% if resume.horas != '168' %} selected{% endif %}>{% translate "24 horas" %}</option>
+      <option value="168"{% if resume.horas == '168' %} selected{% endif %}>{% translate "7 dias" %}</option>
+    </select>
+  </details>
+  {% endif %}
+  <button>{% if configured %}{% translate "Perguntar" %}{% else %}{% translate "Consultar base" %}{% endif %}</button>
+</form>{% endwith %}
+
+<h2>{% translate "Minhas consultas recentes" %}</h2>
+{% if source_unavailable %}<p>{% translate "A consulta anterior não tem fontes da base de conhecimento." %}</p>{% endif %}
+{% for turn in history %}
+<article id="consulta-{{ turn.id }}">
+  <small><time datetime="{{ turn.created_at|date:'c' }}">{{ turn.created_at|date:"d/m/Y H:i" }}</time></small>
+  <h3>{{ turn.question }}</h3>
+  {% if turn.interrupted %}<p>{% translate "Execução interrompida ou sem confirmação de resposta." %}</p>
+  {% elif turn.status == 'running' %}<p>{% translate "Em execução. Atualize para ver o resultado." %}</p>
+  {% elif turn.status == 'failed' %}<p class="error">{% translate turn.answer as failure %}{% iaves_brand failure %}</p>
+  {% else %}
+    {% if turn.result.aviso %}<p>{% translate turn.result.aviso as notice %}{% iaves_brand notice %}</p>{% endif %}
+    {% if turn.result.resposta %}<div class="output">{% iaves_brand turn.result.resposta %}</div>{% endif %}
+    {% if turn.result.pergunta %}<p><strong>{% translate turn.result.pergunta as follow_up %}{% iaves_brand follow_up %}</strong></p>{% endif %}
+    {% with avihub=turn.result.avihub %}
+      {% if avihub.mensagem and not turn.result.pergunta %}<p>{% translate avihub.mensagem %}</p>{% endif %}
+      {% if avihub.contas %}<ul>{% for option in avihub.contas %}<li>{{ option.nome }} · <code>{{ option.id }}</code></li>{% endfor %}</ul>{% endif %}
+      {% if avihub.unidades %}<ul>{% for option in avihub.unidades %}<li>{{ option.nome }} · <code>{{ option.id }}</code>{% if option.ativa %} · {% translate "Unidade ativa" %}{% endif %}</li>{% endfor %}</ul>{% endif %}
+      {% if avihub.nucleos %}<ul>{% for option in avihub.nucleos %}<li>{{ option.nome }} · <code>{{ option.id }}</code></li>{% endfor %}</ul>{% endif %}
+      {% if avihub.url_vinculo %}<p><a href="{{ avihub.url_vinculo }}">{% translate "Vincular minha conta do AviHUB" %}</a></p>
+      {% elif avihub.url_avihub %}<p><a href="{{ avihub.url_avihub }}">{% translate "Abrir AviHUB" %}</a></p>{% endif %}
+      {% if avihub.conta or avihub.unidade or avihub.periodo or avihub.janela_horas %}
+      <section aria-label="{% translate 'Origem dos dados do AviHUB' %}"><h4>{% translate "Origem dos dados do AviHUB" %}</h4>
+        <dl>
+          {% if avihub.conta %}<dt>{% translate "Conta do AviHUB" %}</dt><dd>{{ avihub.conta }}</dd>{% endif %}
+          {% if avihub.unidade %}<dt>{% translate "Unidade" %}</dt><dd>{{ avihub.unidade }}</dd>{% endif %}
+          {% if avihub.periodo %}<dt>{% translate "Período consultado" %}</dt><dd><time datetime="{{ avihub.periodo.inicio }}">{{ avihub.periodo.inicio }}</time> · <time datetime="{{ avihub.periodo.fim }}">{{ avihub.periodo.fim }}</time></dd>{% endif %}
+          {% if avihub.janela_horas %}<dt>{% translate "Janela sem comunicação" %}</dt><dd>{% if avihub.janela_horas == '168' %}{% translate "7 dias" %}{% else %}{% translate "24 horas" %}{% endif %}</dd>{% endif %}
+        </dl>
+      </section>{% endif %}
+      {% if avihub.dados %}<details{% if not turn.result.resposta %} open{% endif %}>
+        <summary>{% translate "Dados consultados no AviHUB" %}</summary>
+        {% if avihub.dados.total_exibido %}<p><strong>{{ avihub.dados.total_exibido }}</strong></p>{% endif %}
+        {% if avihub.dados.eventos %}<ul>{% for event in avihub.dados.eventos %}<li>{{ event }}</li>{% endfor %}</ul>{% endif %}
+        {% if 'equipamentos' in avihub.dados %}<ul>{% for item in avihub.dados.equipamentos %}<li>{{ item.modelo }} · {{ item.serie }}{% if item.localizacao %} · {{ item.localizacao }}{% endif %}{% if item.ultima_conexao %} · {{ item.ultima_conexao }}{% endif %}</li>{% empty %}<li>{% translate "Nenhum equipamento encontrado nesta consulta." %}</li>{% endfor %}</ul>{% endif %}
+        {% if 'nucleos' in avihub.dados %}<h4>{% translate "Núcleos" %}</h4><ul>{% for id, name in avihub.dados.nucleos.items %}<li>{{ name }} · <code>{{ id }}</code></li>{% empty %}<li>{% translate "Nenhum núcleo encontrado." %}</li>{% endfor %}</ul>{% endif %}
+        {% if avihub.dados.galpoes %}<h4>{% translate "Galpões" %}</h4><ul>{% for id, name in avihub.dados.galpoes.items %}<li>{{ name }} · <code>{{ id }}</code></li>{% endfor %}</ul>{% endif %}
+        {% if avihub.dados.lotes %}<h4>{% translate "Lotes" %}</h4><ul>{% for id, name in avihub.dados.lotes.items %}<li>{{ name }} · <code>{{ id }}</code></li>{% endfor %}</ul>{% endif %}
+        {% if avihub.dados.proxima_pagina %}<p>{% translate "Há mais registros disponíveis no AviHUB." %}{% if avihub.url_consulta %} <a href="{{ avihub.url_consulta }}">{% translate "Abrir AviHUB" %}</a>{% endif %}</p>{% endif %}
+      </details>{% endif %}
+    {% endwith %}
+    {% if turn.result.fontes %}
+      <p>{% iaves_brand source_label %}{% if not turn.source_details %} · <a href="?fontes={{ turn.id }}#consulta-{{ turn.id }}">{% translate "Detalhar fontes" %}</a>{% endif %}</p>
+      {% if turn.source_details %}
+        <ul>{% for source in turn.source_details %}<li>{{ source.arquivo }}{% if source.revisao %} · {% translate "Revisão" %} <code>{{ source.revisao }}</code>{% endif %}</li>{% endfor %}</ul>
+      {% endif %}
+      {% if turn.result.estado == 'contexto' %}
+        {% for source in turn.result.fontes %}<div class="output">{% iaves_brand source.texto %}</div>{% endfor %}
+      {% endif %}
+    {% elif turn.result.base_local == 'indisponivel' %}<p>{% iaves_brand _("A base local do IAves está indisponível no momento.") %}</p>
+    {% elif turn.result.estado == 'contexto' or turn.result.estado == 'fontes' %}<p>{% translate "Nenhum trecho da base local foi encontrado para esta pergunta." %}</p>{% endif %}
+    {% if turn.feedback_eligible %}
+    <form class="iaves-feedback" method="post" action="#consulta-{{ turn.id }}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="feedback">
+      <input type="hidden" name="run_id" value="{{ turn.id }}">
+      <strong>{% translate "Resolveu sua dúvida?" %}</strong>
+      <button name="helpful" value="yes" aria-pressed="{{ turn.feedback|yesno:'true,false,false' }}">{% translate "Sim" %}</button>
+      <button name="helpful" value="no" aria-pressed="{% if turn.feedback is False %}true{% else %}false{% endif %}">{% translate "Não" %}</button>
+      {% if turn.feedback is not None %}<small>{% translate "Avaliação registrada." %}</small>{% endif %}
+    </form>
+    {% endif %}
+  {% endif %}
+</article>
+{% empty %}<p>{% translate "Nenhuma execução registrada." %}</p>{% endfor %}
+{% endblock %}

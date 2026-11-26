@@ -56,10 +56,12 @@ def verify_gemini(viewer, tenant, space, box):
               "state":"gemini-test", "scope":"hub.read offline_access", "code_challenge":challenge,
               "code_challenge_method":"S256"}
     consent = "/conta/oauth/authorize/"
-    picker = viewer.get(consent, params, secure=True)
+    unified_prompt = viewer.get(consent, params, secure=True)
     choice = f"{tenant}:{space}"
     all_choice = f"{tenant}:all"
-    assert picker.status_code == 200 and choice.encode() not in picker.content and all_choice.encode() in picker.content
+    assert unified_prompt.status_code == 200
+    assert choice.encode() not in unified_prompt.content and all_choice.encode() not in unified_prompt.content
+    assert box.address.encode() in unified_prompt.content
     assert viewer.get(consent, {**params, "hub_workspace":f"{uuid4()}:all"}, secure=True).status_code == 404
     other_app = register([callback]).json()["client_id"]
     all_prompt = viewer.get(consent, {**params, "client_id":other_app, "hub_workspace":all_choice}, secure=True)
@@ -138,7 +140,7 @@ def verify_activation(viewer, tenant, space, box, personal):
     print("Consentimento de e-mail na ativação MCP: padrão marcado, recusa, desmarcação e revogação verificados.")
 
 
-def verify_send_consent(viewer, tenant, space, box, *, email_only=False):
+def verify_send_consent(viewer, tenant, box, *, email_only=False):
     callback = "https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-mail-send-qa"
     prefix = "/conta/email/oauth" if email_only else "/conta/oauth"
     endpoint = "/conta/mcp/email" if email_only else "/conta/mcp"
@@ -146,8 +148,10 @@ def verify_send_consent(viewer, tenant, space, box, *, email_only=False):
                       content_type="application/json", secure=True).json()
     verifier = secrets.token_urlsafe(48)
     auth = {"client_id":app["client_id"], "redirect_uri":callback, "response_type":"code",
-            "scope":"hub.read hub.mail.send", "hub_workspace":f"{tenant}:all" if email_only else f"{tenant}:{space}", "code_challenge_method":"S256",
+            "scope":"hub.read hub.mail.send", "code_challenge_method":"S256",
             "code_challenge":base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")}
+    if email_only:
+        auth["hub_workspace"] = f"{tenant}:all"
     consent = prefix + "/authorize/"
     def fields(checked):
         reply = viewer.get(consent, auth, secure=True)
@@ -167,12 +171,21 @@ def verify_send_consent(viewer, tenant, space, box, *, email_only=False):
     token = viewer.post(prefix + "/token/", {"client_id":app["client_id"], "redirect_uri":callback,
                         "grant_type":"authorization_code", "code":code, "code_verifier":verifier}, secure=True)
     assert token.status_code == 200
+    link = Link.objects.get(client_id=app["client_id"], user=box.user)
+    assert link.all_tenants != email_only
+    if link.all_tenants:
+        assert str(link.tenant) != str(tenant)
     def tools():
         reply = viewer.post(endpoint, {"jsonrpc":"2.0","id":1,"method":"tools/list"},
                             content_type="application/json", secure=True,
                             HTTP_AUTHORIZATION="Bearer " + token.json()["access_token"])
         return {spec["name"] for spec in reply.json()["result"]["tools"]}
     assert "enviar_email" in tools() and "ler_email" not in tools()
+    if link.all_tenants:
+        allowed = WorkspaceSelection.objects.create(link=link, spaces=[str(link.space)])
+        assert "enviar_email" not in tools()
+        allowed.delete()
+        assert "enviar_email" in tools()
     if email_only:
         headers = {"HTTP_AUTHORIZATION":"Bearer " + token.json()["access_token"]}
         def rpc(method, params=None):
@@ -273,8 +286,8 @@ def verify_outbound(manager, viewer, link, box, space):
     assert save(manager, True, False) == 404
     assert save(viewer, True, False) == 403
     role("member")
-    verify_send_consent(viewer, link.tenant, space, box)
-    verify_send_consent(viewer, link.tenant, space, box, email_only=True)
+    verify_send_consent(viewer, link.tenant, box)
+    verify_send_consent(viewer, link.tenant, box, email_only=True)
     assert "enviar_email" not in listed()
     assert save(viewer, True, False) == 302
     assert box.send_links.filter(pk=link.pk).exists() and not box.links.filter(pk=link.pk).exists()

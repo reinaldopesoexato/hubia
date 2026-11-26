@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load i18n %}
+{% extends "base.html" %}{% load i18n iaves_mark %}
 {% block title %}{% if guide %}{% translate "Guia dos meus espaços" %}{% else %}{% translate "Agentes ativos" %}{% endif %}{% endblock %}
 {% block layout %}directory{% endblock %}
 {% block body %}
@@ -12,7 +12,7 @@
 <ul class="workspace-list">{% for agent in group.agents %}
 <li><a class="space-row" href="{% url 'use_agent' group.tenant group.space agent.id %}">
 <span class="tile mint">{% include "icon.html" with name="agent" %}</span>
-<span class="row-name"><strong>{{ agent.name }}</strong><span class="purpose">{{ agent.purpose }}</span></span>
+<span class="row-name"><strong>{% iaves_brand agent.name %}</strong><span class="purpose">{% iaves_brand agent.purpose %}</span></span>
 <span class="arrow">{% include "icon.html" with name="arrow" %}</span>
 </a></li>{% empty %}<li>{% translate "Nenhum agente ativo neste espaço." %}</li>{% endfor %}</ul>
 </section>

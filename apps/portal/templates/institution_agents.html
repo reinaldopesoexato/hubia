@@ -1,18 +1,18 @@
-{% extends "base.html" %}{% load i18n %}
+{% extends "base.html" %}{% load i18n iaves_mark %}
 {% block title %}{% translate "Agentes de" %} {{ organization }}{% endblock %}
 {% block body %}
 <nav>{% if deleting %}<a href="{% url 'institution_agents' tenant %}">{% translate "← Agentes da instituição" %}</a>{% elif is_owner %}<a href="{% url 'administration' %}">{% translate "← Administração" %}</a>{% else %}<a href="{% url 'dashboard' %}">{% translate "← Meus espaços" %}</a>{% endif %}</nav>
-{% if deleting %}<h1>{% translate "Excluir" %} {{ deleting.name }}?</h1>
+{% if deleting %}<h1>{% translate "Excluir" %} {% iaves_brand deleting.name %}?</h1>
 <p>{% translate "O agente será removido do catálogo de" %} {{ organization }} {% translate "e de todos os espaços em que está disponível. O histórico de uso será preservado." %}</p>
 <form method="post">{% csrf_token %}<button class="agent-unlink" name="action" value="delete">{% translate "Confirmar exclusão" %}</button> <a href="{% url 'institution_agents' tenant %}">{% translate "Cancelar" %}</a></form>
 {% else %}<header class="agent-heading"><div><small>{{ organization }}</small><h1>{% translate "Agentes da instituição" %}</h1></div><a class="agent-primary" href="?novo=1">{% translate "Novo agente" %}</a></header>
 <p>{% translate "Cadastre o agente aqui. Depois, abra" %} <strong>{% translate "Agentes do espaço" %}</strong> {% translate "em cada espaço e marque os agentes que os membros poderão usar." %}</p>
-<ul class="agent-directory">{% for a in agents %}<li><div class="agent-summary"><div><strong>{{ a.name }}</strong>{% if a.same_name %}<small>{{ a.id }}</small>{% endif %}<small>{{ a.description }}</small><small>{% for label in a.spaces %}{{ label }}{% if not forloop.last %}, {% endif %}{% empty %}{% translate "Nenhum espaço selecionado" %}{% endfor %}</small></div></div>
+<ul class="agent-directory">{% for a in agents %}<li><div class="agent-summary"><div><strong>{% iaves_brand a.name %}</strong>{% if a.same_name %}<small>{{ a.id }}</small>{% endif %}<small>{{ a.description }}</small><small>{% for label in a.spaces %}{{ label }}{% if not forloop.last %}, {% endif %}{% empty %}{% translate "Nenhum espaço selecionado" %}{% endfor %}</small></div></div>
 <span class="status{% if a.active %} done{% endif %}">{% if a.active %}{% translate "Ativo" %}{% else %}{% translate "Desativado" %}{% endif %}</span>
-<div class="agent-links"><a href="{% url 'institution_agent_edit' tenant a.id %}">{% translate "Editar" %}</a><a href="{% url 'institution_agent_edit' tenant a.id %}?excluir=1">{% translate "Excluir" %}</a></div></li>
+<div class="agent-links"><a href="{% url 'institution_agent_edit' tenant a.id %}">{% if a.kind == 'iaves' %}{% iaves_brand _("Configurar IAves") %}{% else %}{% translate "Editar" %}{% endif %}</a><a href="{% url 'institution_agent_edit' tenant a.id %}?excluir=1">{% translate "Excluir" %}</a></div></li>
 {% empty %}<li>{% translate "Nenhum agente cadastrado nesta instituição." %}</li>{% endfor %}</ul>
 {% if retired_agents %}<details><summary>{% translate "Agentes excluídos" %}</summary>
 {% for a in retired_agents %}<form method="post" action="{% url 'institution_agent_edit' tenant a.id %}">{% csrf_token %}
-{{ a.name }} <button name="action" value="restore">{% translate "Restaurar no catálogo" %}</button></form>{% endfor %}</details>{% endif %}
+{% iaves_brand a.name %} <button name="action" value="restore">{% translate "Restaurar no catálogo" %}</button></form>{% endfor %}</details>{% endif %}
 {% endif %}
 {% endblock %}

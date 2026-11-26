@@ -20,7 +20,7 @@ from agent_runtime import ConnectorError, https_url, query_connector, search_kno
 from bridge import mail_access
 from portal_identity import bind_account
 from bridge import avihub, catalog_alerts, library
-from bridge.models import CatalogAlerts, LibraryAccess
+from bridge.models import IAVES_AGENT_ID, CatalogAlerts, LibraryAccess
 
 
 class AgentForm(forms.Form):
@@ -213,8 +213,12 @@ def active_agent(cursor, tenant, space, agent):
 @never_cache
 @login_required
 @require_http_methods(["GET","POST"])
-@sensitive_post_parameters("password", "code", "token")
+@sensitive_post_parameters("password", "code", "token", "pergunta", "conta")
 def use_agent(request, tenant, space, agent):
+    if agent == IAVES_AGENT_ID:
+        from iaves_portal import page as iaves_page
+
+        return iaves_page(request, tenant, space, agent)
     remote = None
     history = []
     with transaction.atomic(), connection.cursor() as cursor:

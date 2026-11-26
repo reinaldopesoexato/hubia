@@ -1,0 +1,10 @@
+{% if selection.busca or selection.filtro %}
+  <form class="avihub-notification-link" method="post" action="{{ url }}">
+    {% csrf_token %}
+    {% if selection.busca %}<input type="hidden" name="busca" value="{{ selection.busca }}">{% endif %}
+    {% if selection.filtro %}<input type="hidden" name="filtro" value="{{ selection.filtro }}">{% endif %}
+    <button>{{ label }}</button>
+  </form>
+{% else %}
+  <a href="{{ url }}"{% if relation %} rel="{{ relation }}"{% endif %}>{{ label }}</a>
+{% endif %}

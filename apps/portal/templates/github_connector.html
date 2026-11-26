@@ -26,6 +26,12 @@
 {% if library %}
 <h3>{{ library.name }}</h3>
 <p>{% translate "Repositório" %} {% for repo in conn.repositories %}{% if repo.id == library.repository_id %}<strong>{{ repo.name }}</strong>{% endif %}{% endfor %} · ID {{ library.repository_id }}</p>
+{% if snapshot %}
+<p><strong>{% translate "Revisão da cópia local" %}</strong> <code>{{ snapshot.revision|slice:":12" }}</code>{% if snapshot.synchronized_at %} · <time datetime="{{ snapshot.synchronized_at|date:'c' }}">{{ snapshot.synchronized_at|date:"d/m/Y H:i" }}</time>{% endif %}</p>
+{% else %}
+<p>{% translate "Aguardando uma cópia local válida da biblioteca." %}</p>
+{% endif %}
+<p>{% translate "A cópia local é atualizada automaticamente em segundo plano." %}</p>
 <p>{% translate "Libere uma pasta por linha usando o caminho a partir da raiz do repositório. Os membros do espaço e suas conexões MCP poderão consultar as notas dessas pastas e subpastas. Para liberar as notas da raiz e de todas as pastas atuais e futuras, informe" %} <code>/</code> {% translate "sozinho. Salvar o campo vazio revoga o acesso desse espaço." %}</p>
 {% for row in library_spaces %}<form method="post">{% csrf_token %}<input type="hidden" name="space" value="{{ row.id }}">
 <label>{{ row.name }}<textarea name="folders" rows="2" placeholder="{% translate "Nenhuma pasta liberada" %}">{{ row.folders }}</textarea></label>

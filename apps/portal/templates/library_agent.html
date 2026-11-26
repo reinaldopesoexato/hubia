@@ -9,6 +9,7 @@
 {% else %}<p>{% translate "Nenhuma pasta foi liberada para este espaço." %}</p>{% endif %}
 {% if error %}<p class="error" role="alert">{% translate error %}</p>{% endif %}
 {% if result %}
+{% if result.revisao %}<p><small>{% translate "Revisão" %} <code title="{{ result.revisao }}">{{ result.revisao|slice:':12' }}</code></small></p>{% endif %}
 {% if result.caminho %}<h2>{{ result.caminho }}</h2><a href="{{ result.fonte }}">{% translate "Ver revisão no GitHub" %}</a><pre class="output">{{ result.texto }}</pre>
 {% if result.proximo_inicio %}<form method="post">{% csrf_token %}<input type="hidden" name="caminho" value="{{ result.caminho }}"><input type="hidden" name="inicio" value="{{ result.proximo_inicio }}"><input type="hidden" name="revisao" value="{{ result.revisao }}"><button name="action" value="ler_nota">{% translate "Continuar leitura" %}</button></form>{% endif %}
 {% else %}<ul>{% for note in result.notas %}<li><form method="post">{% csrf_token %}<input type="hidden" name="caminho" value="{{ note.caminho }}"><input type="hidden" name="revisao" value="{{ result.revisao }}"><button name="action" value="ler_nota">{{ note.caminho }}</button></form></li>{% empty %}<li>{% translate "Nenhuma nota encontrada nesta página." %}</li>{% endfor %}</ul>

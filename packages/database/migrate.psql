@@ -72,4 +72,14 @@ SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 13) AS app
   \ir migrations/013-internal-mail.sql
   INSERT INTO hub_migrations.applied (version) VALUES (13);
 \endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 14) AS apply_014 \gset
+\if :apply_014
+  \ir migrations/014-iaves.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (14);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 15) AS apply_015 \gset
+\if :apply_015
+  \ir migrations/015-iaves-metrics.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (15);
+\endif
 COMMIT;

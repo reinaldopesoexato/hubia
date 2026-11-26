@@ -147,14 +147,15 @@ def overview(cursor, principal, period, account_id):
                            "status": "unconfirmed" if unconfirmed else status, "tenant": tenant,
                            "space_id": wid, "agent_id": aid if active else None})
     internal_mail = mail_access.INSTITUTION in institutions and mail_access.allowed(cursor, mail_access.INSTITUTION)
-    emails = OutboundEmail.objects.filter(
-        link__user_id=account_id, link__tenant__in=[mail_access.INSTITUTION] if internal_mail else [],
-        created_at__gte=start, created_at__lt=end,
-    ).order_by("-created_at", "-pk").values_list("created_at", "link__tenant", "link__name", "recipient", "state")[:5]
-    for stamp, tenant, client, recipient, state in emails:
-        status, label = MAIL_STATES.get(state, MAIL_STATES["incerto"])
-        latest.append({"time":stamp, "icon":"mail", "agent":f"E-mail para {recipient}",
-                       "workspace":f"{institutions[tenant]} · {client}", "status":status, "label":label})
+    if internal_mail:
+        emails = OutboundEmail.objects.filter(
+            Q(link__tenant=mail_access.INSTITUTION) | Q(link__all_tenants=True),
+            link__user_id=account_id, created_at__gte=start, created_at__lt=end,
+        ).order_by("-created_at", "-pk").values_list("created_at", "link__name", "recipient", "state")[:5]
+        for stamp, client, recipient, state in emails:
+            status, label = MAIL_STATES.get(state, MAIL_STATES["incerto"])
+            latest.append({"time":stamp, "icon":"mail", "agent":f"E-mail para {recipient}",
+                           "workspace":f"{institutions[mail_access.INSTITUTION]} · {client}", "status":status, "label":label})
 
     peak = max(days.values()) or 1
     bars = [{"day": day, "count": count, "height": round(100 * count / peak, 2),

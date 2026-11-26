@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load i18n %}
+{% extends "base.html" %}{% load i18n iaves_mark %}
 {% block title %}{{ workspace }}{% endblock %}
 {% block body %}
 <nav><a href="/conta/">{% translate "← Meus espaços" %}</a></nav>
@@ -8,6 +8,6 @@
 {% if is_owner and institutional %}<p><a href="{% url 'workspace_settings' tenant space %}">{% translate "Alterar ou excluir espaço" %}</a></p>{% endif %}
 <p><a href="{% url 'integrations' tenant space %}">{% translate "Minhas integrações · Dot, MCP e A2A" %}</a></p>
 <h2>{% translate "Agentes" %}</h2>
-<ul class="cards">{% for a in agents %}<li><a href="{% url 'use_agent' tenant space a.id %}">{{ a.name }}</a>{% if manager and a.kind != "avihub" and a.kind != "library" %} · <a href="{% url 'edit_agent' tenant space a.id %}" aria-label="Editar {{ a.name }}">{% translate "Editar" %}</a>{% endif %}{% if a.description %}<p>{{ a.description }}</p>{% endif %}</li>
+<ul class="cards">{% for a in agents %}<li><a href="{% url 'use_agent' tenant space a.id %}">{% iaves_brand a.name %}</a>{% if manager and a.kind != "avihub" and a.kind != "library" %} · <a href="{% url 'edit_agent' tenant space a.id %}" aria-label="Editar {{ a.name }}">{% translate "Editar" %}</a>{% endif %}{% if a.description %}<p>{{ a.description }}</p>{% endif %}</li>
 {% empty %}<li>{% translate "Nenhum agente ativo neste espaço." %}</li>{% endfor %}</ul>
 {% endblock %}

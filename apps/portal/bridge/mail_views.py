@@ -4,6 +4,7 @@ import re
 from django.utils.translation import gettext as translate_text
 from django.contrib.auth.decorators import login_required
 from django.db import connection, transaction
+from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
@@ -13,7 +14,6 @@ from django.views.decorators.http import require_http_methods
 from model_provider import cipher
 from portal_identity import bind_account
 from . import mail_access
-from .access import MAIL_MCP, email_title
 from .github import institution
 from .mail_protocol import inbox, IMAP_HOST, SMTP_HOST
 from .signature import signature_parts
@@ -116,10 +116,10 @@ def personal(request, tenant):
                         Mailbox.objects.create(provider=provider, user=request.user, address=address,
                                                password_cipher=cipher().encrypt(password.encode()), signature_html=previous_signature)
             elif action == "grant" and box:
-                links = list(Link.objects.filter(user=request.user, tenant=tenant, protocol="mcp"))
+                links = list(Link.objects.filter(user=request.user, protocol="mcp").filter(Q(tenant=tenant) | Q(all_tenants=True)))
                 selected = set(request.POST.getlist("links"))
                 if selected - {str(link.pk) for link in links}:
-                    return HttpResponseBadRequest(translate_text("Selecione apenas suas conexões desta instituição."))
+                    return HttpResponseBadRequest(translate_text("Selecione apenas suas conexões que podem usar esta caixa."))
                 box.links.set([link for link in links if str(link.pk) in selected])
                 Link.objects.filter(pk__in=[link.pk for link in links], offer_mail_access=True).update(offer_mail_access=False)
             else:
@@ -128,5 +128,5 @@ def personal(request, tenant):
                 return redirect("my_email", tenant)
         return render(request, "my_email.html", {"tenant":tenant, "organization":org[0], "provider":provider,
                       "box":box, "error":error, "signature_source":source,
-                      "mail_mcp":MAIL_MCP, "mail_title":email_title(org[0]), "signature_revision":revision, "signature_saved":saved},
+                      "signature_revision":revision, "signature_saved":saved},
                       status=400 if error else 200)

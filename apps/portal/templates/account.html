@@ -1,12 +1,39 @@
-{% extends "base.html" %}{% load i18n %}
+{% extends "base.html" %}{% load i18n iaves_mark %}
 {% block title %}{% translate "Visão geral" %}{% endblock %}
 {% block layout %}dashboard{% endblock %}
 {% block body %}
 <div class="welcome"><div><h1>{% translate "Visão geral" %}</h1><p>{% translate "Olá," %} {{ request.user.first_name|default:request.user.username }}. <span>{% blocktranslate with data=today|date:"DATE_FORMAT" %}Hoje é {{ data }}.{% endblocktranslate %}</span></p></div>
 {% if connections %}<nav class="period" aria-label="{% translate "Período do painel" %}"><a href="?dias=7" {% if period == 7 %}aria-current="true"{% endif %}>{% translate "7 dias" %}</a><a href="?dias=30" {% if period == 30 %}aria-current="true"{% endif %}>{% translate "30 dias" %}</a></nav>{% endif %}</div>
+{% if iaves or library_access or avihub_setup %}
+<section class="panel setup-card" aria-labelledby="dashboard-tasks-title">
+  <h2 id="dashboard-tasks-title">{% translate "O que você quer fazer?" %}</h2>
+  <ul class="workspace-list">
+  {% if avihub_setup %}<li>
+    {% if avihub_setup.ready and iaves %}
+    <a class="space-row" href="{% url 'use_agent' iaves.tenant iaves.space iaves.agent %}?consulta=equipamentos"><span class="row-name"><strong>{% translate "Consultar meus equipamentos" %}</strong><small>{% translate "Veja quais equipamentos ficaram sem comunicação." %}</small></span><span class="arrow" aria-hidden="true">→</span></a>
+    {% elif avihub_setup.ready %}
+    <a class="space-row" href="{{ avihub_setup.url }}"><span class="row-name"><strong>{% translate "Abrir AviHUB" %}</strong></span><span class="arrow" aria-hidden="true">→</span></a>
+    {% elif avihub_setup.pending_url %}
+    <a class="space-row" href="{{ avihub_setup.pending_url }}"><span class="row-name"><strong>{% translate "Continuar verificação" %}</strong><small>{% translate "Conclua o vínculo do AviHUB para consultar os dados da sua unidade." %}</small></span><span class="arrow" aria-hidden="true">→</span></a>
+    {% else %}
+    <a class="space-row" href="{{ avihub_setup.url }}?nova=1&amp;origem=painel"><span class="row-name"><strong>{% translate "Vincular minha conta do AviHUB" %}</strong><small>{% translate "Use sua conta para consultar equipamentos e pesagens." %}</small></span><span class="arrow" aria-hidden="true">→</span></a>
+    {% endif %}
+  </li>{% endif %}
+  {% if library_access %}<li><a class="space-row" href="{% url 'use_agent' library_access.tenant library_access.space library_access.agent %}"><span class="row-name"><strong>{% translate "Consultar manuais" %}</strong><small>{% translate "Busque nas notas liberadas para você." %}</small></span><span class="arrow" aria-hidden="true">→</span></a></li>{% endif %}
+  {% if iaves %}<li><a class="space-row" href="{% url 'use_agent' iaves.tenant iaves.space iaves.agent %}"><span class="row-name"><strong>{% iaves_brand _("Conversar com IAves") %}</strong><small>{% translate "Assistente da cadeia de avicultura da Peso Exato." %}</small></span><span class="arrow" aria-hidden="true">→</span></a></li>
+    {% if avihub_setup.ready %}<li><a class="space-row" href="{% url 'use_agent' iaves.tenant iaves.space iaves.agent %}?consulta=pesagens"><span class="row-name"><strong>{% translate "Ver pesagens de aves" %}</strong><small>{% translate "Consulte as pesagens da sua unidade por período." %}</small></span><span class="arrow" aria-hidden="true">→</span></a></li>{% endif %}
+  {% endif %}
+  </ul>
+  {% if iaves %}<nav class="agent-links" aria-label="IAves">
+    <a href="{% url 'iaves_memory' iaves.tenant iaves.space iaves.agent %}">{% iaves_brand _("Memória do IAves") %}</a>
+    {% url 'iaves_subscriptions' iaves.tenant iaves.space iaves.agent as iaves_subscriptions_url %}
+    {% if iaves_subscriptions_url and avihub_setup %}<a href="{{ iaves_subscriptions_url }}">{% translate "Resumos e alertas" %}</a>{% endif %}
+  </nav>{% endif %}
+</section>
+{% endif %}
 {% if avihub_setup.ready and not connections %}
 <section class="panel setup-card" aria-labelledby="portal-linked"><h2 id="portal-linked">{% translate "Portal Peso Exato vinculado" %}</h2>
-<p><strong>{% translate "Parabéns! Sua conta do AviHUB está vinculada." %}</strong> {% translate "O próximo passo é conectar sua primeira IA à instituição Peso Exato. Escolha ChatGPT ou Gemini no guia para começar a consultar suas operações." %}</p>
+<p><strong>{% translate "Parabéns! Sua conta do AviHUB está vinculada." %}</strong> {% translate "Conecte sua IA ao HUB IA para consultar as operações que sua conta pode acessar." %}</p>
 <a class="setup-primary" href="#configured-ai">{% translate "Conectar minha primeira IA" %}</a></section>
 {% elif avihub_setup and not avihub_setup.ready %}{% include "avihub_welcome.html" %}{% endif %}
 {% if connections %}
@@ -38,7 +65,7 @@
 {% if connections and latest %}
 <section class="panel events-panel"><div class="panel-head"><h2>{% translate "Atividade recente" %}</h2><small>{% translate "Consultas" %}{% if internal_mail %} {% translate "e envios de e-mail" %}{% endif %}</small></div>
 <ul class="events">{% for item in latest %}<li class="event"><span class="tile">{% include "icon.html" with name=item.icon|default:"activity" %}</span>
-<span class="row-name"><strong>{% if item.agent_id %}<a href="{% url 'use_agent' item.tenant item.space_id item.agent_id %}">{{ item.agent }}</a>{% else %}{{ item.agent }}{% endif %}</strong><small>{{ item.workspace }}</small></span>
+<span class="row-name"><strong>{% if item.agent_id %}<a href="{% url 'use_agent' item.tenant item.space_id item.agent_id %}">{% iaves_brand item.agent %}</a>{% else %}{% iaves_brand item.agent %}{% endif %}</strong><small>{{ item.workspace }}</small></span>
 <time datetime="{{ item.time|date:'c' }}">{{ item.time|date:"d/m · H:i" }}</time>
 <span class="status {{ item.status }}">{% if item.label %}{% translate item.label %}{% elif item.status == 'done' %}{% translate "Concluída" %}{% elif item.status == 'failed' %}{% translate "Falhou" %}{% elif item.status == 'unconfirmed' %}{% translate "Sem confirmação" %}{% else %}{% translate "Em execução" %}{% endif %}</span></li>{% endfor %}</ul>
 </section>
