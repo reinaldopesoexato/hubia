@@ -12,7 +12,7 @@ class RemoteError(Exception):
     pass
 
 
-def public_json(url, payload=None, headers=None, *, empty=False):
+def public_response(url, payload=None, headers=None, *, limit=65536, success_only=False):
     try:
         parts = urlsplit(url)
         if (parts.scheme != "https" or not parts.hostname or parts.port not in (443, None)
@@ -34,18 +34,26 @@ def public_json(url, payload=None, headers=None, *, empty=False):
             with pool.urlopen("GET" if payload is None else "POST", path, body=payload,
                     headers={"Host":parts.netloc,"Accept":"application/json",**(headers or {})},
                     redirect=False, retries=False, preload_content=False) as response:
-                if not 200 <= response.status < 300:
+                if success_only and not 200 <= response.status < 300:
                     raise RemoteError(f"HTTP {response.status}")
-                if empty:
-                    return {}
-                data = response.read(65537,decode_content=False)
-                if len(data)>65536:
+                data = response.read(limit + 1, decode_content=False) if limit else b""
+                if len(data) > limit:
                     raise ValueError("resposta extensa")
-                result = json.loads(data)
-                if not isinstance(result,dict):
-                    raise ValueError("resposta")
-                return result
+                return response.status, response.headers, data
         finally:
             pool.close()
     except (ValueError, OSError, UnicodeError, urllib3.exceptions.HTTPError) as exc:
         raise RemoteError("Destino HTTPS indisponível ou resposta inválida.") from exc
+
+
+def public_json(url, payload=None, headers=None, *, empty=False):
+    _, _, data = public_response(url, payload, headers, limit=0 if empty else 65536, success_only=True)
+    if empty:
+        return {}
+    try:
+        result = json.loads(data)
+        if isinstance(result, dict):
+            return result
+    except (ValueError, UnicodeError):
+        pass
+    raise RemoteError("Destino HTTPS indisponível ou resposta inválida.")

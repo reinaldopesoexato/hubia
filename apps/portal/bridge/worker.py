@@ -6,13 +6,16 @@ import django
 
 django.setup()
 from cryptography.fernet import InvalidToken
-from django.db import close_old_connections, transaction
+from django.db import close_old_connections, connection, transaction
 from django.http import Http404
 from django.utils import timezone
 from model_provider import cipher
 from .access import context
 from .events import EVENT, post_signed
+from space_views import active_agent
 from .models import Delivery, Ticket
+from .platform_email import deliver_reset
+from registration import deliver_activation
 from .a2a import query_peer
 from .network import RemoteError
 
@@ -31,6 +34,9 @@ def deliver_one(ticket_id=None):
         if sub.expires<=now or item.ticket.state!="pending" or item.ticket.link_id!=sub.link_id:
             raise Http404
         context(sub.link)
+        if item.ticket.notice_agent:
+            with connection.cursor() as cursor:
+                active_agent(cursor,sub.link.tenant,sub.link.space,item.ticket.notice_agent)
         url,secret = json.loads(cipher().decrypt(bytes(sub.encrypted)))
         event = {"eventId":str(item.pk),"name":EVENT,"timestamp":item.ticket.created.isoformat(),
                  "data":{"task_id":str(item.ticket_id)},"cursor":None}
@@ -59,6 +65,8 @@ def deliver_peer_notice(ticket_id=None):
     item.notice_attempts += 1
     try:
         context(item.link, writing=True)
+        with connection.cursor() as cursor:
+            active_agent(cursor,item.link.tenant,item.link.space,item.notice_agent)
         config = json.loads(cipher().decrypt(bytes(item.link.peer_config)))
         state, answer, remote = query_peer(config, item.question, item.request_id)
         item.state, item.answer, item.remote_id = state, answer[:16000], remote
@@ -79,5 +87,7 @@ if __name__=="__main__":
         close_old_connections()
         callback_sent = deliver_one()
         peer_sent = deliver_peer_notice()
-        if not callback_sent and not peer_sent:
+        reset_processed = deliver_reset()
+        activation_processed = deliver_activation()
+        if not callback_sent and not peer_sent and not reset_processed and not activation_processed:
             time.sleep(3)

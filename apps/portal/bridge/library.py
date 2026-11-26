@@ -7,16 +7,13 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote
 
 from . import github_api
-from .models import LibraryAccess, NoteLibrary
+from .agent_catalog import assigned
+from .models import LibraryAccess
 
 PURPOSE = "Busca e lê notas Markdown nas pastas liberadas para este espaço."
 MAX_BYTES = 512 * 1024
 PAGE = 6
 CHUNK = 16000
-
-
-def library_agent(tenant):
-    return NoteLibrary.objects.filter(connection_id=tenant).values("id", "name").first()
 
 
 def allowed_path(path):
@@ -62,6 +59,8 @@ def note_text(item, base, token):
 def query(tenant, space, action, args):
     # O chamador já verificou a associação do usuário ao espaço. A concessão vincula
     # o repositório, a instituição e o espaço novamente em cada consulta.
+    if not assigned(tenant, space, "library"):
+        raise ValueError("Biblioteca indisponível neste espaço.")
     access = LibraryAccess.objects.select_related("library__connection").filter(
         library__connection_id=tenant, space=space).first()
     if not access or not access.folders:

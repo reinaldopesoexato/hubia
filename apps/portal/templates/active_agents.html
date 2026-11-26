@@ -1,18 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Agentes ativos{% endblock %}
+{% block title %}{% if guide %}Guia dos meus espaços{% else %}Agentes ativos{% endif %}{% endblock %}
 {% block layout %}directory{% endblock %}
 {% block body %}
 <nav><a href="{% url 'dashboard' %}">← Visão geral</a></nav>
-<h1>Agentes ativos</h1>
+{% if guide %}<h1>Guia dos meus espaços</h1>
+<p>Consulte seu papel e os agentes disponíveis em cada espaço.</p>
+{% else %}<h1>Agentes ativos</h1>{% if guide_available %}<p><a href="{% url 'personal_guide' %}">Guia dos meus espaços</a></p>{% endif %}{% endif %}
 {% for group in groups %}
 <section class="panel agent-group">
-<header><small>{{ group.organization }}</small><h2>{{ group.workspace }}</h2></header>
+<header><small>{{ group.organization }}</small><h2>{% if guide %}<a href="{% url 'workspace' group.tenant group.space %}">{{ group.workspace }}</a>{% else %}{{ group.workspace }}{% endif %}</h2>{% if guide %}<small>Seu papel · {{ group.role }}</small>{% endif %}</header>
 <ul class="workspace-list">{% for agent in group.agents %}
 <li><a class="space-row" href="{% url 'use_agent' group.tenant group.space agent.id %}">
 <span class="tile mint">{% include "icon.html" with name="agent" %}</span>
 <span class="row-name"><strong>{{ agent.name }}</strong><span class="purpose">{{ agent.purpose }}</span></span>
 <span class="arrow">{% include "icon.html" with name="arrow" %}</span>
-</a></li>{% endfor %}</ul>
+</a></li>{% empty %}<li>Nenhum agente ativo neste espaço.</li>{% endfor %}</ul>
 </section>
-{% empty %}<p>Nenhum agente ativo nos espaços aos quais você tem acesso.</p>{% endfor %}
+{% empty %}<p>{% if guide %}Sua conta ainda não tem acesso a um espaço.{% else %}Nenhum agente ativo nos espaços aos quais você tem acesso.{% endif %}</p>{% endfor %}
 {% endblock %}

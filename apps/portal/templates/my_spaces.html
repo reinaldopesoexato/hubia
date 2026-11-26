@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block title %}Meus espaços{% endblock %}
+{% block layout %}directory{% endblock %}
+{% block body %}{% include "workspace_list.html" with directory=True %}{% endblock %}

@@ -28,5 +28,12 @@ docker exec -i "$db" psql -qX -v ON_ERROR_STOP=1 -U hub_migrator -d hubia <<'SQL
 \getenv test_password POSTGRES_PASSWORD
 ALTER ROLE hub_portal PASSWORD :'test_password';
 SQL
+# Simula no banco descartável a atualização da versão que guardava chaves por unidade.
+"${test_portal[@]}" -e PGUSER=hub_portal "$portal_image" python -m django migrate bridge 0017_platform_email --noinput --verbosity 0
+docker exec -i "$db" psql -qX -v ON_ERROR_STOP=1 -U hub_migrator -d hubia <<'SQL'
+INSERT INTO hub_accounts.django_migrations (app, name, applied)
+VALUES ('bridge', '0016_avihub_unit_keys', now());
+ALTER TABLE hub_accounts.bridge_avihubsession ADD COLUMN encrypted_unit_keys bytea NOT NULL;
+SQL
 "${test_portal[@]}" -e PGUSER=hub_portal "$portal_image" python -m django migrate --noinput --verbosity 0
 "${test_portal[@]}" -e PGUSER=hub_migrator "$portal_image" python smoke.py

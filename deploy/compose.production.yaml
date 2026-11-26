@@ -11,6 +11,8 @@ services:
     environment:
       PGPASSWORD: ${PORTAL_DB_PASSWORD:?configure PORTAL_DB_PASSWORD}
       PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:?configure PORTAL_SESSION_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     ports:
       - "127.0.0.1:18873:8000"
     healthcheck:

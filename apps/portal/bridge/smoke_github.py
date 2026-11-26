@@ -86,6 +86,9 @@ def verify_library(manager, viewer, tenant, space, config_url):
     agent = NoteLibrary.objects.get(connection_id=tenant)
     url = reverse("use_agent", args=[tenant, space, agent.id])
     link = SimpleNamespace(tenant=tenant, space=space)
+    from smoke_agents import select_institution_agent
+    assert viewer.get(url, secure=True).status_code == 404
+    assert select_institution_agent(manager, tenant, space, agent.pk, True, {"secure":True}).status_code == 302
     assert "Nenhuma pasta" in viewer.get(url, secure=True).content.decode()
     def tools():
         return [t["name"] for t in mcp.available_tools(link, {}, False)]

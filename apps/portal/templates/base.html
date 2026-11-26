@@ -12,9 +12,9 @@
 <a class="brand" href="{% url 'dashboard' %}" aria-label="HUB IA, painel"><img class="brand-logo" src="/hub-ia.png" width="76" height="76" alt="HUB IA"></a>
 <nav class="rail-nav" aria-label="Navegação principal">
 <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>{% include "icon.html" with name="grid" %}Visão geral</a>
-<a href="{% url 'dashboard' %}#espacos" {% if workspace %}class="selected"{% endif %}>{% include "icon.html" with name="layers" %}Meus espaços</a>
+<a href="{% url 'my_spaces' %}" {% if request.resolver_match.url_name == 'my_spaces' %}aria-current="page"{% elif workspace %}class="selected"{% endif %}>{% include "icon.html" with name="layers" %}Meus espaços</a>
 <a href="{% url 'ai_workspaces' %}" {% if request.resolver_match.url_name == 'ai_workspaces' %}aria-current="page"{% endif %}>{% include "icon.html" with name="layers" %}Espaços das minhas IAs</a>
-{% if is_owner %}<a href="{% url 'administration' %}" {% if request.resolver_match.url_name == 'administration' or request.resolver_match.url_name == 'people' %}class="selected"{% endif %}>{% include "icon.html" with name="shield" %}Administração</a>{% endif %}
+{% if is_owner %}<a href="{% url 'administration' %}" {% if request.resolver_match.url_name == 'administration' or request.resolver_match.url_name == 'people' or request.resolver_match.url_name == 'platform_email' or institution_editor %}class="selected"{% endif %}>{% include "icon.html" with name="shield" %}Administração</a>{% endif %}
 </nav>
 <div class="rail-foot"><a href="{% url 'password' %}">{% include "icon.html" with name="key" %}Alterar senha</a>
 <form action="/conta/sair/" method="post">{% csrf_token %}<button>{% include "icon.html" with name="logout" %}Sair</button></form></div>
@@ -22,8 +22,8 @@
 {% endif %}
 <div class="surface">
 {% if request.user.is_authenticated %}
-<header class="top"><span><b>HUB IA</b><i>/</i>{% if workspace %}{{ workspace }}{% elif request.resolver_match.url_name == 'people' or request.resolver_match.url_name == 'administration' %}Administração{% elif request.resolver_match.url_name == 'password' %}Conta{% else %}Painel{% endif %}</span>
-<div class="identity"><span class="avatar">{{ request.user.username|slice:":1"|upper }}</span><strong>{{ request.user.username }}</strong></div></header>
+<header class="top"><span><b>HUB IA</b><i>/</i>{% if workspace %}{{ workspace }}{% elif request.resolver_match.url_name == 'people' or request.resolver_match.url_name == 'administration' or request.resolver_match.url_name == 'platform_email' or institution_editor %}Administração{% elif request.resolver_match.url_name == 'password' %}Conta{% else %}Painel{% endif %}</span>
+<div class="identity"><span class="avatar">{{ request.user.username|slice:":1"|upper }}</span><strong>{{ request.user.get_full_name|default:request.user.username }}</strong></div></header>
 {% else %}<header class="login-brand"><a class="brand" href="/"><img class="brand-logo" src="/hub-ia.png" width="76" height="76" alt="HUB IA"></a></header>{% endif %}
 <main id="conteudo" class="{% block layout %}form-page{% endblock %}">{% block body %}{% endblock %}</main>
 </div></body></html>

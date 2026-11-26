@@ -8,7 +8,7 @@ No macOS, abra `Deploy-HUB-IA.command` com dois cliques ou execute `open -a Term
 
 O destino deve ser um servidor Linux com Bash, GNU coreutils, tar, flock, OpenSSL, curl e Docker com Compose v2.24.4 ou superior. O usuário SSH precisa poder executar Docker. Aponte o DNS de `hubia.psxt.io` para o servidor. Quando o Nginx do host está ativo, o instalador adiciona o virtual host do HUB em `/etc/nginx/conf.d/zz-hubia.conf`, testa a configuração e recarrega o serviço. Esse fluxo requer root ou sudo sem prompt. Em hosts sem Nginx, o Caddy publica a porta 443.
 
-O script envia o Compose, a configuração HTTPS, o instalador remoto e as migrações. No servidor, o projeto Compose `hubia-prod` mantém PostgreSQL em rede privada. A senha inicial do banco fica em `~/.local/share/hubia/deploy.env` com acesso restrito. Após aplicar as migrações, o instalador verifica o HTTPS de `/health/edge` no próprio servidor. A raiz do site publica o portal de entrada em HTML. A página consulta a conexão HTTPS e informa a disponibilidade do acesso institucional. No Nginx, o instalador também confere se a página publicada corresponde à versão enviada.
+O script envia o Compose, a configuração HTTPS, o instalador remoto e as migrações. No servidor, o projeto Compose `hubia-prod` mantém PostgreSQL em rede privada. A senha inicial do banco fica em `~/.local/share/hubia/deploy.env` com acesso restrito. Após aplicar as migrações, o instalador verifica o HTTPS de `/health/edge` no próprio servidor. A raiz do site publica o portal de entrada em HTML. A página apresenta os agentes de inteligência artificial da Peso Exato e oferece acesso ao login e ao cadastro de clientes. No Nginx, o instalador também confere se a página publicada corresponde à versão enviada.
 
 ### Confiança do certificado
 
@@ -40,7 +40,7 @@ A migração é transacional e repetir a aplicação da mesma versão é seguro.
 
 Depois do deploy, rode `./Cadastrar-Usuario.command` no Mac. Autentique o operador por SSH e informe o novo usuário e a senha nos prompts privados do terminal. A senha tem no mínimo 12 caracteres. O comando cria uma conta comum e seu espaço pessoal em uma única transação. Para entrar, abra `https://hubia.psxt.io/`, clique em **Entrar no portal** e use as credenciais cadastradas. Na página **Meus espaços** aparecem apenas os workspaces autorizados. **Sair** encerra a sessão.
 
-O cadastro via SSH destina-se ao operador. Usuários cadastrados acessam o HUB somente pelo navegador. O cadastro atual não concede privilégios de plataforma nem vínculo institucional automático. Os vínculos institucionais usam o provisionamento administrativo já existente. O login local armazena hashes de senha e usa o par `urn:hubia:portal:local` e ID local para vincular identidades. A sessão expira após oito horas. A validação de deploy usa duas contas temporárias em uma transação revertida ao final.
+O cadastro via SSH destina-se ao operador. Usuários cadastrados acessam o HUB somente pelo navegador. Na Peso Exato, novas contas recebem o papel de leitor no espaço Clientes Peso Exato. A administração pode ajustar seus vínculos posteriormente. O login local armazena hashes de senha e usa o par `urn:hubia:portal:local` e ID local para vincular identidades. A sessão expira após oito horas. A validação de deploy usa duas contas temporárias em uma transação revertida ao final.
 
 ## Provisionamento administrativo
 
@@ -92,9 +92,9 @@ Entre em <https://hubia.psxt.io/conta/administracao/> com essa conta para criar,
 
 ### Espaços, agentes e usuários no portal
 
-Em **Meus espaços**, abra a instituição e o espaço desejado. **Guia do espaço** consulta o papel e o catálogo da conta atual. Cada espaço existente ou novo recebe um guia. O histórico das últimas 50 consultas é individual por agente. Um novo envio do mesmo formulário não repete a consulta.
+Em **Visão geral → Guia dos meus espaços**, cada usuário consulta seus espaços, seu papel em cada um e os agentes disponíveis. O guia pertence à conta e fica fora da contagem de agentes dos espaços. No MCP, a ferramenta `consultar_guia` mostra os espaços autorizados à conexão. No A2A, envie “consultar guia” para consultar o espaço da conexão. O histórico das últimas 50 execuções dos agentes de espaço é individual por agente.
 
-Em **Gerenciar agentes e ver membros**, o titular pessoal, o responsável institucional ou o administrador institucional com acesso ao espaço pode criar, editar, desativar e reativar agentes. O administrador geral também gerencia catálogos institucionais por **Administração → instituição → espaço**, inclusive quando não participa do espaço. O portal oferece consulta à base de conhecimento por trechos, guia, link para portal HTTPS com login próprio e consulta a conector. Usuários comuns podem alterar a própria senha. O administrador geral cadastra, desativa e reativa contas em **Administração → Usuários e auditoria**.
+O titular do espaço pessoal gerencia seus próprios agentes. Em **Agentes da instituição**, o administrador cadastra os agentes e, em **Agentes do espaço**, marca os disponíveis aos membros. O administrador geral também gerencia esses catálogos pela Administração. O portal oferece consulta à base de conhecimento por trechos, link para portal HTTPS com login próprio e consulta a conector. Usuários comuns podem alterar a própria senha. O administrador geral cadastra, desativa e reativa contas em **Administração → Usuários e auditoria**.
 
 Para conectar uma API de consulta, o operador configura `$HOME/.local/share/hubia/connectors/connectors.json` no servidor. Use um arquivo restrito legível pelo grupo do processo do portal (GID 65534, modo 0640). As duas chaves externas são os UUIDs da instituição ou tenant pessoal e do espaço, visíveis na URL. Exemplo de formato:
 
@@ -111,3 +111,11 @@ No navegador, **Gerenciar agentes → Configurar modelo de IA** permite cadastra
 Durante o deploy, `scripts/test-portal.sh` inicia um PostgreSQL temporário sem portas publicadas para exercitar também os fluxos de administrador, mesmo quando já existe um titular em produção. O provedor de IA nesses testes é uma fixture. Depois de passar no ambiente isolado, o instalador verifica a migração e o login no banco de destino.
 
 Na gestão de cada espaço institucional, os responsáveis podem conceder e revogar acesso e consultar os membros ativos. O titular da instituição ou administrador geral define o papel institucional. O leitor visualiza o catálogo e seu histórico, o membro executa agentes e o administrador institucional gerencia os espaços institucionais a que tem acesso.
+
+### Cadastro de clientes e login com Google
+
+O cadastro por senha usa o SMTP de **Administração → E-mail da plataforma**. O link de ativação vale por 24 horas. Cada conta nova recebe seu espaço pessoal. Na instalação Peso Exato, recebe também acesso de leitor a Clientes Peso Exato, com consultas ao AviHUB da própria conta e às notas da pasta EQUIPMENTS/Manuais do Obsidian.
+
+Para habilitar **Continuar com Google**, crie um cliente OAuth do tipo aplicação Web no Google Cloud e autorize o retorno exato `https://hubia.psxt.io/conta/google/retorno/`. No servidor, configure `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no arquivo persistente de deploy (`~/.local/share/hubia/deploy.env`) e reaplique o deploy. O mesmo botão atende ao primeiro acesso e aos logins seguintes.
+
+Em **Administração → Usuários → Editar**, marque as instituições e os espaços permitidos. Um bloqueio individual de agente prevalece em todos os espaços do usuário. Retirar o bloqueio volta a respeitar a disponibilidade definida pelo espaço.

@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods
 
 from model_provider import cipher
 from portal_identity import bind_account
+from . import mail_access
 from .access import MAIL_MCP, email_title
 from .github import institution
 from .mail_protocol import inbox, IMAP_HOST, SMTP_HOST
@@ -25,6 +26,8 @@ DOMAIN = re.compile(r"(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a
 @require_http_methods(["GET", "POST"])
 def connector(request, tenant):
     with transaction.atomic(), connection.cursor() as cursor:
+        if tenant != mail_access.INSTITUTION:
+            raise Http404
         ctx = institution(cursor, request.user, tenant)
         provider = MailProvider.objects.select_for_update().filter(pk=tenant).first()
         if request.method == "POST":
@@ -54,7 +57,7 @@ def personal(request, tenant):
                           WHERE i.tenant_id=%s AND m.user_id=%s AND m.active AND t.status='ACTIVE'""",
                        [tenant, principal])
         org = cursor.fetchone()
-        if not org:
+        if not org or not mail_access.allowed(cursor, tenant):
             raise Http404
         providers = MailProvider.objects.filter(pk=tenant)
         provider = (providers.select_for_update() if request.method=="POST" else providers).first()

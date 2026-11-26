@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Administração{% endblock %}
 {% block body %}
-<p><a href="/conta/">← Meus espaços</a></p><h1>Administração</h1><p><a href="{% url 'people' %}">Usuários e auditoria</a></p>
+<p><a href="/conta/">← Meus espaços</a></p><h1>Administração</h1><p><a href="{% url 'people' %}">Usuários e auditoria</a> · <a href="{% url 'platform_email' %}">E-mail da plataforma</a></p>
 <dl class="stats admin-metrics">
 {% include "metric.html" with label="Instituições" value=organizations|length symbol="org" tone="sky" %}
 {% include "metric.html" with label="Ativas" value=active_orgs symbol="shield" tone="mint" %}
@@ -16,14 +16,15 @@
 {% for org in organizations %}
 <details><summary>{{ org.name }} · {% if org.status == "ACTIVE" %}Ativa{% else %}Suspensa{% endif %}</summary>
 {% if org.status == "ACTIVE" %}
-<h3>Conectores</h3><p><a href="{% url 'github_connector' org.id %}">GitHub</a> · <a href="{% url 'email_connector' org.id %}">E-mail institucional</a></p>
+<p><a href="{% url 'institution_agents' org.id %}">Agentes da instituição</a></p>
+<h3>Conectores</h3><p><a href="{% url 'github_connector' org.id %}">GitHub</a>{% if org.mail_institution %} · <a href="{% url 'email_connector' org.id %}">E-mail institucional</a>{% endif %}</p>
 <form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}">
 <label>Nome da instituição<input name="name" value="{{ org.name }}" maxlength="120" required></label>
 <button name="action" value="rename_org">Salvar nome</button></form>
 <h3>Espaços</h3>
 {% for space in org.spaces %}
 <details><summary>{{ space.name }}</summary>
-<p><a href="{% url 'manage_agents' org.id space.id %}">Gerenciar agentes e ver membros</a></p>
+<p><a href="{% url 'manage_agents' org.id space.id %}">Agentes do espaço e membros</a></p>
 <p><a href="{% url 'workspace_settings' org.id space.id %}">Alterar ou excluir espaço</a></p>
 <form method="post">{% csrf_token %}<input type="hidden" name="tenant" value="{{ org.id }}"><input type="hidden" name="workspace" value="{{ space.id }}">
 <label>Usuário cadastrado<input name="username" maxlength="150" required></label>

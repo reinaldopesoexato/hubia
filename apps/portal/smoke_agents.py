@@ -17,13 +17,19 @@ def verify_agents(client, ordinary, user, http):
         space = cursor.fetchone()[0]
     location = reverse("workspace",args=[tenant,space])
     manage = reverse("manage_agents",args=[tenant,space])
-    assert location in client.get("/conta/",secure=True).content.decode()
+    assert location in client.get("/conta/espacos/",secure=True).content.decode()
     assert client.get(location,secure=True).status_code==200
     assert ordinary.get(location,secure=True).status_code==404
     assert ordinary.get(manage,secure=True).status_code==404
+    directory = client.get(manage, secure=True).content.decode()
+    assert "?novo=1" in directory and 'id="agent-editor"' not in directory
+    creation = client.get(manage + "?novo=1", secure=True)
+    assert creation.status_code == 200 and b'name="connector_id"' in creation.content
     csrf = client.cookies["__Host-hubia-csrf"].value
     form = {"kind":"knowledge","name":"Procedimentos","configuration":"Atendimento das 8 às 18 horas.","active":"on","csrfmiddlewaretoken":csrf}
     assert client.post(manage,form,**http).status_code==302
+    saved = client.get(manage, secure=True).content.decode()
+    assert 'role="status"' in saved and form["name"] in saved
     assert client.post(manage,form,**http).status_code==400
     assert client.post(manage,{**form,"kind":"external","name":"Link","configuration":"javascript:alert(1)"},**http).status_code==400
     with connection.cursor() as cursor:
@@ -40,6 +46,15 @@ def verify_agents(client, ordinary, user, http):
     page = client.get(url,secure=True).content.decode()
     assert page.count(form["configuration"])==1
     edit = reverse("edit_agent",args=[tenant,space,agent])
+    editor = client.get(edit, secure=True).content.decode()
+    assert form["configuration"] in editor and "Membros com acesso" not in editor
+    assert edit in client.get(url, secure=True).content.decode()
+    assert ordinary.get(edit, secure=True).status_code == 404
+    bad = client.post(edit, {**form, "kind":"external", "external_url":"endereço inválido"}, **http)
+    assert bad.status_code == 400 and "endereço inválido" in bad.content.decode()
+    revised = {**form, "knowledge_text":"Pesagem diária", "external_url":"https://example.org"}
+    assert client.post(edit, revised, **http).status_code == 302
+    assert "Pesagem diária" in client.get(edit, secure=True).content.decode()
     assert client.post(edit,{k:v for k,v in form.items() if k!="active"},**http).status_code==302
     assert client.get(url,secure=True).status_code==404
     assert client.get(manage,secure=True).status_code==200
@@ -63,3 +78,57 @@ def verify_agents(client, ordinary, user, http):
     assert "Conector indisponível" in client.get(chat,secure=True).content.decode()
     print("Chave protegida, configuração de IA, isolamento da conversa e desconexão verificados com provedor de teste.")
     print("Catálogo, edição, consulta, histórico privado, idempotência, CSRF e isolamento entre usuários verificados.")
+
+
+def select_institution_agent(client, tenant, space, agent, enabled, http):
+    from bs4 import BeautifulSoup
+    url = reverse("manage_agents", args=[tenant,space])
+    page = client.get(url, secure=True)
+    assert page.status_code == 200
+    form = BeautifulSoup(page.content, "html.parser").select_one('button[value="select_agents"]').find_parent("form")
+    previous = {item["value"] for item in form.select('input[name="agents"][checked]')}
+    selected = previous | {str(agent)} if enabled else previous - {str(agent)}
+    return client.post(url, {"csrfmiddlewaretoken":form.select_one('[name="csrfmiddlewaretoken"]')["value"],
+                             "action":"select_agents", "agents":sorted(selected), "previous":sorted(previous)}, **http)
+
+
+def verify_institution_agents(owner, viewer, tenant, first, second, http):
+    from bs4 import BeautifulSoup
+    listing = reverse("institution_agents", args=[tenant])
+    csrf = owner.cookies["__Host-hubia-csrf"].value
+    form = {"kind":"knowledge","knowledge_text":"Base QA","name":"Base institucional QA","description":"Orienta os membros.", "active":"on",
+            "csrfmiddlewaretoken":csrf}
+    assert viewer.get(listing, secure=True).status_code == 404
+    assert owner.post(listing, form, **http).status_code == 302
+    def by_name(name):
+        sql = "SELECT id FROM hub_tenancy.agents WHERE tenant_id=%s AND workspace_id IS NULL AND name=%s"
+        with connection.cursor() as cursor:
+            cursor.execute(sql,[tenant,name])
+            return cursor.fetchone()[0]
+    agent = by_name(form["name"])
+    edit = reverse("institution_agent_edit",args=[tenant,agent])
+    use = reverse("use_agent",args=[tenant,first,agent])
+    assert viewer.get(use,secure=True).status_code == 404
+    assert select_institution_agent(owner,tenant,first,agent,True,http).status_code == 302
+    assert viewer.get(use,secure=True).status_code == 200
+    assert viewer.get(reverse("use_agent",args=[tenant,second,agent]),secure=True).status_code == 404
+    assert select_institution_agent(owner,tenant,second,agent,True,http).status_code == 302
+    assert owner.post(edit,{**form, "description":"Descrição compartilhada"},**http).status_code == 302
+    assert "Descrição compartilhada" in viewer.get(use,secure=True).content.decode()
+    def panel_counts():
+        public = BeautifulSoup(viewer.get("/conta/espacos/",secure=True).content,"html.parser")
+        return {a["href"]:int(a.select_one(".space-count").get_text().split()[0]) for a in public.select("a.space-row")}
+    counts = panel_counts()
+    key = reverse("workspace",args=[tenant,first])
+    assert select_institution_agent(owner,tenant,first,agent,False,http).status_code == 302
+    assert viewer.get(use,secure=True).status_code == 404 and panel_counts()[key] == counts[key]-1
+    assert select_institution_agent(owner,tenant,first,agent,True,http).status_code == 302
+    assert owner.post(listing,{**form,"name":"Excluir QA"},**http).status_code == 302
+    temporary = by_name("Excluir QA")
+    assert select_institution_agent(owner,tenant,first,temporary,True,http).status_code == 302
+    delete = reverse("institution_agent_edit",args=[tenant,temporary]) + "?excluir=1"
+    assert owner.get(delete,secure=True).status_code == 200
+    assert owner.post(delete,{"action":"delete","csrfmiddlewaretoken":csrf},**http).status_code == 302
+    assert viewer.get(reverse("use_agent",args=[tenant,first,temporary]),secure=True).status_code == 404
+    assert panel_counts()[key] == counts[key]
+    return agent

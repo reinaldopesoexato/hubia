@@ -2,14 +2,32 @@
 {% block title %}Agentes de {{ workspace }}{% endblock %}
 {% block body %}
 <nav><a href="/conta/">Meus espaços</a>{% if is_owner %} · <a href="{% url 'administration' %}">Administração</a>{% endif %}{% if can_open %} · <a href="{% url 'workspace' tenant space %}">Abrir espaço</a>{% endif %}</nav>
-<small>{{ organization }} · {{ workspace }}</small><h1>Gerenciar agentes</h1><p><a href="{% url 'configure_model' tenant space %}">Configurar modelo de IA</a></p>
-<ul class="cards">{% for a in agents %}<li>{% if a.kind == "library" %}<a href="{% url 'github_connector' tenant %}">{{ a.name }}</a> · Institucional{% else %}<a href="{% url 'edit_agent' tenant space a.id %}">{{ a.name }}</a>{% endif %}{% if a.kind == "notifications" %} · <a href="{% url 'notification_config' tenant space a.id %}">Configurar canais e destinos</a>{% endif %} · {% if a.active %}Ativo{% else %}Desativado{% endif %}</li>
-{% empty %}<li>Nenhum agente cadastrado.</li>{% endfor %}</ul>
-<h2>{% if edit %}Editar agente{% else %}Novo agente{% endif %}</h2>
-{% if warning %}<p class="error">{{ warning }}</p>{% endif %}
-{% if connectors %}<p>Conectores deste espaço: {{ connectors|join:", " }}</p>{% endif %}
-<form method="post">{% csrf_token %}{{ form.as_p }}<button>{% if edit %}Salvar alterações{% else %}Cadastrar agente{% endif %}</button>
-{% if edit %}<a href="{% url 'manage_agents' tenant space %}">Cancelar edição</a>{% endif %}</form>
+<header class="agent-heading"><div><small>{{ organization }} · {{ workspace }}</small><h1>Gerenciar agentes</h1></div>
+{% if institutional %}<a href="{% url 'institution_agents' tenant %}">Catálogo da instituição</a>{% else %}<a class="agent-primary" href="?novo=1">Novo agente</a>{% endif %}</header>
+{% if institutional %}<h2>Agentes do espaço</h2>
+{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
+<form method="post">{% csrf_token %}
+{% for a in choices %}{% if a.assigned %}<input type="hidden" name="previous" value="{{ a.id }}">{% endif %}
+<label><input type="checkbox" name="agents" value="{{ a.id }}"{% if a.assigned %} checked{% endif %}> {{ a.name }}{% if not a.active %} · Desativado na instituição{% endif %}</label>
+{% if a.same_name %}<small>{{ a.id }}</small>{% endif %}{% if a.description %}<small>{{ a.description }}</small>{% endif %}
+{% if a.assigned and a.active and a.kind == "notifications" %}<a href="{% url 'notification_config' tenant space a.id %}">Configurar canais e destinos</a>{% endif %}
+{% if a.assigned and can_open and a.active and a.kind == "avihub" %}<a href="{% url 'use_agent' tenant space a.id %}">Gerenciar contas AviHUB</a>{% endif %}
+{% empty %}<p>Nenhum agente cadastrado na instituição.</p>{% endfor %}
+{% if choices %}<p><button name="action" value="select_agents">Salvar seleção</button></p>{% endif %}</form>
+{% else %}
+{% if saved %}<p role="status" class="agent-saved"><strong>{{ saved.name }}</strong> {% if saved.created %}cadastrado{% else %}atualizado{% endif %}. <a href="{% url 'edit_agent' tenant space saved.id %}">Voltar ao editor</a></p>{% endif %}
+{% if agents|length > 1 %}<div id="agent-filter" hidden><label for="agent-search">Buscar agente</label>
+<input type="search" id="agent-search" placeholder="Nome ou tipo" autocomplete="off"></div>{% endif %}
+<ul class="agent-directory">{% for a in agents %}
+<li><div class="agent-summary"><span class="tile">{% include "icon.html" with name="agent" %}</span><div><strong>{{ a.name }}</strong><small>{{ a.kind_label }}</small></div></div>
+<span class="status{% if a.active %} done{% endif %}">{% if a.active %}Ativo{% else %}Desativado{% endif %}</span>
+<div class="agent-links">{% if a.kind == "avihub" %}<a href="{% url 'use_agent' tenant space a.id %}">Gerenciar contas</a>
+{% elif a.kind == "library" %}<a href="{% url 'github_connector' tenant %}">Configurar biblioteca</a>
+{% else %}<a href="{% url 'edit_agent' tenant space a.id %}" aria-label="Editar {{ a.name }}">Editar</a>
+{% if a.kind == "notifications" %}<a href="{% url 'notification_config' tenant space a.id %}">Configurar canais e destinos</a>{% endif %}{% endif %}</div></li>
+{% empty %}<li>Nenhum agente cadastrado neste espaço.</li>{% endfor %}</ul>
+<p class="muted" id="agent-no-matches" role="status" hidden>Nenhum agente corresponde à busca.</p>
+{% endif %}<p><a href="{% url 'configure_model' tenant space %}">Configurar modelo de IA</a></p>
 <h2>Avisos às integrações</h2>
 <form action="{% url 'manage_agents' tenant space %}" method="post">{% csrf_token %}
 <label><input type="checkbox" name="enabled" {% if catalog_alerts_enabled %}checked{% endif %}> Avisar as integrações deste espaço quando um agente ficar disponível</label>
@@ -25,4 +43,26 @@
 <label>Usuário deste espaço<input name="username" required maxlength="150"></label>
 <label>Papel institucional<select name="role"><option value="member">Membro</option><option value="viewer">Leitor</option><option value="institution_admin">Administrador institucional</option></select></label>
 <button name="action" value="role">Salvar papel</button></form></details>{% endif %}
+{% if not institutional and agents|length > 1 %}
+<script>
+(() => {
+  const filter = document.getElementById('agent-search');
+  const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+  const rows = Array.from(document.querySelectorAll('.agent-directory li'), row => {
+    const labels = row.querySelectorAll('.agent-summary strong, .agent-summary small');
+    return {row, search: normalize(Array.from(labels, label => label.textContent).join(' '))};
+  });
+  function filterAgents() {
+    const term = normalize(filter.value.trim());
+    for (const {row, search} of rows) {
+      row.hidden = !search.includes(term);
+    }
+    document.getElementById('agent-no-matches').hidden = rows.some(({row}) => !row.hidden);
+  }
+  document.getElementById('agent-filter').hidden = false;
+  filter.addEventListener('input', filterAgents);
+  filterAgents();
+})();
+</script>
+{% endif %}
 {% endblock %}

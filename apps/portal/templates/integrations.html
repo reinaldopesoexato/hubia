@@ -2,17 +2,17 @@
 <nav><a href="{% url 'workspace' tenant space %}">← {{ workspace }}</a></nav>
 <small>{{ organization }} · {{ workspace }}</small><h1>Minhas integrações</h1>
 <p>As conexões e tarefas desta página pertencem à sua conta neste espaço.</p>
-{% include "mail_mcp_setup.html" %}
+{% if internal_mail %}{% include "mail_mcp_setup.html" %}{% endif %}
 <h2>Conectar meu Dot</h2>
-<p>No ChatGPT, abra <strong>Plugins → Adicionar servidor MCP personalizado</strong>, escolha OAuth e use <code>{{ mcp_url }}</code>. O cadastro automático abre seu espaço pessoal. Para escolher este espaço explicitamente, cadastre um cliente abaixo com a URI de retorno mostrada pelo ChatGPT.</p>
+<p>No ChatGPT, abra <strong>Plugins → Adicionar servidor MCP personalizado</strong>, escolha OAuth e use <code>{{ mcp_url }}</code>. O cadastro automático abre seu espaço pessoal. Para conectar o ChatGPT a esta instituição, cadastre um cliente abaixo com a URI de retorno mostrada pelo ChatGPT.</p>
 <p>Na conversa com o Dot, peça: “Liste os agentes no HUB IA e assine o evento hub.task.created. Quando chegar uma tarefa, leia-a com fetch_task e responda com reply_task se disponível.”</p>
 <h2>Conectar meu Gemini</h2>
-<p>No Gemini, abra <strong>Customize → Connectors → Create custom app</strong> e informe <code>{{ mcp_url }}</code>. Continue com os campos Client ID e Client secret vazios. Entre no HUB, escolha o espaço e revise os acessos antes de autorizar.</p>
+<p>No Gemini, abra <strong>Customize → Connectors → Create custom app</strong> e informe <code>{{ mcp_url }}</code>. Continue com os campos Client ID e Client secret vazios. Entre no HUB e autorize a conexão. Se houver mais de uma conta ou instituição disponível, escolha qual conectar.</p>
 {% if secret %}<div role="status"><h2>Credencial de {{ created_link.name }}</h2>
 {% if created_link.protocol == 'mcp' %}<p>Client ID: <code>{{ created_link.client_id }}</code></p>{% endif %}
 <p>Copie a credencial para o cliente agora. Ela é exibida uma vez.</p><code>{{ secret }}</code></div>{% endif %}
 {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-<details {% if form.errors %}open{% endif %}><summary>Cadastro manual de conexão</summary><form method="post">{% csrf_token %}{{ form.as_p }}<button name="action" value="create">Criar conexão</button></form>
+<details id="cadastro-manual" {% if form.errors %}open{% endif %}><summary>Cadastro manual de conexão</summary><form method="post">{% csrf_token %}{{ form.as_p }}<button name="action" value="create">Criar conexão</button></form>
 <p>Agent Card público do HUB: <code>{{ card_url }}</code></p></details>
 <h2>Conexões deste espaço</h2>
 <p><a href="{% url 'ai_workspaces' %}">Gerenciar espaços das minhas IAs</a></p>

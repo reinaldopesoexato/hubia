@@ -15,23 +15,31 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from model_provider import MODEL_REF, ModelForm, available_connectors, save_model
 from agent_runtime import ConnectorError, https_url, query_connector, search_knowledge
+from bridge import mail_access
 from portal_identity import bind_account
-from bridge import catalog_alerts, library
+from bridge import avihub, catalog_alerts, library
 from bridge.models import CatalogAlerts, LibraryAccess
 
 
 class AgentForm(forms.Form):
+    config_inputs = {"knowledge": "knowledge_text", "external": "external_url", "connector": "connector_id"}
+
     name = forms.CharField(label="Nome", max_length=120)
-    description = forms.CharField(label="Descrição", max_length=500, required=False)
+    description = forms.CharField(label="Descrição", max_length=500, required=False, widget=forms.Textarea(attrs={"rows": 2}))
     kind = forms.ChoiceField(label="Funcionamento", choices=[
-        ("notifications","Notificações por canal"), ("guide","Guia do espaço"), ("knowledge","Consulta à base de conhecimento"),
+        ("notifications","Notificações por canal"), ("knowledge","Consulta à base de conhecimento"),
         ("external","Abrir portal externo"), ("connector","Consulta a uma API conectada")])
-    configuration = forms.CharField(label="Configuração", required=False, max_length=16000,
-        widget=forms.Textarea(attrs={"rows":5}), help_text="Para base de conhecimento, separe os trechos por uma linha em branco. Para portal externo, use a URL HTTPS. Para API, use o identificador de um conector deste espaço.")
+    configuration = forms.CharField(label="Configuração", required=False, max_length=16000)
     active = forms.BooleanField(label="Disponível aos membros", required=False, initial=True)
 
-    def __init__(self, *args, connectors, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data=None, *, connectors, **kwargs):
+        if data is not None:
+            # Existing clients still submit the canonical configuration field.
+            field = self.config_inputs.get(data.get("kind"))
+            if field and field in data:
+                data = data.copy()
+                data["configuration"] = data[field]
+        super().__init__(data, **kwargs)
         self.connectors = connectors
 
     def clean(self):
@@ -46,9 +54,16 @@ class AgentForm(forms.Form):
             self.add_error("configuration", "Inclua ao menos um trecho para pesquisa.")
         elif kind == "connector" and value not in self.connectors:
             self.add_error("configuration", "Escolha um conector configurado para este espaço.")
-        elif kind in ("guide","notifications"):
+        elif kind == "notifications":
             data["configuration"] = ""
         return data
+
+
+def render_editor(request, ctx, form, agent, initial, connectors):
+    for kind, field in form.config_inputs.items():
+        ctx[field] = (form["configuration"].value() or "") if form["kind"].value() == kind else ""
+    ctx.update(form=form, edit=agent, original=initial, connectors=sorted(connectors), model_ref=MODEL_REF)
+    return render(request, "agent_editor.html", ctx, status=400 if form.errors else 200)
 
 
 def space_context(cursor, user, tenant, space, management=False):
@@ -74,15 +89,10 @@ def rows(cursor):
 
 
 def catalog(cursor, tenant, space, include_inactive=False):
-    cursor.execute("""SELECT id,name,description,kind,active FROM hub_tenancy.agents
+    cursor.execute("""SELECT id,name,description,kind,active FROM hub_tenancy.workspace_agents
         WHERE tenant_id=%s AND workspace_id=%s AND (active OR %s) ORDER BY lower(name),id""",
         [tenant,space,include_inactive])
-    agents = rows(cursor)
-    institutional = library.library_agent(tenant)
-    if institutional:
-        agents.append({**institutional, "kind":"library", "description":library.PURPOSE, "active":True})
-        agents.sort(key=lambda agent:agent["name"].casefold())
-    return agents
+    return rows(cursor)
 
 
 @never_cache
@@ -94,6 +104,7 @@ def workspace(request, tenant, space):
         ctx["agents"] = catalog(cursor,tenant,space)
         cursor.execute("SELECT hub_admin.can_manage_space(%s,%s)",[tenant,space])
         ctx["manager"] = cursor.fetchone()[0]
+        ctx["internal_mail"] = mail_access.allowed(cursor, tenant)
         cursor.execute("SELECT EXISTS(SELECT FROM hub_tenancy.institutions WHERE tenant_id=%s)",[tenant])
         ctx["institutional"] = cursor.fetchone()[0]
     return render(request,"workspace.html",ctx)
@@ -118,55 +129,78 @@ def manage_agents(request, tenant, space, agent=None):
                 catalog_alerts.cancel_pending(tenant, space)
             return redirect("manage_agents", tenant, space)
         ctx["catalog_alerts_enabled"] = alerts.exists()
+        if ctx["institutional"]:
+            from institution_agents import choices, save_selection
+            if request.method == "POST":
+                if request.POST.get("action") != "select_agents" or agent:
+                    return HttpResponseBadRequest("Edite o cadastro no catálogo da instituição.")
+                ctx["error"] = save_selection(cursor, tenant, space, request.POST)
+                if not ctx["error"]:
+                    return redirect("manage_agents", tenant, space)
+            if agent:
+                return redirect("institution_agent_edit", tenant, agent)
+            if request.GET.get("novo") == "1":
+                return redirect("institution_agents", tenant)
+            ctx["choices"] = choices(cursor, tenant, space)
         initial = {}
         if agent:
             cursor.execute("""SELECT name,kind,description,configuration,active FROM hub_tenancy.agents
-                WHERE tenant_id=%s AND workspace_id=%s AND id=%s""" +
+                WHERE tenant_id=%s AND workspace_id=%s AND id=%s AND NOT retired""" +
                 (" FOR UPDATE" if request.method=="POST" else ""), [tenant,space,agent])
             existing = rows(cursor)
             if not existing:
                 raise Http404
             initial = existing[0]
-        try:
-            connectors = available_connectors(cursor,tenant,space)
-        except ConnectorError as exc:
-            connectors = {}
-            ctx["warning"] = str(exc)
-        form = AgentForm(request.POST if request.method=="POST" else None,initial=initial,connectors=connectors)
-        if request.method=="POST" and form.is_valid():
-            values = [form.cleaned_data[k] for k in ("name","kind","description","configuration","active")]
+        notice_key = f"agent_saved_{space}"
+        editor = agent or request.method == "POST" or request.GET.get("novo") == "1"
+        if editor and not ctx["institutional"]:
             try:
-                with transaction.atomic():
-                    if agent:
-                        cursor.execute("""UPDATE hub_tenancy.agents SET (name,kind,description,configuration,active)=(%s,%s,%s,%s,%s)
-                            WHERE tenant_id=%s AND workspace_id=%s AND id=%s RETURNING id""",[*values,tenant,space,agent])
-                        if not cursor.fetchone():
-                            raise Http404
-                    else:
-                        cursor.execute("""INSERT INTO hub_tenancy.agents (name,kind,description,configuration,active,tenant_id,workspace_id)
-                            VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id""",[*values,tenant,space])
-                        agent = cursor.fetchone()[0]
-                    if form.cleaned_data["active"] and not initial.get("active"):
-                        catalog_alerts.announce(tenant, agent, values[0], space=space)
-                    elif initial.get("active") and not form.cleaned_data["active"]:
-                        catalog_alerts.cancel_pending(tenant, space, agent)
-                return redirect("manage_agents",tenant,space)
-            except IntegrityError as exc:
-                if exc.__cause__.sqlstate != "23505":
-                    raise
-                form.add_error("name","Já existe um agente com esse nome no espaço.")
-        ctx.update(form=form,edit=agent,agents=catalog(cursor,tenant,space,True),connectors=sorted(connectors))
+                connectors = available_connectors(cursor,tenant,space)
+            except ConnectorError as exc:
+                connectors = {}
+                ctx["warning"] = str(exc)
+            form = AgentForm(request.POST if request.method=="POST" else None,initial=initial,connectors=connectors)
+            if request.method=="POST" and form.is_valid():
+                values = [form.cleaned_data[k] for k in ("name","kind","description","configuration","active")]
+                try:
+                    with transaction.atomic():
+                        if agent:
+                            cursor.execute("""UPDATE hub_tenancy.agents SET (name,kind,description,configuration,active)=(%s,%s,%s,%s,%s)
+                                WHERE tenant_id=%s AND workspace_id=%s AND id=%s RETURNING id""",[*values,tenant,space,agent])
+                            if not cursor.fetchone():
+                                raise Http404
+                        else:
+                            cursor.execute("""INSERT INTO hub_tenancy.agents (name,kind,description,configuration,active,tenant_id,workspace_id)
+                                VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id""",[*values,tenant,space])
+                            agent = cursor.fetchone()[0]
+                        if form.cleaned_data["active"] and not initial.get("active"):
+                            catalog_alerts.announce(tenant, agent, values[0], space=space)
+                        elif initial.get("active") and not form.cleaned_data["active"]:
+                            catalog_alerts.cancel_pending(tenant, space, agent)
+                    request.session[notice_key] = {"id": str(agent), "name": values[0], "created": not initial}
+                    return redirect("manage_agents",tenant,space)
+                except IntegrityError as exc:
+                    if exc.__cause__.sqlstate != "23505":
+                        raise
+                    form.add_error("name","Já existe um agente com esse nome no espaço.")
+            return render_editor(request, ctx, form, agent, initial, connectors)
+        if not ctx["institutional"]:
+            agents = catalog(cursor, tenant, space, True)
+            kinds = dict(AgentForm.base_fields["kind"].choices)
+            for item in agents:
+                item["kind_label"] = kinds.get(item["kind"], "Institucional")
+            ctx.update(agents=agents, saved=request.session.pop(notice_key, None))
         cursor.execute("SELECT * FROM hub_admin.space_people(%s,%s)",[tenant,space])
         ctx["people"] = rows(cursor)
         labels = {"institution_owner":"Responsável","institution_admin":"Administrador institucional",
                   "personal_owner":"Titular","member":"Membro","viewer":"Leitor"}
         for person in ctx["people"]:
             person["label"] = labels.get(person["role"],person["role"])
-    return render(request,"manage_agents.html",ctx,status=400 if form.errors else 200)
+    return render(request,"manage_agents.html",ctx,status=400 if ctx.get("error") else 200)
 
 
 def active_agent(cursor, tenant, space, agent):
-    cursor.execute("""SELECT id,name,description,kind,configuration FROM hub_tenancy.agents
+    cursor.execute("""SELECT id,name,description,kind,configuration FROM hub_tenancy.workspace_agents
         WHERE tenant_id=%s AND workspace_id=%s AND id=%s AND active""",[tenant,space,agent])
     found = rows(cursor)
     if not found:
@@ -177,14 +211,21 @@ def active_agent(cursor, tenant, space, agent):
 @never_cache
 @login_required
 @require_http_methods(["GET","POST"])
+@sensitive_post_parameters("password", "code", "token")
 def use_agent(request, tenant, space, agent):
     remote = None
     history = []
     with transaction.atomic(), connection.cursor() as cursor:
         ctx = space_context(cursor,request.user,tenant,space)
-        institutional = library.library_agent(tenant)
-        if institutional and institutional["id"] == agent:
-            ctx.update(agent=institutional, enabled=LibraryAccess.objects.filter(library_id=agent, space=space).exists())
+        record = active_agent(cursor,tenant,space,agent)
+        if record["kind"] == "avihub":
+            equipment = avihub.AviHubAgent.objects.filter(tenant=tenant, pk=agent).first()
+            if not equipment:
+                raise Http404
+            ctx["agent_name"] = record["name"]
+            return avihub.page(request, ctx, equipment)
+        if record["kind"] == "library":
+            ctx.update(agent=record, enabled=LibraryAccess.objects.filter(library_id=agent, space=space).exists())
             if request.method == "POST":
                 action = request.POST.get("action")
                 if action not in ("buscar_notas", "ler_nota"):
@@ -194,7 +235,6 @@ def use_agent(request, tenant, space, agent):
                 except ValueError as exc:
                     ctx["error"] = str(exc)
             return render(request, "library_agent.html", ctx)
-        record = active_agent(cursor,tenant,space,agent)
         ctx["agent"] = record
         if record["kind"]=="notifications":
             from bridge.notifications import channels, destinations, send
@@ -209,9 +249,9 @@ def use_agent(request, tenant, space, agent):
             ctx["targets"] = choices
             enabled = channels(tenant,space,agent).filter(enabled=True).values_list("channel",flat=True)
             ctx["channels"] = {key: CHANNELS[key][0] for key in enabled}
+        if request.method=="GET":
             cursor.execute("SELECT hub_admin.can_manage_space(%s,%s)",[tenant,space])
             ctx["manager"] = cursor.fetchone()[0]
-        if request.method=="GET":
             cursor.execute("SELECT role FROM hub_tenancy.memberships WHERE tenant_id=%s",[tenant])
             ctx["viewer"] = cursor.fetchone()[0]=="viewer"
             cursor.execute("""SELECT question,answer,status,created_at,
@@ -254,15 +294,7 @@ def use_agent(request, tenant, space, agent):
             except ConnectorError as exc:
                 cursor.execute("UPDATE hub_tenancy.agent_runs SET answer=%s,status='failed' WHERE id=%s",[str(exc),run])
         else:
-            if record["kind"]=="guide":
-                names = ", ".join(row["name"] for row in catalog(cursor,tenant,space))
-                cursor.execute("SELECT role FROM hub_tenancy.memberships WHERE tenant_id=%s",[tenant])
-                role = cursor.fetchone()[0]
-                labels = {"institution_owner":"responsável institucional","institution_admin":"administrador institucional",
-                          "personal_owner":"titular","member":"membro","viewer":"leitor"}
-                answer = f"{ctx['organization']} · {ctx['workspace']}\nSeu papel: {labels.get(role,role)}.\nAgentes disponíveis: {names}."
-            else:
-                answer = search_knowledge(record["configuration"],question)
+            answer = search_knowledge(record["configuration"],question)
             cursor.execute("UPDATE hub_tenancy.agent_runs SET answer=%s,status='done' WHERE id=%s",[answer,run])
     if remote:
         context = {"tenant_id":str(tenant),"workspace_id":str(space),"principal_id":str(ctx["principal"]),"agent_id":str(agent)}
@@ -289,13 +321,17 @@ def configure_model(request, tenant, space):
                        [tenant,space])
         current = rows(cursor)
         form = ModelForm(request.POST if request.method=="POST" else None,initial=current[0] if current else {})
+        cursor.execute("SELECT EXISTS (SELECT FROM hub_tenancy.personal_spaces WHERE tenant_id=%s)", [tenant])
+        personal_space = cursor.fetchone()[0]
+        if not personal_space:
+            form.fields.pop("install_agent")
         if request.method=="POST":
             if request.POST.get("action")=="disconnect":
                 cursor.execute("DELETE FROM hub_tenancy.workspace_models WHERE tenant_id=%s AND workspace_id=%s",[tenant,space])
                 return redirect("configure_model",tenant,space)
             if form.is_valid():
                 if save_model(cursor,tenant,space,form.cleaned_data):
-                    if form.cleaned_data["install_agent"]:
+                    if personal_space and form.cleaned_data["install_agent"]:
                         cursor.execute("""INSERT INTO hub_tenancy.agents(tenant_id,workspace_id,name,kind,description,configuration)
                             VALUES (%s,%s,'Assistente de IA','connector','Converse com o modelo configurado para este espaço.',%s)
                             ON CONFLICT (tenant_id,workspace_id,name) DO NOTHING RETURNING id""",[tenant,space,MODEL_REF])

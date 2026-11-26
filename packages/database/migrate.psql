@@ -47,4 +47,29 @@ SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 8) AS appl
   \ir migrations/008-workspace-trash.sql
   INSERT INTO hub_migrations.applied (version) VALUES (8);
 \endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 9) AS apply_009 \gset
+\if :apply_009
+  \ir migrations/009-institution-agents.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (9);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 10) AS apply_010 \gset
+\if :apply_010
+  \ir migrations/010-user-space-guide.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (10);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 11) AS apply_011 \gset
+\if :apply_011
+  \ir migrations/011-user-access.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (11);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 12) AS apply_012 \gset
+\if :apply_012
+  \ir migrations/012-client-workspace.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (12);
+\endif
+SELECT NOT EXISTS (SELECT FROM hub_migrations.applied WHERE version = 13) AS apply_013 \gset
+\if :apply_013
+  \ir migrations/013-internal-mail.sql
+  INSERT INTO hub_migrations.applied (version) VALUES (13);
+\endif
 COMMIT;

@@ -50,9 +50,15 @@ OAUTH2_PROVIDER = {
     "ACCESS_TOKEN_EXPIRE_SECONDS": 3600,
     "ROTATE_REFRESH_TOKEN": True,
     "REFRESH_TOKEN_REUSE_PROTECTION": True,
-    "SCOPES": {"hub.read": "Consultar catálogo, tarefas e notas do espaço. Ler sua caixa de entrada quando você autorizar a conexão a ler o e-mail.",
+    "SCOPES": {"hub.read": "Consultar catálogo, tarefas e notas do espaço.",
                "hub.mail.send": "Enviar e-mails pela sua caixa e editar a assinatura dos envios por IA quando você autorizar",
                "hub.notify": "Enviar avisos externos nos canais e destinos autorizados do espaço",
                "hub.reply": "Responder às tarefas da conexão", "offline_access": "Renovar a conexão"},
     "DEFAULT_SCOPES": ["hub.read"],
 }
+
+EMAIL_BACKEND = "bridge.platform_email.PlatformBackend"
+PASSWORD_RESET_TIMEOUT = 3600
+
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID","")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET","")

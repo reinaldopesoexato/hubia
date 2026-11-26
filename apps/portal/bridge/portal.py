@@ -16,6 +16,7 @@ from oauth2_provider.models import get_application_model, get_access_token_model
 from agent_runtime import https_url
 from model_provider import cipher
 from space_views import space_context
+from . import mail_access
 from .access import MCP, MAIL_MCP, email_title, context
 from .a2a import CARD, query_peer
 from .models import Link, Ticket, Subscription, Delivery
@@ -31,6 +32,12 @@ class ConnectionForm(forms.Form):
     card = forms.URLField(label="URL do Agent Card remoto",required=False,assume_scheme="https")
     token = forms.CharField(label="Bearer do agente remoto, se exigido",required=False,max_length=2048,widget=forms.PasswordInput)
     writable = forms.BooleanField(label="Permitir que o cliente MCP responda às minhas tarefas",required=False)
+
+    def __init__(self, *args, internal_mail=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        field = self.fields["protocol"]
+        if not internal_mail:
+            field.choices = [(key, label) for key, label in field.choices if key != "mail"]
 
     def clean(self):
         data = super().clean()
@@ -82,16 +89,18 @@ def integrations(request, tenant, space):
     secret = None
     created_link = None
     error = None
-    form = ConnectionForm()
     with transaction.atomic(), connection.cursor() as cursor:
         ctx = space_context(cursor,request.user,tenant,space)
         cursor.execute("SELECT role FROM hub_tenancy.memberships WHERE tenant_id=%s",[tenant])
         viewer = cursor.fetchone()[0]=="viewer"
-        links = Link.objects.filter(tenant=tenant,space=space,user=request.user)
+        internal_mail = mail_access.allowed(cursor, tenant)
+        ctx["internal_mail"] = internal_mail
+        form = ConnectionForm(internal_mail=internal_mail)
+        links = mail_access.visible_links(Link.objects.filter(tenant=tenant, space=space, user=request.user), internal_mail)
         if request.method=="POST":
             action = request.POST.get("action")
             if action=="create":
-                form = ConnectionForm(request.POST)
+                form = ConnectionForm(request.POST, internal_mail=internal_mail)
                 if form.is_valid():
                     if viewer and (form.cleaned_data["writable"] or form.cleaned_data["protocol"]=="peer"):
                         form.add_error(None,"Seu papel permite somente consultas.")
@@ -99,7 +108,7 @@ def integrations(request, tenant, space):
                         created_link,secret=create_connection(request.user,tenant,space,form.cleaned_data)
                         if not secret:
                             return redirect("integrations",tenant,space)
-                        form=ConnectionForm()
+                        form=ConnectionForm(internal_mail=internal_mail)
             else:
                 try:
                     link = links.select_for_update().get(pk=UUID(request.POST.get("link","")))

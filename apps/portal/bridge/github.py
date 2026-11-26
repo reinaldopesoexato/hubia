@@ -15,7 +15,8 @@ from django.views.decorators.http import require_GET, require_http_methods
 from portal_identity import bind_account
 from . import catalog_alerts, github_api
 from .access import ORIGIN
-from .library import parse_folders
+from .agent_catalog import assigned, register_connector
+from .library import PURPOSE, parse_folders
 from .models import GitHubConnection, LibraryAccess, NoteLibrary
 
 
@@ -89,7 +90,7 @@ def connector(request, tenant):
                 if conn.error or not repo or not 1 <= len(name) <= 120:
                     return HttpResponseBadRequest("Selecione um repositório verificado e informe o nome do agente.")
                 created = NoteLibrary.objects.create(connection=conn, name=name, repository_id=repo["id"])
-                catalog_alerts.announce(tenant, created.id, name)
+                register_connector(cursor, tenant, created.id, name, "library", PURPOSE)
                 return redirect("github_connector", tenant)
             elif action == "grant_folders" and library:
                 space = next((key for key in spaces if str(key) == request.POST.get("space")), None)
@@ -102,7 +103,7 @@ def connector(request, tenant):
                 else:
                     if folders:
                         _, first = LibraryAccess.objects.update_or_create(library=library, space=space, defaults={"folders":folders})
-                        if first:
+                        if first and assigned(tenant, space, "library"):
                             catalog_alerts.announce(tenant, library.id, library.name, space=space, library_access=True)
                     else:
                         LibraryAccess.objects.filter(library=library, space=space).delete()

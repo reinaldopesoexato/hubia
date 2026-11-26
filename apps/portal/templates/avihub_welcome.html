@@ -1,0 +1,24 @@
+<details class="panel setup-card" {% if not setup_deferred %}open{% endif %}>
+  <summary>Configurar acesso ao Portal Peso Exato (AviHUB)</summary>
+  {% if avihub_setup.pending_url %}
+  <p>Seu vínculo aguarda o código de verificação do AviHUB. Abra a conta para concluir esta etapa.</p>
+  <a class="setup-primary" href="{{ avihub_setup.pending_url }}">Continuar verificação</a>
+  {% else %}
+  <ol>
+    <li>Informe o e-mail e a senha que você usa no Portal Peso Exato (AviHUB).</li>
+    <li>Selecione <strong>Vincular conta</strong>. Se o AviHUB solicitar um código, confirme-o na próxima tela.</li>
+    <li>Em <a href="#configured-ai">Minhas IAs configuradas</a>, conecte sua IA para consultar as operações da sua conta.</li>
+  </ol>
+  <form class="setup-login" method="post" action="{{ avihub_setup.url }}?origem=painel">
+    {% csrf_token %}
+    <label>E-mail do AviHUB<input name="email" type="email" maxlength="254" required autocomplete="section-avihub username"></label>
+    <label>Senha do AviHUB<input name="password" type="password" required autocomplete="section-avihub current-password"></label>
+    <button class="setup-primary" name="action" value="login">Vincular conta</button>
+  </form>
+  {% endif %}
+  {% if not setup_deferred %}
+  <form method="post" action="{% url 'dashboard' %}" class="setup-defer">{% csrf_token %}
+    <button name="action" value="defer_avihub">Configurar depois</button>
+  </form>
+  {% endif %}
+</details>

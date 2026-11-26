@@ -7,6 +7,7 @@ from django.http import Http404
 from space_views import space_context
 from portal_identity import bind_account
 from .workspaces import effective, visible
+from .models import AccountProfile
 
 
 ORIGIN = "https://hubia.psxt.io"
@@ -55,6 +56,7 @@ def context(link, *, writing=False, multi_space=False):
             if space not in spaces:
                 space = next(iter(spaces))
         ctx = space_context(cursor,link.user,link.tenant,space)
+        ctx["guide_available"] = AccountProfile.may_open_guide(link.user)
         if spaces is not None:
             ctx["spaces"] = spaces
         cursor.execute("SELECT role FROM hub_tenancy.memberships WHERE tenant_id=%s",[link.tenant])

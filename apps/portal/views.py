@@ -2,7 +2,9 @@ from uuid import UUID
 
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
+from django.contrib.auth.views import (LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView,
+                                       PasswordResetView)
+from django.views.generic import TemplateView
 from django.db import DatabaseError, connection, transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
@@ -13,40 +15,69 @@ from django.views.decorators.http import require_http_methods
 from django.utils.text import slugify
 
 
-from bridge import a2a, github, mail_views, mcp, oauth
+from bridge import a2a, avihub, github, mail_views, mcp, oauth, platform_email
+from bridge.access import MCP
 from bridge.workspaces import manage as ai_workspaces
 from bridge.portal import integrations
-from bridge.models import CatalogAlerts, LibraryAccess, Link, NotificationChannel
+from bridge.models import AccountProfile, CatalogAlerts, LibraryAccess, Link, NotificationChannel
 from bridge.catalog_alerts import cancel_pending
-from dashboard import agent_directory, overview
-from account_admin import people
+from dashboard import accessible_tenants, agent_directory, overview, tenant_workspaces
+import registration
+from account_admin import people, edit_person
 from portal_identity import bind_account
 from bridge.notifications import configure as notification_config
 from space_views import configure_model, manage_agents, manage_member, use_agent, workspace
 
 
+def allow_auth_attempt(namespace, identifier, limit):
+    key = salted_hmac(namespace, identifier).hexdigest()
+    with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM login_limits WHERE started_at < now() - interval '5 minutes'")
+        cursor.execute("""
+            INSERT INTO login_limits (source) VALUES (%s)
+            ON CONFLICT (source) DO UPDATE SET attempts = login_limits.attempts + 1
+            WHERE login_limits.attempts < %s RETURNING attempts
+        """, [key, limit])
+        return cursor.fetchone() is not None
+
+
 class PortalLogin(LoginView):
+    authentication_form = registration.EmailLoginForm
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), "google_enabled":registration.google_enabled()}
+
     template_name = "login.html"
     redirect_authenticated_user = True
 
     def post(self, request, *args, **kwargs):
         source = request.META.get("HTTP_X_REAL_IP", request.META["REMOTE_ADDR"])
-        key = salted_hmac("portal-login", source).hexdigest()
-        with connection.cursor() as cursor:
-            cursor.execute("DELETE FROM login_limits WHERE started_at < now() - interval '5 minutes'")
-            cursor.execute("""
-                INSERT INTO login_limits (source) VALUES (%s)
-                ON CONFLICT (source) DO UPDATE SET attempts = login_limits.attempts + 1
-                WHERE login_limits.attempts < 20 RETURNING attempts
-            """, [key])
-            if not cursor.fetchone():
-                return HttpResponse("Muitas tentativas. Aguarde cinco minutos.", status=429,
-                                    headers={"Retry-After": "300"})
+        if not allow_auth_attempt("portal-login", source, 20):
+            return HttpResponse("Muitas tentativas. Aguarde cinco minutos.", status=429,
+                                headers={"Retry-After": "300"})
         return super().post(request, *args, **kwargs)
+
+
+class PortalReset(PasswordResetView):
+    form_class = platform_email.QueuedResetForm
+    template_name = "password_reset.html"
+    success_url = "/conta/recuperar-senha/solicitada/"
+
+    def form_valid(self, form):
+        if not platform_email.PlatformMailSettings.objects.filter(pk=1).exclude(encrypted_password=b"").exists():
+            form.add_error(None, "A recuperação por e-mail está indisponível. Entre em contato com a administração do HUB IA.")
+            return self.form_invalid(form)
+        source = self.request.META.get("HTTP_X_REAL_IP", self.request.META["REMOTE_ADDR"])
+        if not allow_auth_attempt("portal-reset-source", source, 10):
+            return HttpResponse("Muitas tentativas. Aguarde cinco minutos.", status=429, headers={"Retry-After": "300"})
+        if not allow_auth_attempt("portal-reset-email", form.cleaned_data["email"].casefold(), 2):
+            return redirect(self.success_url)
+        return super().form_valid(form)
 
 
 @never_cache
 @login_required
+@require_http_methods(["GET", "HEAD", "POST"])
 def account(request):
     period = 30 if request.GET.get("dias") == "30" else 7
     with transaction.atomic(), connection.cursor() as cursor:
@@ -54,21 +85,46 @@ def account(request):
         if principal is None:
             logout(request)
             return HttpResponse("O acesso desta conta está desativado.", status=403)
-        context = overview(cursor, principal, period)
+        if request.method == "POST":
+            if request.POST.get("action") != "defer_avihub":
+                return HttpResponse("Opção de configuração inválida.", status=400)
+            AccountProfile.objects.update_or_create(user=request.user, defaults={"avihub_setup_deferred": True})
+            return redirect("dashboard")
+        context = overview(cursor, principal, period, request.user.pk)
+        context["mcp_url"] = MCP
+        context["avihub_setup"] = avihub.dashboard_setup(cursor, request.user, context["spaces"])
+        context["setup_deferred"] = AccountProfile.objects.filter(user=request.user, avihub_setup_deferred=True).exists()
+        context["guide_available"] = AccountProfile.may_open_guide(request.user)
     return render(request, "account.html", {**context, "is_owner": is_owner})
 
 
 @never_cache
 @login_required
+@require_http_methods(["GET", "HEAD"])
+def my_spaces(request):
+    with transaction.atomic(), connection.cursor() as cursor:
+        principal, owner = bind_account(cursor, request.user)
+        if not principal:
+            raise Http404
+        spaces = [space for tenant in accessible_tenants(cursor) for space in tenant_workspaces(cursor, tenant)]
+    return render(request, "my_spaces.html", {"spaces": spaces, "is_owner": owner,
+                  "guide_available": AccountProfile.may_open_guide(request.user)})
+
+
+@never_cache
+@login_required
 @require_http_methods(["GET"])
-def active_agents(request):
+def active_agents(request, personal_guide=False):
     with transaction.atomic(), connection.cursor() as cursor:
         principal, is_owner = bind_account(cursor, request.user)
         if principal is None:
             logout(request)
             return HttpResponse("O acesso desta conta está desativado.", status=403)
-        groups = agent_directory(cursor)
-    return render(request, "active_agents.html", {"groups":groups, "is_owner":is_owner})
+        guide_available = AccountProfile.may_open_guide(request.user)
+        if personal_guide and not guide_available:
+            raise Http404
+        groups = agent_directory(cursor, include_empty=personal_guide)
+    return render(request, "active_agents.html", {"groups":groups, "is_owner":is_owner, "guide":personal_guide, "guide_available":guide_available})
 
 
 def apply_admin_form(cursor, form):
@@ -101,6 +157,7 @@ def apply_admin_form(cursor, form):
 @login_required
 @require_http_methods(["GET", "POST"])
 def administration(request):
+    from bridge import mail_access
     error = None
     groups = {}
     with transaction.atomic(), connection.cursor() as cursor:
@@ -124,7 +181,7 @@ def administration(request):
                     raise
         cursor.execute("SELECT * FROM hub_admin.organization_directory()")
         for tenant, name, status, space, space_name in cursor.fetchall():
-            org = groups.setdefault(tenant, {"id": tenant, "name": name, "status": status, "spaces": []})
+            org = groups.setdefault(tenant, {"id": tenant, "name": name, "status": status, "spaces": [], "mail_institution": tenant == mail_access.INSTITUTION})
             if space:
                 org["spaces"].append({"id": space, "name": space_name})
         cursor.execute("SELECT tenant_id, workspace_id, workspace, deleted_at FROM hub_admin.workspace_inventory() WHERE deleted_at IS NOT NULL")
@@ -173,11 +230,11 @@ def workspace_settings(request, tenant, space):
         if not deleted_at:
             cursor.execute("SELECT set_config('hub.tenant_id',%s,true)", [str(tenant)])
             cursor.execute("""SELECT (SELECT count(*) FROM hub_admin.space_people(%s,%s)),
-                (SELECT count(*) FROM hub_tenancy.agents WHERE tenant_id=%s AND workspace_id=%s)""",
+                (SELECT count(*) FROM hub_tenancy.workspace_agents WHERE tenant_id=%s AND workspace_id=%s AND active)""",
                 [tenant,space,tenant,space])
             members, agents = cursor.fetchone()
             ctx["impact"] = [
-                ("Membros ativos", members), ("Agentes próprios", agents),
+                ("Membros ativos", members), ("Agentes disponíveis", agents),
                 ("Conexões", Link.objects.filter(tenant=tenant,space=space).count()),
                 ("Canais de notificação", NotificationChannel.objects.filter(tenant=tenant,space=space).count()),
             ]
@@ -186,8 +243,22 @@ def workspace_settings(request, tenant, space):
     return render(request, "workspace_settings.html", ctx, status=400 if "error" in ctx else 200)
 
 
+from institution_agents import manage as institution_agents
+
+
 space_path = "conta/espacos/<uuid:tenant>/<uuid:space>/"
 urlpatterns = [
+    path("conta/administracao/usuarios/<int:ident>/",edit_person,name="edit_person"),
+    path("conta/administracao/usuarios/<int:ident>/excluir/",edit_person,{"deleting":True},name="delete_person"),
+    path("conta/cadastrar/",registration.signup,name="signup"),
+    path("conta/ativar/<str:token>/",registration.activate,name="activate_registration"),
+    path("conta/google/",registration.google_start,name="google_start"),
+    path("conta/google/retorno/",registration.google_callback,name="google_callback"),
+    path("conta/google/vincular/",registration.google_link,name="google_link"),
+    path("conta/espacos/", my_spaces, name="my_spaces"),
+    path("conta/guia/", active_agents, {"personal_guide":True}, name="personal_guide"),
+    path("conta/administracao/instituicoes/<uuid:tenant>/agentes/", institution_agents, name="institution_agents"),
+    path("conta/administracao/instituicoes/<uuid:tenant>/agentes/<uuid:agent>/", institution_agents, name="institution_agent_edit"),
     path("conta/minhas-ias/espacos/",ai_workspaces,name="ai_workspaces"),
     path(".well-known/agent-card.json",a2a.card),
     path(".well-known/oauth-protected-resource/conta/mcp",oauth.protected_metadata),
@@ -206,6 +277,12 @@ urlpatterns = [
     path("conta/a2a",a2a.endpoint),
     path(space_path+"configuracoes/",workspace_settings,name="workspace_settings"),
     path(space_path+"integracoes/",integrations,name="integrations"),
+    path("conta/administracao/email/", platform_email.configure, name="platform_email"),
+    path("conta/recuperar-senha/", PortalReset.as_view(), name="password_reset"),
+    path("conta/recuperar-senha/solicitada/", TemplateView.as_view(template_name="password_reset_done.html"), name="password_reset_done"),
+    path("conta/recuperar-senha/concluida/", TemplateView.as_view(template_name="password_reset_complete.html"), name="password_reset_complete"),
+    path("conta/recuperar-senha/<uidb64>/<token>/", PasswordResetConfirmView.as_view(
+        template_name="password_reset_confirm.html"), name="password_reset_confirm"),
     path("conta/senha/", PasswordChangeView.as_view(template_name="password.html",success_url="/conta/"), name="password"),
     path("conta/instituicoes/<uuid:tenant>/conectores/email/",mail_views.connector,name="email_connector"),
     path("conta/instituicoes/<uuid:tenant>/meu-email/",mail_views.personal,name="my_email"),
@@ -220,7 +297,7 @@ urlpatterns = [
     path(space_path + "gestao/", manage_agents, name="manage_agents"),
     path(space_path + "gestao/<uuid:agent>/", manage_agents, name="edit_agent"),
     path("conta/administracao/", administration, name="administration"),
-    path("conta/entrar/", PortalLogin.as_view()),
+    path("conta/entrar/", PortalLogin.as_view(),name="login"),
     path("conta/sair/", LogoutView.as_view()),
     path("conta/agentes/", active_agents, name="active_agents"),
     path("conta/", account, name="dashboard"),

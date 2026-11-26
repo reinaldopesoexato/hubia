@@ -32,7 +32,8 @@ with transaction.atomic():
     assert client.post("/conta/entrar/", form, **http).status_code == 302
     page = client.get("/conta/", secure=True)
     assert page.status_code == 200 and user.username in page.content.decode()
-    assert page.content.decode().count("Espaço pessoal") == 1
+    assert b'id="configured-ai"' in page.content and b'<dl class="stats">' not in page.content
+    assert "Espaço pessoal" in client.get("/conta/espacos/", secure=True).content.decode()
     with connection.cursor() as cursor:
         cursor.execute("SELECT count(*) FROM hub_tenancy.memberships WHERE user_id = %s", [other_id])
         assert cursor.fetchone()[0] == 0
@@ -41,8 +42,12 @@ with transaction.atomic():
     ordinary.force_login(other)
     assert ordinary.get(admin_url, secure=True).status_code == 403
     assert ordinary.post(admin_url, {"action": "create_org", "name": "Teste"}, **http).status_code == 403
+    from smoke_registration import verify_registration, verify_user_editor
+    public_user = verify_registration()
     from bridge.smoke import verify_bridge
     verify_bridge(user,other)
+    from bridge.smoke_avihub import verify_avihub_session_storage
+    verify_avihub_session_storage(user)
     verify_agents(client,ordinary,user,http)
     for days in (7, 30):
         dashboard = client.get("/conta/", {"dias": days}, secure=True)
@@ -62,7 +67,7 @@ with transaction.atomic():
     assert "Notificações teste" not in ordinary.get("/conta/agentes/", secure=True).content.decode()
     assert Client(HTTP_HOST="hubia.psxt.io").get("/conta/agentes/", secure=True).status_code == 302
     isolated_dashboard = ordinary.get("/conta/", secure=True).content.decode()
-    assert "Nenhuma consulta no período" in isolated_dashboard
+    assert "<h2>Atividade recente</h2>" not in isolated_dashboard
     assert "Concluída" not in isolated_dashboard
     print("Painel de 7 e 30 dias e isolamento de atividade verificados.")
     if test_activation:
@@ -87,8 +92,12 @@ with transaction.atomic():
         manage("rename_space", tenant=tenant, workspace=workspace, name="Matriz")
         manage("grant_space", tenant=tenant, workspace=workspace, username=user.username)
         assert "Matriz" in client.get("/conta/", secure=True).content.decode()
+        space_url_for_guide = f"/conta/espacos/{tenant}/{workspace}/"
+        guide = client.get("/conta/guia/", secure=True).content.decode()
+        assert space_url_for_guide in guide and "Operações" not in guide and "Titular" in guide
         manage("revoke_space", tenant=tenant, workspace=workspace, username=user.username)
         assert "Matriz" not in client.get("/conta/", secure=True).content.decode()
+        assert space_url_for_guide not in client.get("/conta/guia/", secure=True).content.decode()
         manage("suspend", tenant=tenant)
         manage("create_space", expected=400, tenant=tenant, name="Bloqueado")
         manage("activate", tenant=tenant)
@@ -101,6 +110,8 @@ with transaction.atomic():
         create = {"action":"create","username":login,"password1":password,"password2":password,"csrfmiddlewaretoken":csrf}
         assert client.post(people_url,create,**http).status_code==302
         created = get_user_model().objects.get(username=login)
+        from bridge.smoke_platform_email import verify_platform_email
+        verify_platform_email(client, ordinary, created, http)
         for action,expected in (("disable",False),("enable",True)):
             assert client.post(people_url,{"action":action,"account":created.pk,"csrfmiddlewaretoken":csrf},**http).status_code==302
             created.refresh_from_db()
@@ -115,18 +126,26 @@ with transaction.atomic():
         viewer = Client(HTTP_HOST="hubia.psxt.io")
         viewer.force_login(created)
         assert viewer.get(space_url,secure=True).status_code==200
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id FROM hub_tenancy.agents WHERE tenant_id=%s AND workspace_id=%s AND kind='guide'",[tenant,workspace])
-            guide_url = space_url + "agentes/" + str(cursor.fetchone()[0]) + "/"
+        from smoke_agents import verify_institution_agents
+        shared_agent = verify_institution_agents(client, viewer, tenant, workspace, operations, http)
+        verify_user_editor(client, viewer, public_user, tenant, workspace, shared_agent)
+        agent_url = space_url + "agentes/" + str(shared_agent) + "/"
         from bridge.smoke_github import verify_github
         verify_github(ordinary,viewer,tenant,workspace)
-        from bridge.smoke_mail import verify_mail
-        verify_mail(ordinary,viewer,tenant,workspace,created)
+        from bridge.smoke_avihub import verify_avihub
+        verify_avihub(ordinary, viewer, created, tenant, workspace, other, operations)
+        from bridge.smoke_mail import fixture_mail_access, verify_mail
+        from unittest.mock import patch
+        from uuid import UUID
+        with patch("bridge.mail_access.INSTITUTION", UUID(tenant)):
+            fixture_mail_access(tenant, created.pk, True)
+            fixture_mail_access(tenant, other.pk, True)
+            verify_mail(ordinary,viewer,tenant,workspace,created)
         from bridge.smoke_workspaces import verify_workspace_selection
         verify_workspace_selection(viewer, ordinary, created, tenant, workspace, operations, manage)
         from smoke_spaces import verify_space_lifecycle
         verify_space_lifecycle(client, ordinary, other, tenant, workspace, csrf, http)
-        assert viewer.post(guide_url,{"question":"teste","request_id":str(uuid4())},**http).status_code==403
+        assert viewer.post(agent_url,{"question":"teste","request_id":str(uuid4())},**http).status_code==403
         assert ordinary.post(grant_url,{"action":"revoke","username":login},**http).status_code==302
         assert viewer.get(space_url,secure=True).status_code==404
         print("Concessão, papel de leitor e revogação pelo responsável institucional verificados.")

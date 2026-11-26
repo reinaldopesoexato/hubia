@@ -8,6 +8,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
 from portal_identity import bind_account
+from . import mail_access
 from .models import CatalogObservation, Link, MailProvider, Mailbox, WorkspaceSelection
 
 
@@ -31,7 +32,7 @@ def selection(link):
     try:
         return link.workspaceselection.spaces
     except WorkspaceSelection.DoesNotExist:
-        return [str(link.space)]
+        return None
 
 
 def effective(link, rows):
@@ -78,6 +79,8 @@ def save_permissions(request, cursor, links):
         mail_id = form.get("mailbox" + suffix) if not legacy else None
         mail_edits = []
         if mail_id:
+            if not mail_access.allowed(cursor, link.tenant):
+                raise Http404
             for field, relation in (("read", "links"), ("send", "send_links")):
                 original = form.get("initial-" + field + suffix)
                 if original not in ("0", "1"):
@@ -129,12 +132,13 @@ def manage(request):
         principal, owner = bind_account(cursor, request.user)
         if not principal:
             raise Http404
-        links = Link.objects.filter(user=request.user, protocol="mcp")
+        internal_mail = mail_access.allowed(cursor, mail_access.INSTITUTION)
+        links = mail_access.visible_links(Link.objects.filter(user=request.user, protocol="mcp"), internal_mail)
         if request.method == "POST":
             return save_permissions(request, cursor, links)
         groups = {}
-        boxes = {box.provider_id:box for box in Mailbox.objects.filter(user=request.user, provider__enabled=True)
-                 .prefetch_related("links", "send_links")}
+        internal_box = (Mailbox.objects.filter(user=request.user, provider_id=mail_access.INSTITUTION, provider__enabled=True)
+               .prefetch_related("links", "send_links").first()) if internal_mail else None
         recent = CatalogObservation.objects.filter(link__user=request.user, listed_at__isnull=False).order_by(
             "link_id", "-listed_at").distinct("link_id").values_list("link_id", "listed_at", "token__scope")
         observations = {key:(stamp, "hub.mail.send" in scope.split()) for key, stamp, scope in recent}
@@ -148,7 +152,7 @@ def manage(request):
                 continue
             ids = effective(link, rows)
             all_spaces = selection(link) is None
-            box = boxes.get(link.tenant)
+            box = internal_box if link.tenant == mail_access.INSTITUTION else None
             if box and link.tenant not in send_access:
                 send_access[link.tenant] = mail_write_access(cursor, link.tenant)
             entries.append({"link":link, "observed":observations.get(link.pk), "box":box, "can_enable_send":send_access.get(link.tenant),
@@ -158,4 +162,4 @@ def manage(request):
                             "count":len(ids), "initial":state_key(None if all_spaces else map(str, ids)),
                             "choices":[(space,name,space in ids) for space,name,_ in rows]})
         entries.sort(key=lambda item: (item["organization"].casefold(), item["tenant"], item["link"].name.casefold()))
-    return render(request, "ai_workspaces.html", {"entries":entries, "saved":request.GET.get("salvo")=="1", "is_owner":owner})
+    return render(request, "ai_workspaces.html", {"entries":entries, "internal_mail":internal_mail, "saved":request.GET.get("salvo")=="1", "is_owner":owner})

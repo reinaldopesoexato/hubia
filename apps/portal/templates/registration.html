@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block title %}Acesso à conta · HUB IA{% endblock %}
+{% block layout %}form-page auth-panel{% endblock %}
+{% block body %}
+{% if mode == 'signup' %}<h1>Crie sua conta</h1><p>Crie sua conta para acessar seu espaço pessoal e os recursos disponíveis para clientes.</p>
+{% if google_enabled %}{% include "google_sign_in.html" %}<p class="auth-separator">ou cadastre-se por e-mail</p>{% endif %}
+<form method="post">{% csrf_token %}{{ form.as_p }}<p><small>Use uma senha de pelo menos 12 caracteres.</small></p><button>Enviar link de ativação</button></form>
+{% elif mode == 'sent' %}<h1>Confira seu e-mail</h1><p>Para endereços disponíveis, enviamos um link válido por 24 horas. Se já tem conta, entre com seu método habitual.</p>
+{% elif mode == 'activate' %}<h1>Ative sua conta</h1><p>Confirme a senha que escolheu para ativar e entrar no seu espaço pessoal.</p>
+{% elif mode == 'link' %}<h1>Vincule sua conta Google</h1><p>Já existe um cadastro com esse e-mail. Confirme a senha do HUB IA para usar o Google nos próximos acessos.</p>
+{% elif mode == 'expired' %}<h1>Link indisponível</h1><p>O link expirou ou já foi usado. <a href="{% url 'signup' %}">Solicite um novo cadastro</a> ou entre na sua conta.</p>
+{% else %}<h1>Entrar com Google</h1>{% endif %}
+{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
+{% if mode == 'activate' or mode == 'link' %}<form method="post" {% if mode == 'link' %}action="{% url 'google_link' %}"{% endif %}>{% csrf_token %}<label for="pass">Senha do HUB IA</label><input id="pass" name="password" type="password" autocomplete="current-password" required><button>{% if mode == 'activate' %}Ativar e entrar{% else %}Vincular e entrar{% endif %}</button></form>{% endif %}
+<p><a href="{% url 'login' %}">Voltar ao login</a></p>
+{% endblock %}

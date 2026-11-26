@@ -1,6 +1,7 @@
 """Avisos do catálogo na transação que torna o agente disponível."""
 from uuid import uuid4
 
+from django.db.models import BooleanField, F, Func, Value, UUIDField
 from django.urls import reverse
 from django.utils import timezone
 from .models import CatalogAlerts, Delivery, Link, Subscription, Ticket
@@ -13,6 +14,8 @@ def announce(tenant, agent, name, *, space=None, library_access=False):
     if space is not None:
         enabled = enabled.filter(space=space)
     links = Link.objects.filter(tenant=tenant, space__in=enabled.values("space"), email_only=False, user__is_active=True)
+    links = links.filter(Func(F("user_id"), Value(agent,output_field=UUIDField()),
+                             function="hub_admin.may_receive_agent_notice",output_field=BooleanField()))
     now = timezone.now()
     event = str(uuid4())
     for link in links:

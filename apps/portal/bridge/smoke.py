@@ -113,7 +113,10 @@ def verify_bridge(user,other):
              "role":"ROLE_USER","parts":[{"text":"listar agentes"}]}}}
     assert post("/conta/a2a",message,**key).status_code==401
     answer=post("/conta/a2a",message,HTTP_AUTHORIZATION="Bearer "+token2).json()
-    assert "Guia do espaço" in answer["result"]["message"]["parts"][0]["text"]
+    assert "QA Catálogo" in answer["result"]["message"]["parts"][0]["text"]
+    message["params"]["message"]["parts"] = [{"text":"consultar guia"}]
+    guide = post("/conta/a2a", message, HTTP_AUTHORIZATION="Bearer "+token2).json()
+    assert "Titular" in guide["result"]["message"]["parts"][0]["text"]
     assert client.post(url,{"link":link.pk,"action":"revoke"},secure=True).status_code==302
     assert post("/conta/mcp",fresh,**key).status_code==401
     print("OAuth PKCE, MCP, evento assinado, fila, resposta, A2A, isolamento e revogação verificados.")
@@ -146,7 +149,7 @@ def verify_discovery(client, remote, link, key, rpc, post):
         assert listed()["_meta"] != initial["_meta"]
     assert listed() == initial
     manage = reverse("manage_agents", args=[link.tenant, link.space])
-    form = {"kind":"guide", "name":"Descoberta MCP QA", "active":"on"}
+    form = {"kind":"knowledge", "knowledge_text":"Conteúdo QA", "name":"Descoberta MCP QA", "active":"on"}
     assert client.post(manage, form, secure=True).status_code == 302
     assert b"notifications/tools/list_changed" in get_stream()
     assert b"keep-alive" in get_stream()  # Another stream does not duplicate the outstanding signal.
@@ -177,7 +180,7 @@ def verify_catalog_alerts(client, link, rpc, params, receiver):
     assert client.post(manage, setting, secure=True).status_code == 302
     peer, _ = create_connection(link.user,link.tenant,link.space,{"protocol":"peer","name":"QA Peer",
         "writable":False,"card":"https://example.org/card","token":""})
-    form = {"kind":"guide", "name":"QA Catálogo", "active":"on"}
+    form = {"kind":"knowledge", "knowledge_text":"Conteúdo QA", "name":"QA Catálogo", "active":"on"}
     assert client.post(manage, form, secure=True).status_code == 302
     notice = Ticket.objects.get(link=link,notice_agent__isnull=False)
     edit = reverse("edit_agent",args=[link.tenant,link.space,notice.notice_agent])

@@ -9,5 +9,5 @@
 <label>Domínio dos endereços de e-mail<input name="domain" value="{{ provider.domain }}" maxlength="253" required placeholder="empresa.com.br"></label>
 <label><input type="checkbox" name="enabled" {% if provider.enabled %}checked{% endif %}> Permitir que membros conectem suas caixas</label>
 <button>Salvar configuração</button></form>
-{% if provider.enabled %}<p>Cada membro pode abrir <strong>Meu e-mail</strong> em um espaço da instituição para conectar sua caixa e escolher quais IAs poderão ler ou enviar e-mails.</p>{% endif %}
+{% if provider.enabled %}<p>Membros da equipe interna podem abrir <strong>Meu e-mail</strong> em um espaço da instituição para conectar sua caixa e escolher quais IAs poderão ler ou enviar e-mails.</p>{% endif %}
 {% endblock %}

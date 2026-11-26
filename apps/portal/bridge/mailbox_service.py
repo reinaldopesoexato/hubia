@@ -8,13 +8,16 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
 from django.http import Http404
+from django.utils import timezone
 from model_provider import cipher
-from . import mail_protocol
+from . import mail_access, mail_protocol
 from .models import Mailbox, OutboundEmail
 from .signature import signature_parts
 
 
 def authorized(link):
+    if not mail_access.for_link(link):
+        return Mailbox.objects.none()
     return Mailbox.objects.filter(provider_id=link.tenant, provider__enabled=True,
                                   user_id=link.user_id, links=link.pk)
 
@@ -37,6 +40,8 @@ def query(link, action, args):
     box = authorized(link).first()
     if box is None:
         raise ValueError("Acesso à caixa revogado.")
+    if action == "buscar_emails":
+        field, term = mail_protocol.search_filter(args)
     try:
         password = cipher().decrypt(bytes(box.password_cipher)).decode()
     except InvalidToken:
@@ -46,14 +51,26 @@ def query(link, action, args):
         if action == "ler_email":
             return mail_protocol.read(client, resolve(box, validity, "mensagem", args["mensagem_id"]))
         latest = mail_protocol.number(client, "UIDNEXT") - 1
-        after = resolve(box, validity, "cursor", args["marcador"]) if "marcador" in args else None
-        messages, end = mail_protocol.page(client, count, latest, after)
+        if action == "buscar_emails":
+            key = hashlib.sha256(json.dumps([field, term]).encode()).hexdigest()
+            purpose = "busca." + key
+            upper = resolve(box, validity, purpose, args["marcador"]) if "marcador" in args else latest
+            messages, next_upper = mail_protocol.search_page(client, count, upper, field, term)
+            more = next_upper is not None
+            marker = reference(box, validity, purpose, next_upper) if more else None
+        else:
+            after = resolve(box, validity, "cursor", args["marcador"]) if "marcador" in args else None
+            messages, end = mail_protocol.page(client, count, latest, after)
+            marker = reference(box, validity, "cursor", end)
+            more = end < latest
         return {"mensagens":[{**item, "mensagem_id":reference(box, validity, "mensagem", uid)}
                              for uid, item in messages],
-                "marcador":reference(box, validity, "cursor", end), "ha_mais":end < latest}
+                "marcador":marker, "ha_mais":more}
 
 
 def sendable(link):
+    if not mail_access.for_link(link):
+        return Mailbox.objects.none()
     return Mailbox.objects.filter(provider_id=link.tenant, provider__enabled=True,
                                   user_id=link.user_id, send_links=link.pk)
 
@@ -89,7 +106,8 @@ def send(link, args):
         raise ValueError("Confira o endereço, o assunto (até 200 caracteres) e a mensagem (até 8.000).")
     digest = hashlib.sha256(json.dumps([str(box.pk), recipient, subject, body]).encode()).hexdigest()
     run, created = OutboundEmail.objects.get_or_create(link=link, request_id=request_id,
-                                                       defaults={"fingerprint":digest})
+                                                       defaults={"fingerprint":digest, "created_at":timezone.now(),
+                                                                 "recipient":recipient})
     if run.fingerprint != digest:
         raise ValueError("Este request_id já foi usado para outro e-mail.")
     receipt = {"request_id":str(request_id), "estado":run.state}

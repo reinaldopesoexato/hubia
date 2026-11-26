@@ -1,9 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Entrar{% endblock %}
+{% block title %}Entrar no HUB IA{% endblock %}
+{% block layout %}form-page auth-panel{% endblock %}
 {% block body %}
-<h1>Entrar no portal</h1><p>Use seu usuário cadastrado no HUB IA.</p>
-{% if form.errors %}<p class="error" role="alert">Usuário ou senha inválidos.</p>{% endif %}
-<form action="/conta/entrar/" method="post">{% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-<label for="username">Usuário</label><input id="username" name="username" value="{{ form.username.value|default:'' }}" maxlength="150" autocomplete="username" required autofocus>
+<h1>Entrar no HUB IA</h1><p>Acesse seu espaço pessoal e as instituições vinculadas à sua conta.</p>
+{% include "google_sign_in.html" %}
+{% if not google_enabled %}<small>O acesso com Google aguarda configuração pela plataforma.</small>{% endif %}
+<p class="auth-separator">ou use sua senha</p>
+{% if form.errors %}<p class="error" role="alert">Usuário, e-mail ou senha inválidos.</p>{% endif %}
+<form action="{% url 'login' %}" method="post">{% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+<label for="username">Usuário ou e-mail</label><input id="username" name="username" value="{{ form.username.value|default:'' }}" maxlength="254" autocomplete="username" required>
 <label for="password">Senha</label><input id="password" name="password" type="password" autocomplete="current-password" required>
-<button type="submit">Entrar</button></form>{% endblock %}
+<p><a href="{% url 'password_reset' %}">Esqueci minha senha</a></p><button class="auth-entry" type="submit">Entrar</button></form>
+<p>Primeiro acesso? <a href="{% url 'signup' %}">Criar uma conta</a></p>{% endblock %}

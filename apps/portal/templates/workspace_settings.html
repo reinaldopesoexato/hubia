@@ -11,6 +11,7 @@
 <form method="post">{% csrf_token %}
 <label>Nome do espaço<input name="name" value="{{ workspace }}" required maxlength="120"></label>
 <button name="action" value="rename_space">Salvar nome</button></form>
+<p><a href="{% url 'manage_agents' tenant space %}">Selecionar agentes do espaço</a></p>
 <h2>Configuração atual</h2><ul>{% for label,count in impact %}<li>{{ label }} · {{ count }}</li>{% endfor %}
 <li>Avisos de catálogo · {% if catalog_alerts %}ativos{% else %}desativados{% endif %}</li>
 <li>Biblioteca · {% for folder in folders %}{% if folder == "/" %}Todas as pastas{% else %}{{ folder }}{% endif %}{% if not forloop.last %}, {% endif %}{% empty %}sem pastas liberadas{% endfor %}</li></ul>

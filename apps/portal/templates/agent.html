@@ -2,7 +2,7 @@
 {% block title %}{{ agent.name }}{% endblock %}
 {% block body %}
 <nav><a href="{% url 'workspace' tenant space %}">← {{ workspace }}</a></nav>
-<small>{{ organization }} · {{ workspace }}</small><h1>{{ agent.name }}</h1><p>{{ agent.description }}</p>
+<small>{{ organization }} · {{ workspace }}</small><h1>{{ agent.name }}</h1>{% if manager %}<a href="{% url 'edit_agent' tenant space agent.id %}">Editar agente</a>{% endif %}<p>{{ agent.description }}</p>
 {% if agent.kind == 'notifications' %}
 {% if manager %}<p><a href="{% url 'notification_config' tenant space agent.id %}">Configurar canais e destinos</a></p>{% endif %}
 {% if viewer %}<p>Seu papel de leitor permite consultar o histórico.</p>
@@ -16,10 +16,9 @@
 {% elif viewer %}<p>Seu papel de leitor permite consultar o catálogo e o histórico de suas execuções.</p>
 {% else %}
 <form method="post">{% csrf_token %}<input type="hidden" name="request_id" value="{{ request_id }}">
-{% if agent.kind == 'guide' %}<input type="hidden" name="question" value="Quais são meus agentes e meu papel neste espaço?"><button>Consultar meu acesso</button>
-{% else %}<label for="question">Sua consulta</label><textarea id="question" name="question" maxlength="2000" rows="3" required></textarea>
+<label for="question">Sua consulta</label><textarea id="question" name="question" maxlength="2000" rows="3" required></textarea>
 {% if agent.kind == 'connector' %}<p><small>A consulta será enviada ao serviço configurado. Para um modelo de IA, também serão enviadas até quatro consultas anteriores suas com as respectivas respostas neste agente.</small></p>{% endif %}
-<button>Executar consulta</button>{% endif %}</form>{% endif %}
+<button>Executar consulta</button></form>{% endif %}
 <h2>{% if agent.kind == "notifications" %}Meus avisos recentes{% else %}Minhas consultas recentes{% endif %}</h2>
 {% for r in history %}<article><small>{{ r.created_at|date:"d/m/Y H:i" }}</small><h3>{{ r.question }}</h3>
 {% if r.interrupted %}<p>Execução interrompida ou sem confirmação de resposta.</p>{% elif r.status == 'running' %}<p>Em execução. Atualize para ver o resultado.</p>

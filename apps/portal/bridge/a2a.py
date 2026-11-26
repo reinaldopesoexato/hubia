@@ -10,10 +10,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
 from agent_runtime import search_knowledge, terms
+from dashboard import space_guide
 from space_views import catalog
+from .agent_catalog import visible_tasks
 from .access import ICON_URL, ORIGIN, context
 from .mcp import fail, success
-from .models import Link, Ticket
+from .models import ConnectionUsage, Link, Ticket
 from .network import RemoteError, public_json
 from .oauth import bearer
 
@@ -28,8 +30,8 @@ def card(request):
         "capabilities":{},"defaultInputModes":["text/plain"],"defaultOutputModes":["text/plain"],
         "securitySchemes":{"hubBearer":{"httpAuthSecurityScheme":{"scheme":"Bearer"}}},
         "securityRequirements":[{"schemes":{"hubBearer":{"list":[]}}}],
-        "skills":[{"id":"space_lookup","name":"Consultar espaço","description":"Envie «listar agentes» para listar o catálogo ou envie termos da base de conhecimento.",
-                   "tags":["catalog","knowledge"],"examples":["listar agentes"]}]})
+        "skills":[{"id":"space_lookup","name":"Consultar espaço","description":"Envie «consultar guia» para ver seu acesso neste espaço, «listar agentes» para ver o catálogo ou envie termos da base de conhecimento.",
+                   "tags":["catalog","knowledge"],"examples":["consultar guia","listar agentes"]}]})
 
 
 @csrf_exempt
@@ -78,21 +80,31 @@ def endpoint(request):
         with connection.cursor() as cursor:
             if question.casefold() in ("listar agentes","list agents","catalog"):
                 answer = "\n".join(a["name"] for a in catalog(cursor,link.tenant,link.space)) or "Catálogo vazio."
+            elif question.casefold() == "consultar guia":
+                if not ctx["guide_available"]:
+                    return HttpResponse(status=403)
+                groups = space_guide(cursor, link.tenant, [link.space])
+                if not groups:
+                    return HttpResponse(status=403)
+                group = groups[0]
+                names = ", ".join(a["name"] for a in group["agents"]) or "Nenhum"
+                answer = f"{group['organization']} · {group['workspace']}\nSeu papel: {group['role']}.\nAgentes disponíveis: {names}."
             elif question.casefold() in ("listar avisos", "list notices"):
-                notices = Ticket.objects.filter(link=link, notice_agent__isnull=False, state="pending").order_by("created")[:25]
+                notices = visible_tasks(link).filter(notice_agent__isnull=False,state="pending").order_by("created")[:25]
                 batch = list(notices.select_for_update())
                 answer = "\n\n".join(t.question for t in batch) or "Nenhum aviso pendente."
                 Ticket.objects.filter(pk__in=[t.pk for t in batch]).update(state="read")
             elif ctx["viewer"]:
                 return HttpResponse(status=403)
             else:
-                cursor.execute("""SELECT name,configuration FROM hub_tenancy.agents WHERE tenant_id=%s
+                cursor.execute("""SELECT name,configuration FROM hub_tenancy.workspace_agents WHERE tenant_id=%s
                     AND workspace_id=%s AND active AND kind='knowledge' ORDER BY name""",[link.tenant,link.space])
                 hits = [name+"\n"+search_knowledge(body,question) for name,body in cursor.fetchall() if terms(question)&terms(body)]
                 answer = "\n\n".join(hits)[:16000] or "Nenhum trecho correspondente nas bases deste espaço."
         reply = {"role":"ROLE_AGENT","messageId":str(uuid4()),"parts":[{"text":answer}]}
         if isinstance(message.get("contextId"),str):
             reply["contextId"] = message["contextId"]
+        ConnectionUsage.record(link)
         return success(ident,{"message":reply})
 
 

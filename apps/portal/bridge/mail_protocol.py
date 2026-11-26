@@ -16,6 +16,7 @@ IMAP_HOST = "imap.emailemnuvem.com.br"
 SMTP_HOST = "smtp.emailemnuvem.com.br"
 PAGE = 10
 MAX_BYTES = 256 * 1024
+SEARCH_FIELDS = {"remetente":"FROM", "assunto":"SUBJECT", "texto":"TEXT"}
 
 
 @contextmanager
@@ -70,6 +71,10 @@ def page(client, count, latest, after):
             end = uids[-1]
     else:
         return [], latest
+    return headers(client, uids), end
+
+
+def headers(client, uids):
     messages = []
     for uid in uids:
         raw = literal(client.uid("fetch", str(uid), "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)]<0.8192>)"))
@@ -77,7 +82,35 @@ def page(client, count, latest, after):
             header = BytesParser(policy=policy.default).parsebytes(raw, headersonly=True)
             messages.append((uid, {key:str(header.get(field, "")) for key, field in
                              (("de","From"), ("assunto","Subject"), ("data","Date"))}))
-    return messages, end
+    return messages
+
+
+def search_filter(args):
+    field = args.get("campo", "texto")
+    term = args["termo"].strip()
+    if field not in SEARCH_FIELDS:
+        raise ValueError("Escolha remetente, assunto ou texto.")
+    if not term or len(term) > 200 or not term.isprintable():
+        raise ValueError("Informe um termo de busca com 1 a 200 caracteres, em uma linha.")
+    return field, term
+
+
+def search_page(client, count, upper, field, term):
+    if not count or upper < 1:
+        return [], None
+    # Keep the SEARCH response within imaplib's line limit even in large mailboxes.
+    # For smaller inboxes, search the full history even when its UIDs are sparse.
+    lower = max(1, upper - 49999) if count > 50000 else 1
+    charset = () if term.isascii() else ("CHARSET", "UTF-8")
+    # imaplib transmits this last argument as a length-prefixed IMAP literal.
+    client.literal = term.encode("utf-8")
+    status, rows = client.uid("search", *charset, "UID", f"{lower}:{upper}", SEARCH_FIELDS[field])
+    if status != "OK":
+        raise ValueError("O servidor recusou a pesquisa na caixa de entrada.")
+    uids = sorted((int(uid) for uid in (rows[0] or b"").split()), reverse=True)
+    page_uids = uids[:PAGE]
+    next_upper = page_uids[-1] - 1 if len(uids) > PAGE else lower - 1
+    return headers(client, page_uids), next_upper or None
 
 
 class HTMLText(HTMLParser):

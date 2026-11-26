@@ -1,106 +1,24 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#102f35">
-<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64">
-<link rel="icon" type="image/png" sizes="64x64" href="/hub-ia-64.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/hub-ia.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<title>HUB IA · Portal institucional</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10372e"><meta name="description" content="Conheça os agentes de inteligência artificial da Peso Exato e acesse seu espaço de trabalho.">
+<link rel="icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Agentes de inteligência artificial · Peso Exato</title>
 <style>
-* { box-sizing: border-box }
-:root { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #18383d; background: #f1f5f2; }
-body { margin: 0; min-height: 100vh }
-header { background: #fff; border-bottom: 1px solid #cedbd5 }
-.wrap { width: min(1020px, 90%); margin-inline: auto }
-.bar { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 20px }
-.brand { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 750; letter-spacing: -.05em }
-.brand-logo { display: block; object-fit: contain }
-.domain, .eyebrow { font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .06em }
-.domain { color: #4c6566 }
-main { padding-block: clamp(28px, 5vw, 72px) }
-.hero { position: relative; overflow: hidden; isolation: isolate; padding: clamp(30px, 5vw, 64px); border-radius: 20px; background: #12363a; color: white }
-.hero::after { content: ""; position: absolute; z-index: -1; width: 50%; height: 160%; inset: -30% -5% auto auto; opacity: .48; transform: rotate(-17deg); background: repeating-radial-gradient(ellipse at 110% 30%, transparent 0 14px, #479284 15px, transparent 16px 23px); mask-image: linear-gradient(to right, transparent, black 58%) }
-.eyebrow { color: #a5dfc7; margin: 0; text-transform: uppercase }
-h1 { font-size: clamp(40px, 6vw, 72px); font-weight: 590; letter-spacing: -.065em; line-height: 1.03; margin: 18px 0 }
-.intro { color: #d8e8e4; font-size: 17px; line-height: 1.5; margin: 0; max-width: 36ch }
-.cards { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; margin-top: 18px }
-section.card { border: 1px solid #d0ded7; border-radius: 16px; background: white; padding: clamp(22px, 3vw, 34px) }
-h2 { font-size: 21px; letter-spacing: -.035em; margin: 0 0 16px }
-p { line-height: 1.55 }
-.status { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 600; margin: 0 }
-.dot { width: 10px; height: 10px; border-radius: 50%; background: #82918b }
-[data-state="ok"] .dot { background: #137551; box-shadow: 0 0 0 4px #e2f4e9 }
-[data-state="error"] .dot { background: #a74430 }
-.note { color: #52686a; font-size: 15px; margin: 10px 0 18px }
-button { font: inherit; font-weight: 600; padding: 10px 16px; border: 1px solid #93aaa1; border-radius: 8px; background: white; color: #214e48; cursor: pointer }
-button:hover { background: #edf5ef }
-button:focus-visible, a:focus-visible { outline: 3px solid #267a72; outline-offset: 3px }
-button:disabled { opacity: .6; cursor: wait }
-.login { display:inline-block; padding:11px 17px; background:#155c52; color:white; border-radius:8px; font-weight:600; text-decoration:none }
-a { color: #226357 }
-@media(max-width:680px) { .cards { grid-template-columns: 1fr } .bar { min-height: 60px } }
-</style>
-</head>
-<body>
-<header><div class="wrap bar">
-  <div class="brand"><img class="brand-logo" src="/hub-ia.png" width="76" height="76" alt="HUB IA"></div>
-  <span class="domain">hubia.psxt.io</span>
-</div></header>
-<main class="wrap">
-  <div class="hero">
-    <p class="eyebrow">HUB IA</p>
-    <h1>Portal institucional</h1>
-    <p class="intro">Espaço de acesso à plataforma de agentes de inteligência artificial.</p>
-  </div>
-  <div class="cards">
-    <section class="card">
-      <h2>Conexão com o portal</h2>
-      <div aria-live="polite" role="status">
-        <p id="status" class="status"><span class="dot" aria-hidden="true"></span><span id="label">Aguardando verificação</span></p>
-        <p id="detail" class="note">Consulte a disponibilidade do servidor HTTPS.</p>
-      </div>
-      <button id="refresh" type="button" hidden>Verificar agora</button>
-      <noscript><a href="/health/edge">Consultar conexão</a></noscript>
-    </section>
-    <section class="card">
-      <h2>Acesso à instituição</h2>
-      <p class="note">Entre com seu usuário e sua senha para consultar seus espaços de trabalho.</p>
-      <a class="login" href="/conta/entrar/">Entrar no portal</a>
-    </section>
-  </div>
-</main>
-<script>
-const refresh = document.getElementById('refresh');
-const statusLine = document.getElementById('status');
-const label = document.getElementById('label');
-const detail = document.getElementById('detail');
-async function checkConnection() {
-  refresh.disabled = true;
-  statusLine.dataset.state = 'checking';
-  label.textContent = 'Verificando conexão…';
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 7000);
-  try {
-    const response = await fetch('/health/edge', {cache:'no-store', signal:controller.signal});
-    if (!response.ok || (await response.text()).trim() !== 'ok') throw new Error('Resposta inválida');
-    statusLine.dataset.state = 'ok';
-    label.textContent = 'Conexão disponível';
-    detail.textContent = 'Verificada às ' + new Date().toLocaleTimeString('pt-BR') + ' neste dispositivo.';
-  } catch {
-    statusLine.dataset.state = 'error';
-    label.textContent = 'Conexão indisponível';
-    detail.textContent = 'Confira sua conexão e tente novamente.';
-  } finally {
-    clearTimeout(timeout);
-    refresh.disabled = false;
-  }
-}
-refresh.hidden = false;
-refresh.addEventListener('click', checkConnection);
-checkConnection();
-</script>
-</body>
-</html>
+*{box-sizing:border-box}body{margin:0;color:#153a30;background:#f3f5ed;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit}.wrap{width:min(1180px,92%);margin:auto}
+header,.bar,.actions,.brand{display:flex;align-items:center}.bar{height:84px;justify-content:space-between}.brand{gap:12px;text-decoration:none;font-weight:700}.brand img{width:62px;height:62px;object-fit:contain}.brand span{border-left:1px solid #bbc9bc;padding-left:15px}.enter{font-weight:650;text-underline-offset:5px}
+.hero{overflow:hidden;isolation:isolate;position:relative;border-radius:26px;background:linear-gradient(112deg,#0d342b 15%,#154e41 75%,#2c7561);color:#fff;padding:clamp(32px,6vw,85px)}
+.hero:after{position:absolute;content:"";z-index:-1;inset:-45% -22% -20% 45%;background:repeating-radial-gradient(ellipse at 66% 39%,transparent 0 19px,#89caaa70 20px,transparent 21px 30px);transform:rotate(-18deg);mask-image:linear-gradient(90deg,transparent,#000 55%)}
+h1{max-width:18ch;font-size:clamp(2.5rem,5.9vw,5.2rem);letter-spacing:-.06em;line-height:1.04;margin:0 0 24px;font-weight:600;text-wrap:balance}.intro{max-width:46ch;color:#dfede4;font-size:clamp(1.05rem,1.8vw,1.28rem);line-height:1.52;margin:0}.actions{gap:20px;flex-wrap:wrap;margin-top:34px}.cta{padding:14px 22px;border-radius:9px;background:#d3f4aa;color:#163a2c;font-weight:750;text-decoration:none}.cta:hover{background:#e4ffc3}.secondary{text-underline-offset:5px;font-weight:600}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,4vw,54px);padding:clamp(28px,4vw,52px) 1%}.features article{border-top:2px solid #94af97;padding-top:16px}h2{font-size:1.18rem;letter-spacing:-.025em;margin:0 0 8px}.features p{line-height:1.55;color:#405c4e;margin:0}
+a:focus-visible{outline:3px solid #d78837;outline-offset:5px}@media(max-width:690px){.bar{height:66px}.brand img{width:48px;height:48px}.features{grid-template-columns:1fr;gap:24px}.hero{padding:34px 24px}.hero:after{inset:10% -55% -18% 52%;opacity:.45}.secondary{padding-block:8px}}
+</style></head><body>
+<header><div class="wrap bar"><a class="brand" href="/"><img src="/hub-ia.png" alt="HUB IA"><span>Peso Exato</span></a><a class="enter" href="/conta/entrar/">Entrar</a></div></header>
+<main class="wrap"><section class="hero"><h1>Agentes de inteligência artificial da Peso Exato</h1>
+<p class="intro">Consulte informações de equipamentos, encontre orientações e acompanhe sua operação com os agentes disponíveis no seu espaço.</p>
+<div class="actions"><a class="cta" href="/conta/cadastrar/">Criar minha conta</a><a class="secondary" href="/conta/entrar/">Acessar meu espaço</a></div></section>
+<section class="features" aria-label="Recursos do HUB IA"><article><h2>Seu espaço pessoal</h2><p>Comece com sua própria conta. O guia mostra os espaços e os agentes que você já pode acessar.</p></article>
+<article><h2>Conhecimento da equipe</h2><p>Consulte procedimentos e materiais que sua instituição disponibilizou para o seu trabalho.</p></article>
+<article><h2>Equipamentos no AviHUB</h2><p>Nos espaços com o agente AviHUB, vincule sua conta para consultar balanças e dados das unidades autorizadas.</p></article></section></main>
+</body></html>

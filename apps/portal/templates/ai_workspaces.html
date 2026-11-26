@@ -26,7 +26,7 @@
 </style>{% endblock %}
 {% block body %}
 <h1>Espaços das minhas IAs</h1>
-<p>Escolha os espaços e as permissões de e-mail de cada IA. Salve todas as alterações de uma vez.</p>
+<p>Por padrão, cada conexão inclui os espaços atuais e futuros aos quais você tem acesso na instituição ou conta pessoal conectada. Você pode limitar os espaços ou pausar uma conexão.{% if internal_mail %} Também pode ajustar as permissões de e-mail.{% endif %}</p>
 {% if entries %}
 <form method="post" id="access-form">{% csrf_token %}
 {% regroup entries by tenant as groups %}

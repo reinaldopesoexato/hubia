@@ -81,7 +81,7 @@ def resolve_recipient(cursor, tenant, space, agent, data, permitted=None):
 
 def send(cursor, user, ctx, agent, data, *, connection_name=None):
     tenant, space = ctx["tenant"], ctx["space"]
-    cursor.execute("""SELECT name FROM hub_tenancy.agents WHERE tenant_id=%s AND workspace_id=%s
+    cursor.execute("""SELECT name FROM hub_tenancy.workspace_agents WHERE tenant_id=%s AND workspace_id=%s
                       AND id=%s AND active AND kind='notifications'""", [tenant, space, agent])
     agent_row = cursor.fetchone()
     if not agent_row:
@@ -143,7 +143,7 @@ def send(cursor, user, ctx, agent, data, *, connection_name=None):
 def configure(request, tenant, space, agent):
     with transaction.atomic(), connection.cursor() as cursor:
         ctx = space_context(cursor,request.user,tenant,space,management=True)
-        cursor.execute("""SELECT name FROM hub_tenancy.agents WHERE tenant_id=%s AND workspace_id=%s
+        cursor.execute("""SELECT name FROM hub_tenancy.workspace_agents WHERE tenant_id=%s AND workspace_id=%s
                           AND id=%s AND kind='notifications'""", [tenant,space,agent])
         found = cursor.fetchone()
         if not found:

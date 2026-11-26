@@ -17,7 +17,10 @@ def verify_workspace_selection(viewer, outsider, user, tenant, origin, second, m
                            secure=True, HTTP_AUTHORIZATION="Bearer " + token.token)
     def ids():
         data = json.loads(call("listar_espacos").json()["result"]["content"][0]["text"])
-        return {row["space_id"] for row in data}
+        expected = {row["space_id"] for row in data}
+        guide = json.loads(call("consultar_guia").json()["result"]["content"][0]["text"])
+        assert {group["space"] for group in guide} == expected
+        return expected
     def discovered_spaces():
         response = viewer.post("/conta/mcp", {"jsonrpc":"2.0","id":1,"method":"tools/list"},
                                content_type="application/json", secure=True, HTTP_AUTHORIZATION="Bearer " + token.token)
@@ -46,7 +49,8 @@ def verify_workspace_selection(viewer, outsider, user, tenant, origin, second, m
                                name="Segunda IA", client_id=str(uuid4()))
     page = viewer.get(url, secure=True).content.decode()
     assert page.count(">Salvar permissões</button>") == 1 and f"mode-{peer.pk}" in page
-    def batch(first_mode, peer_mode, first_spaces=(), peer_spaces=(), peer_initial=origin):
+    assert f'name="initial-{peer.pk}" value="all"' in page
+    def batch(first_mode, peer_mode, first_spaces=(), peer_spaces=(), peer_initial="all"):
         return viewer.post(url, {
             "link": [str(link.pk), str(peer.pk)],
             f"mode-{link.pk}": first_mode, f"initial-{link.pk}": origin,

@@ -2,18 +2,40 @@ import base64
 import hashlib
 import json
 import secrets
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
+from datetime import timedelta
 from urllib.parse import parse_qs, urlsplit
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+from django.db import connection
 from django.urls import reverse
+from django.utils import timezone
 from django.test import TestCase
 from oauth2_provider.models import get_access_token_model
 from . import mcp
 from .access import MCP
 from .smoke import Hidden
-from .models import Link, Mailbox, WorkspaceSelection
+from .models import Link, Mailbox, OutboundEmail, WorkspaceSelection
+
+
+def fixture_mail_access(tenant, user_id, enabled):
+    # Only used inside smoke.py's rollback-only test transaction.
+    with connection.cursor() as cursor:
+        cursor.execute("RESET ROLE")
+        cursor.execute("""UPDATE hub_tenancy.memberships SET internal_mail=%s WHERE tenant_id=%s
+                          AND user_id=hub_admin.portal_principal(%s)""", [enabled, tenant, str(user_id)])
+        assert cursor.rowcount == 1
+        cursor.execute("SET LOCAL ROLE hub_portal")
+
+
+@contextmanager
+def without_mail(tenant, user_id):
+    fixture_mail_access(tenant, user_id, False)
+    try:
+        yield
+    finally:
+        fixture_mail_access(tenant, user_id, True)
 
 
 def verify_gemini(viewer, tenant, space, box):
@@ -37,7 +59,7 @@ def verify_gemini(viewer, tenant, space, box):
     picker = viewer.get(consent, params, secure=True)
     choice = f"{tenant}:{space}"
     all_choice = f"{tenant}:all"
-    assert picker.status_code == 200 and choice.encode() in picker.content and all_choice.encode() in picker.content
+    assert picker.status_code == 200 and choice.encode() not in picker.content and all_choice.encode() in picker.content
     assert viewer.get(consent, {**params, "hub_workspace":f"{uuid4()}:all"}, secure=True).status_code == 404
     other_app = register([callback]).json()["client_id"]
     all_prompt = viewer.get(consent, {**params, "client_id":other_app, "hub_workspace":all_choice}, secure=True)
@@ -70,7 +92,7 @@ def verify_gemini(viewer, tenant, space, box):
     result = viewer.post("/conta/mcp", {"jsonrpc":"2.0", "id":1, "method":"tools/list"},
                          content_type="application/json", secure=True, HTTP_AUTHORIZATION="Bearer "+token.json()["access_token"])
     assert "ler_email" in {tool["name"] for tool in result.json()["result"]["tools"]}
-    assert not WorkspaceSelection.objects.filter(link__client_id=app["client_id"]).exists()
+    assert WorkspaceSelection.objects.get(link__client_id=app["client_id"]).spaces == [str(space)]
     print("Gemini: espaço individual ou todos os atuais e futuros, recusa, isolamento e PKCE verificados.")
 
 
@@ -165,8 +187,33 @@ def verify_send_consent(viewer, tenant, space, box, *, email_only=False):
                            content_type="application/json", secure=True, **headers).status_code == 401
         test_link = Link.objects.get(client_id=app["client_id"], user=box.user)
         box.links.add(test_link)
-        assert {"listar_emails_novos", "ler_email"} <= tools()
+        assert {"listar_emails_novos", "ler_email", "buscar_emails"} <= tools()
+        with without_mail(tenant, box.user_id):
+            assert viewer.post(endpoint, {"jsonrpc":"2.0","id":1,"method":"tools/list"},
+                               content_type="application/json", secure=True, **headers).status_code == 401
+            assert viewer.get(consent, auth, secure=True).status_code == 404
+        imap = MagicMock()
+        imap.response.side_effect = lambda name: (name, [b"1" if name == "UIDVALIDITY" else b"1001"])
+        def command(name, *args):
+            if name == "search":
+                return "OK", [b"1 2 3 4 5 6 7 8 9 10 11" if args[1] == "1:1000" else b"1"]
+            return "OK", [(b"header", b"From: Rodrigo\r\nSubject: Pedido\r\n\r\nPedido de novembro")]
+        imap.uid.side_effect = command
+        def call(name, **args):
+            return rpc("tools/call", {"name":name, "arguments":args})
+        def payload(reply):
+            return json.loads(reply["result"]["content"][0]["text"])
+        with patch("bridge.mail_protocol.inbox", side_effect=lambda *args: nullcontext((imap, 1000))):
+            search = {"campo":"remetente", "termo":"Rodrigo"}
+            page = payload(call("buscar_emails", **search))
+            assert len(page["mensagens"]) == 10 and page["ha_mais"]
+            marker = page["marcador"]
+            assert "error" in call("buscar_emails", termo="Outro", marcador=marker)
+            older = payload(call("buscar_emails", **search, marcador=marker))
+            assert not older["ha_mais"] and len(older["mensagens"]) == 1
+            assert payload(call("ler_email", mensagem_id=older["mensagens"][0]["mensagem_id"]))["de"] == "Rodrigo"
         box.links.remove(test_link)
+        assert "error" in call("buscar_emails", termo="Rodrigo")
         metadata = viewer.get("/.well-known/oauth-protected-resource" + endpoint, secure=True).json()
         assert metadata["resource"].endswith(endpoint) and "hub.notify" not in metadata["scopes_supported"]
         server = viewer.get("/.well-known/oauth-authorization-server/conta/email", secure=True).json()
@@ -238,6 +285,20 @@ def verify_outbound(manager, viewer, link, box, space):
     assert {"consultar_assinatura_email", "editar_assinatura_email"} <= listed()
     def get_signature():
         return json.loads(signature_call("consultar_assinatura_email")["result"]["content"][0]["text"])["html"]
+    with without_mail(link.tenant, box.user_id):
+        assert viewer.get(personal, secure=True).status_code == 404
+        assert viewer.post(personal, updates, secure=True).status_code == 404
+        assert save(viewer, True, False) == 404
+        links_url = reverse("integrations", args=[link.tenant, space])
+        workspace = viewer.get(reverse("workspace", args=[link.tenant, space]), secure=True)
+        assert workspace.status_code == 200 and personal.encode() not in workspace.content
+        page = viewer.get(links_url, secure=True)
+        assert page.status_code == 200 and b"/conta/mcp/email" not in page.content
+        assert viewer.post(links_url, {"action":"create", "protocol":"mail", "name":"Bloqueada",
+                           "callback":"https://example.org/callback"}, secure=True).status_code == 400
+        assert box.address.encode() not in viewer.get(permissions, secure=True).content
+        assert "list_agents" in listed() and "enviar_email" not in listed()
+        assert "error" in send() and "error" in signature_call("consultar_assinatura_email")
     assert get_signature() == signature
     assert "error" in signature_call("editar_assinatura_email", {"html":"<form>Inválido</form>"})
     final_signature = "<strong>Equipe técnica</strong>"
@@ -257,6 +318,20 @@ def verify_outbound(manager, viewer, link, box, space):
         assert get_signature() == ""
         assert json.loads(send()["result"]["content"][0]["text"])["estado"] == "aceito_pelo_smtp"
         assert "error" in send(mensagem="Outra")
+        receipt = OutboundEmail.objects.get(link=link, request_id=args["request_id"])
+        title = f"E-mail para {args['destinatario']}"
+        def activity(client, days):
+            page = client.get("/conta/", {"dias":days}, secure=True)
+            assert page.status_code == 200
+            return page.content.decode().partition('<h2>Atividade recente</h2>')[2]
+        recent = activity(viewer, 7)
+        assert recent.count(title) == 1 and "Aceito pelo servidor de e-mail" in recent
+        assert title not in activity(manager, 7)
+        OutboundEmail.objects.filter(pk=receipt.pk).update(created_at=timezone.now()-timedelta(days=12), state="incerto")
+        assert title not in activity(viewer, 7)
+        older = activity(viewer, 30)
+        assert title in older and "Sem confirmação" in older
+        print("Atividade de e-mail: estado SMTP, repetição sem duplicata, períodos e isolamento por usuário verificados.")
         role("viewer")
         assert "enviar_email" not in listed() and "error" in send()
         assert "error" in signature_call("editar_assinatura_email", {"html":"Sem permissão"})
@@ -285,12 +360,12 @@ def verify_mail(manager, viewer, tenant, space, user):
     link = Link.objects.create(user=user, tenant=tenant, space=space, protocol="mcp", name="IA QA", client_id=str(uuid4()))
 
     def granted():
-        return {tool["name"] for tool in mcp.available_tools(link, {}, False)} & {"listar_emails_novos", "ler_email"}
+        return {tool["name"] for tool in mcp.available_tools(link, {}, False)} & {"listar_emails_novos", "ler_email", "buscar_emails"}
 
     assert not granted()
     assert viewer.post(personal, {"action":"grant", "links":str(uuid4())}, secure=True).status_code == 400
     assert viewer.post(personal, {"action":"grant", "links":str(link.pk)}, secure=True).status_code == 302
-    assert granted() == {"listar_emails_novos", "ler_email"}
+    assert granted() == {"listar_emails_novos", "ler_email", "buscar_emails"}
     with patch("bridge.mail_views.inbox", side_effect=ValueError("Falha no IMAP")):
         assert viewer.post(personal, form, secure=True).status_code == 400
         assert granted()

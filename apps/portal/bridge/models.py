@@ -1,6 +1,7 @@
 from uuid import uuid4
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class Link(models.Model):
@@ -20,6 +21,21 @@ class Link(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["client_id","user"], name="bridge_user_client")]
+
+
+class ConnectionUsage(models.Model):
+    link = models.ForeignKey(Link, on_delete=models.CASCADE, related_name="daily_usage")
+    day = models.DateField()
+    queries = models.PositiveBigIntegerField(default=1)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["link", "day"], name="connection_usage_day")]
+
+    @classmethod
+    def record(cls, link):
+        usage, created = cls.objects.get_or_create(link=link, day=timezone.localdate())
+        if not created:
+            cls.objects.filter(pk=usage.pk).update(queries=models.F("queries") + 1)
 
 
 class Ticket(models.Model):
@@ -145,6 +161,8 @@ class OutboundEmail(models.Model):
     link = models.ForeignKey(Link, on_delete=models.CASCADE)
     request_id = models.UUIDField()
     fingerprint = models.CharField(max_length=64)
+    created_at = models.DateTimeField(null=True)
+    recipient = models.EmailField(blank=True, default="")
     state = models.CharField(max_length=16, default="registrado")
 
     class Meta:
@@ -158,3 +176,71 @@ class CatalogObservation(models.Model):
     listed_at = models.DateTimeField(null=True)
     announced = models.CharField(max_length=64, blank=True)
     announced_at = models.DateTimeField(null=True)
+
+
+class AviHubAgent(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    tenant = models.UUIDField(unique=True)
+    origin = models.URLField()
+
+
+class AviHubSession(models.Model):
+    agent = models.ForeignKey(AviHubAgent, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    encrypted = models.BinaryField()
+    ready = models.BooleanField(default=False)
+    expires = models.DateTimeField(null=True)
+    email = models.EmailField(blank=True, default="")
+    label = models.CharField(max_length=80, blank=True, default="")
+
+    @property
+    def account_ref(self):
+        return f"conta-{self.pk}"
+
+    @property
+    def account_name(self):
+        return self.label or self.email or "Conta vinculada"
+
+    def account_info(self):
+        return {"id": self.account_ref, "nome": self.account_name, "email": self.email}
+
+
+class PlatformMailSettings(models.Model):
+    address = models.EmailField(default="hubia@psxt.io")
+    sender_name = models.CharField(max_length=120, default="HUB IA")
+    host = models.CharField(max_length=253, default="smtp.hostinger.com")
+    port = models.PositiveIntegerField(default=465)
+    tls_mode = models.CharField(max_length=8, default="ssl")
+    encrypted_password = models.BinaryField(default=bytes)
+
+
+class PasswordResetDelivery(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    encrypted_token = models.BinaryField()
+    due = models.DateTimeField(db_index=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+
+class AccountProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
+    phone = models.CharField(max_length=32, blank=True)
+    company = models.CharField(max_length=150, blank=True)
+    google_subject = models.CharField(max_length=255, null=True, unique=True)
+    guide_enabled = models.BooleanField(default=True)
+    avihub_setup_deferred = models.BooleanField(default=False)
+
+    @classmethod
+    def may_open_guide(cls, user):
+        return not cls.objects.filter(user=user, guide_enabled=False).exists()
+
+
+class PendingRegistration(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    name = models.CharField(max_length=150)
+    email = models.EmailField()
+    phone = models.CharField(max_length=32)
+    company = models.CharField(max_length=150)
+    password_hash = models.CharField(max_length=128)
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+    delivery_due = models.DateTimeField(null=True,db_index=True)
+    attempts = models.PositiveSmallIntegerField(default=0)

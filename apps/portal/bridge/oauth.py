@@ -18,6 +18,7 @@ from oauth2_provider.models import get_access_token_model, get_application_model
 from portal_identity import bind_account
 from oauth2_provider.views import AuthorizationView, TokenView
 
+from . import mail_access
 from .access import ORIGIN, MCP, META, MAIL_MCP, MAIL_ISSUER, MAIL_SCOPES, email_title, context, with_icon_link
 from .models import Link, Mailbox, MailProvider, WorkspaceSelection
 from .workspaces import selection
@@ -124,11 +125,13 @@ def pick_workspace(request, client_id, selected, *, email_only=False):
         principal, _ = bind_account(cursor, request.user)
         if not principal:
             raise Http404
+        if email_only and not mail_access.allowed(cursor, mail_access.INSTITUTION):
+            raise Http404
         choices = {}
         groups = []
         mail_tenants = set(Mailbox.objects.filter(user=request.user, provider__enabled=True).values_list("provider_id", flat=True)) if email_only else None
         for tenant in accessible_tenants(cursor):
-            if email_only and tenant not in mail_tenants:
+            if email_only and (tenant != mail_access.INSTITUTION or tenant not in mail_tenants):
                 continue
             cursor.execute("""SELECT w.id, w.name, i.name FROM hub_tenancy.workspaces w
                               LEFT JOIN hub_tenancy.institutions i ON i.tenant_id=w.tenant_id
@@ -139,18 +142,18 @@ def pick_workspace(request, client_id, selected, *, email_only=False):
             organization = rows[0][2] or "Espaço pessoal"
             all_key = f"{tenant}:all"
             choices[all_key] = (tenant, rows[0][0], organization)
-            options = [(all_key, "Todos os meus espaços atuais e futuros")]
-            if email_only:
-                groups.append((organization, [(all_key, email_title(organization))]))
-                continue
-            for space, workspace, _ in rows:
-                key = f"{tenant}:{space}"
-                choices[key] = (tenant, space, organization)
-                options.append((key, workspace))
-            groups.append((organization, options))
-    if not selected and request.method == "GET":
-        params = [(key, value) for key, values in request.GET.lists() if key != "hub_workspace" for value in values]
-        return render(request, "gemini_workspace.html", {"params":params, "groups":groups, "email_only":email_only})
+            groups.append((all_key, email_title(organization) if email_only else organization))
+            # Honor an individual workspace explicitly selected on an older consent page.
+            if not email_only and selected:
+                for space, _, _ in rows:
+                    if selected == f"{tenant}:{space}":
+                        choices[selected] = (tenant, space, organization)
+    if not selected:
+        if len(groups) == 1 and not email_only:
+            selected = groups[0][0]
+        elif request.method == "GET":
+            params = [(key, value) for key, values in request.GET.lists() if key != "hub_workspace" for value in values]
+            return render(request, "gemini_workspace.html", {"params":params, "groups":groups, "email_only":email_only})
     if selected not in choices:
         raise Http404
     tenant, space, organization = choices[selected]
@@ -185,6 +188,8 @@ class Consent(AuthorizationView):
                     link = links.first() or pick_workspace(request, client_id, selected, email_only=self.email_only)
                     if not isinstance(link, Link):
                         return link
+                    if link._state.adding and not selected:
+                        selected = f"{link.tenant}:all"
                 elif self.email_only:
                     raise Http404
                 else:
@@ -197,19 +202,25 @@ class Consent(AuthorizationView):
                 return JsonResponse({"error":"invalid_request"}, status=400)
             if selected and not picked_all and selected != f"{link.tenant}:{link.space}":
                 return JsonResponse({"error":"invalid_request"}, status=400)
-            allowed = {"hub.read","hub.mail.send","offline_access"} | ({"hub.reply","hub.notify"} if link.writable else set())
+            internal_mail = mail_access.for_link(link)
+            if self.email_only and not internal_mail:
+                raise Http404
+            allowed = {"hub.read", "offline_access"}
+            if internal_mail:
+                allowed.add("hub.mail.send")
+            if link.writable:
+                allowed.update(("hub.reply", "hub.notify"))
             if not set(data.get("scope","").split())<=allowed:
                 return JsonResponse({"error":"invalid_scope"},status=400)
             self.space_info = context(link, multi_space=True)
             self.space_info["email_only"] = self.email_only
             self.space_info["hub_workspace"] = selected
-            self.space_info["all_spaces"] = picked_all or already_all
-            self.space_info["offer_all_spaces"] = not self.email_only and not selected and not already_all
+            self.space_info["all_spaces"] = already_all or (link._state.adding and (picked_all or not selected))
             # Serialize consent with changes to the user's mailbox and its permissions.
             provider = MailProvider.objects.filter(pk=link.tenant, enabled=True)
             if request.method == "POST":
                 provider = provider.select_for_update()
-            profile = provider.first()
+            profile = provider.first() if internal_mail else None
             if request.method == "POST" and not link._state.adding:
                 link = Link.objects.select_for_update().filter(pk=link.pk).first()
                 if link is None:
@@ -246,11 +257,11 @@ class Consent(AuthorizationView):
                 result = parse_qs(urlsplit(response.get("Location", "")).query)
                 if "code" in result and "error" not in result:
                     if link._state.adding:
-                        link, _ = Link.objects.select_for_update().get_or_create(
+                        link, created = Link.objects.select_for_update().get_or_create(
                             client_id=link.client_id, user=request.user, defaults={"tenant":link.tenant,
                             "space":link.space, "name":link.name, "protocol":"mcp", "writable":link.writable, "email_only":self.email_only})
-                    if picked_all or (self.space_info["offer_all_spaces"] and request.POST.get("allow_all_spaces") == "on"):
-                        WorkspaceSelection.objects.update_or_create(link=link, defaults={"spaces":None})
+                        if created and selected:
+                            WorkspaceSelection.objects.create(link=link, spaces=None if picked_all else [str(link.space)])
                     if send_choice is not None and send_choice != send_enabled:
                         if send_choice:
                             send_box.send_links.add(link)
@@ -318,7 +329,7 @@ def authenticate_mcp(request, email_only=False):
         return None
     link = Link.objects.select_related("user").filter(protocol="mcp",email_only=email_only,client_id=grant.application.client_id,
                                                       user=grant.user).first()
-    if not link:
+    if not link or (email_only and not mail_access.for_link(link)):
         return None
     ctx = context(link, multi_space=True)
     can_reply = link.writable and not ctx["viewer"] and grant.allow_scopes(["hub.reply"])

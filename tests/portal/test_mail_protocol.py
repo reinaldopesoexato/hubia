@@ -82,6 +82,39 @@ class MailProtocolTests(unittest.TestCase):
         self.assertEqual(mail.page(client, 0, 2000, 2000), ([], 2000))
         client.uid.assert_not_called()
 
+    def test_history_search_finds_old_messages_and_pages_backwards(self):
+        client = MagicMock()
+        def dispatch(command, *args):
+            if command == "search":
+                upper = int(args[1].split(":")[1])
+                self.assertEqual(args, ("UID", f"1:{upper}", "FROM"))
+                self.assertEqual(client.literal, b"Rodrigo")
+                return "OK", [b" ".join(str(uid).encode() for uid in range(2, min(upper, 12) + 1))]
+            self.assertIn("BODY.PEEK", args[-1])
+            return "OK", [(b"header", b"From: Rodrigo\r\nSubject: Pedido\r\n")]
+        client.uid.side_effect = dispatch
+        first, marker = mail.search_page(client, 4000, 4000, "remetente", "Rodrigo")
+        self.assertEqual([uid for uid, _ in first], list(range(12, 2, -1)))
+        second, end = mail.search_page(client, 4001, marker, "remetente", "Rodrigo")
+        self.assertEqual([uid for uid, _ in second], [2])
+        self.assertIsNone(end)
+
+    def test_search_encodes_accented_phrase_and_handles_empty_windows(self):
+        client = MagicMock()
+        client.uid.return_value = ("OK", [b""])
+        term = 'Cotação "A"'
+        self.assertEqual(mail.search_filter({"termo":term}), ("texto", term))
+        self.assertEqual(mail.search_page(client, 60000, 80000, "assunto", term), ([], 30000))
+        client.uid.assert_called_once_with("search", "CHARSET", "UTF-8", "UID", "30001:80000", "SUBJECT")
+        self.assertEqual(client.literal, term.encode("utf-8"))
+        self.assertEqual(mail.search_page(client, 60000, 30000, "assunto", term), ([], None))
+        client.uid.return_value = ("NO", [b"search unavailable"])
+        with self.assertRaises(ValueError):
+            mail.search_page(client, 2, 5, "texto", term)
+        for args in ({"termo":" "}, {"termo":"a\nb"}, {"termo":"a"*201}, {"termo":"a", "campo":"outro"}):
+            with self.assertRaises(ValueError):
+                mail.search_filter(args)
+
     def test_no_cursor_advance_on_fetch_failure(self):
         client = MagicMock()
         client.uid.side_effect = [("OK",[b"11"]), ("NO",[b"unavailable"])]

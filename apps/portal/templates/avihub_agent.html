@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Contas AviHUB{% endblock %}
+{% block body %}
+<nav>{% if mode == "list" %}<a href="{% url 'workspace' tenant space %}">← {{ workspace }}</a>{% else %}<a href="{{ request.path }}">← Contas vinculadas</a>{% endif %}</nav>
+<header class="agent-heading"><div><small>{{ organization }} · {{ agent_name|default:"AviHUB" }}</small>
+<h1>{% if mode == "add" %}Incluir conta{% elif mode == "edit" %}Editar conta{% elif mode == "confirm" %}Excluir vínculos{% else %}Contas vinculadas{% endif %}</h1></div>
+{% if mode == "list" %}<a class="agent-primary" href="?nova=1">Incluir conta</a>{% endif %}</header>
+{% if error %}<p class="error agent-feedback" role="alert">{{ error }}</p>{% endif %}
+{% if notice %}<p class="agent-saved" role="status">{{ notice }}</p>{% endif %}
+
+{% if mode == "list" %}
+{% if accounts %}
+<p><a href="{% url 'dashboard' %}#configured-ai">Ir para o guia de conexão das IAs</a></p>
+<form method="post" id="account-list">{% csrf_token %}
+<div class="account-toolbar">
+<label id="account-select-all" hidden><input type="checkbox"> Selecionar todas</label>
+<button class="agent-unlink" name="action" value="review_delete">Excluir selecionadas</button>
+<span role="status" id="account-count"></span></div>
+<ul class="linked-accounts">
+{% for account in accounts %}<li>
+<label><input type="checkbox" name="contas" value="{{ account.account_ref }}">
+<span><strong>{{ account.account_name }}</strong><small>{% if account.label and account.email %}{{ account.email }} · {% endif %}{{ account.account_ref }}</small></span></label>
+<span class="status{% if account.ready %} done{% endif %}">{% if account.ready %}Vinculada{% else %}Aguardando código{% endif %}</span>
+<a href="?conta={{ account.account_ref }}" aria-label="Editar {{ account.account_name }} ({{ account.account_ref }})">Editar</a>
+</li>{% endfor %}</ul></form>
+<script>
+(() => {
+  const list = document.getElementById('account-list');
+  const boxes = Array.from(list.querySelectorAll('[name="contas"]'));
+  const toggle = document.getElementById('account-select-all');
+  const all = toggle.querySelector('input');
+  function update() {
+    const count = boxes.filter(box => box.checked).length;
+    list.querySelector('button').disabled = count === 0;
+    all.checked = count === boxes.length;
+    all.indeterminate = count > 0 && count < boxes.length;
+    document.getElementById('account-count').textContent = count === 1 ? '1 selecionada' : count + ' selecionadas';
+  }
+  all.addEventListener('change', () => { for (const box of boxes) box.checked = all.checked; });
+  list.addEventListener('change', update);
+  toggle.hidden = false;
+  window.addEventListener('pageshow', update);
+  update();
+})();
+</script>
+{% else %}<p class="empty">Você ainda não vinculou uma conta AviHUB nesta instituição.</p>{% endif %}
+
+{% elif mode == "confirm" %}
+<p>As contas abaixo serão desvinculadas do HUB IA. Para voltar a usá-las pelo agente, será preciso entrar novamente.</p>
+<form method="post">{% csrf_token %}
+<ul>{% for account in selected %}<li><strong>{{ account.account_name }}</strong> · {% if account.label and account.email %}{{ account.email }} · {% endif %}{{ account.account_ref }}
+<input type="hidden" name="contas" value="{{ account.account_ref }}"></li>{% endfor %}</ul>
+<div class="agent-actions"><button class="agent-unlink" name="action" value="delete">Confirmar exclusão</button><a href="{{ request.path }}">Cancelar</a></div></form>
+
+{% elif mode == "add" %}
+<p>Use seu login de <strong>{{ agent.origin }}</strong>. O agente poderá consultar os dados que essa conta tem permissão para acessar.</p>
+<form method="post">{% csrf_token %}
+<label>Apelido da conta (opcional)<input name="apelido" maxlength="80" value="{{ request.POST.apelido }}" placeholder="Ex. Granja Norte"></label>
+<label>E-mail do AviHUB<input type="email" name="email" maxlength="254" required autocomplete="username" value="{{ request.POST.email }}"></label>
+<label>Senha do AviHUB<input type="password" name="password" required autocomplete="current-password"></label>
+<div class="agent-actions"><button name="action" value="login">Vincular conta</button><a href="{{ request.path }}">Cancelar</a></div></form>
+
+{% elif mode == "edit" %}
+<p><strong>{{ session.email|default:session.account_name }}</strong> · {{ session.account_ref }}</p>
+{% if not session.ready %}
+<h2>Verificar conta</h2>
+<form method="post">{% csrf_token %}<input type="hidden" name="conta" value="{{ session.account_ref }}">
+<label>Código do AviHUB<input name="code" required maxlength="64" autocomplete="one-time-code"></label>
+<button name="action" value="verify">Verificar código</button></form>
+<form method="post">{% csrf_token %}<input type="hidden" name="conta" value="{{ session.account_ref }}">
+<button name="action" value="sms">Receber por SMS</button> <button name="action" value="whatsapp">Receber por WhatsApp</button></form>
+{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="conta" value="{{ session.account_ref }}">
+<label>Apelido da conta<input name="apelido" maxlength="80" value="{% if request.POST.action == 'rename' %}{{ request.POST.apelido }}{% else %}{{ session.label }}{% endif %}" placeholder="Ex. Granja Norte"></label>
+<small>Use esse nome para indicar ao agente qual conta consultar.</small>
+<div class="agent-actions"><button name="action" value="rename">Salvar alterações</button><a href="{{ request.path }}">Cancelar</a></div></form>
+{% endif %}
+{% endblock %}
